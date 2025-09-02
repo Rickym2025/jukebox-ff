@@ -91,14 +91,14 @@
       const lyricsModalClose = document.getElementById('lyrics-modal-close');
       
       // IMPORTANTE: Usa l'URL della tua App Script e aggiungi "?source=matera" alla fine
-      const sheetApiUrl = 'URL_DELLA_TUA_WEB_APP?source=matera';
+      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbzziUkdI78CZ9vhZ7LNWCFvn6r7JeY2TKuiiDMAdAsAf5uGHZKPsTFJvoy1wxN1wH1t/exec?source=matera';
       
       let allSongs = [];
       let currentPlayingItem = null;
 
       loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        if (document.getElementById('email-input').value.trim().toLowerCase() === 'faustofusett65@gmail.com') {
+        if (document.getElementById('email-input').value.trim().toLowerCase() === 'faustofusetti65@gmail.com') {
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('jukebox-container').style.display = 'block';
           loadMusicFromApi();
