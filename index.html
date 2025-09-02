@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <style>
-    /* --- STILI GENERALI --- */
     :root { 
       --primary-color: #0693e3; 
       --secondary-color: #e3a006; 
@@ -19,10 +18,8 @@
       color: #f0f0f0; 
       text-align: center; 
       background-color: #121212;
-      overflow: hidden; /* Impedisce lo scrolling */
+      overflow: hidden;
     }
-
-    /* --- SFONDO (puoi usare un video o un'immagine) --- */
     #background-video { 
       position: fixed; 
       right: 0; 
@@ -35,8 +32,6 @@
       object-fit: cover; 
       filter: brightness(0.4); 
     }
-
-    /* --- CONTENITORE PRINCIPALE --- */
     .container-wrapper { 
       min-height: 100vh; 
       width: 100%; 
@@ -45,8 +40,6 @@
       justify-content: center; 
       padding: 20px; 
     }
-
-    /* --- SCHERMATA DI ACCESSO --- */
     #login-screen {
       background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(10px);
@@ -59,12 +52,8 @@
     }
     #login-screen h1 {
       font-size: 1.8em;
-      margin-bottom: 15px;
-      color: var(--primary-color);
-    }
-    #login-screen p {
       margin-bottom: 25px;
-      font-size: 1.1em;
+      color: var(--primary-color);
     }
     #login-form input {
       width: 100%;
@@ -97,10 +86,8 @@
       transform: translateY(-3px);
       box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4);
     }
-
-    /* --- CONTENITORE JUKEBOX --- */
     #jukebox-container {
-      display: none; /* Nascosto di default */
+      display: none;
       background: rgba(0, 0, 0, 0.45);
       backdrop-filter: blur(10px);
       padding: 40px 30px;
@@ -114,8 +101,6 @@
         margin-bottom: 25px;
         font-size: 1.6em;
     }
-
-    /* --- LISTA CANZONI --- */
     .song-list-container { 
       max-height: 50vh; 
       overflow-y: auto; 
@@ -160,24 +145,20 @@
 </head>
 <body>
 
-  <!-- Inserisci qui il tuo video di sfondo. Puoi sostituirlo con un'immagine statica se preferisci -->
   <video autoplay muted loop playsinline preload="auto" id="background-video">
     <source src="https://github.com/Rickym2025/fausto-fusetti-links/raw/main/video_sfondo_compressed.mp4" type="video/mp4" />
   </video>
 
   <div class="container-wrapper">
     
-    <!-- 1. Schermata di Accesso -->
     <div id="login-screen">
-      <h1>Jukebox Riservato</h1>
-      <p>Inserisci la tua email per accedere al catalogo musicale per Matera.</p>
+      <h1>Jukebox Riservato per MATERA</h1>
       <form id="login-form">
-        <input type="email" id="email-input" placeholder="latuaemail@esempio.com" required />
+        <input type="email" id="email-input" placeholder="Inserisci l'email di accesso" required />
         <button type="submit" class="button">Accedi al Jukebox</button>
       </form>
     </div>
 
-    <!-- 2. Il Jukebox (inizialmente nascosto) -->
     <div id="jukebox-container">
       <h2>Ascolta i Brani</h2>
       <div id="song-list-container">
@@ -190,34 +171,31 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // --- ELEMENTI DEL DOM ---
       const loginScreen = document.getElementById('login-screen');
       const loginForm = document.getElementById('login-form');
       const jukeboxContainer = document.getElementById('jukebox-container');
       const songListContainer = document.getElementById('song-list-container');
       const audioPlayer = document.getElementById('jukebox-audio-player');
       
-      // --- URL DEL TUO GOOGLE SHEET ---
-      // IMPORTANTE: Sostituisci questo URL con quello della tua Web App di Google Apps Script.
       const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbyyvfsSlgx6J-dIeLaIi3Crd6eqG029DDsGzF3Wy8u1VIfwhTMDZJdTPS_ubYszUyFR/exec';
       
       let allSongs = [];
       let currentPlayingItem = null;
 
-      // --- GESTIONE ACCESSO ---
       loginForm.addEventListener('submit', function(e) {
-        e.preventDefault(); // Impedisce al form di ricaricare la pagina
-        const email = document.getElementById('email-input').value;
-        if (email) {
-          // Nasconde la schermata di login e mostra il jukebox
+        e.preventDefault();
+        const emailInput = document.getElementById('email-input').value.trim();
+        const allowedEmail = 'faustofusett65@gmail.com';
+
+        if (emailInput.toLowerCase() === allowedEmail) {
           loginScreen.style.display = 'none';
           jukeboxContainer.style.display = 'block';
-          // Carica la musica solo dopo l'accesso
           loadMusicFromApi();
+        } else {
+          alert('Accesso non autorizzato. Email non corretta.');
         }
       });
 
-      // --- FUNZIONI PER CARICARE E VISUALIZZARE LA MUSICA ---
       async function loadMusicFromApi() {
         try {
           const response = await fetch(sheetApiUrl);
@@ -226,7 +204,7 @@
           const songs = await response.json();
           if (songs.error) throw new Error(songs.error);
           
-          allSongs = songs.slice(0, 10); // Mostra solo le prime 10 canzoni
+          allSongs = songs.slice(0, 10);
           displaySongs();
 
         } catch (error) {
@@ -235,10 +213,9 @@
       }
 
       function displaySongs() {
-        songListContainer.innerHTML = ''; // Pulisce il contenitore
+        songListContainer.innerHTML = '';
         if (allSongs.length > 0) {
           allSongs.forEach(song => {
-            // Crea un elemento per ogni canzone
             const songItemHTML = `
               <div class="song-item" data-src="${song.url}" data-title="${song.title}">
                 <span class="title">${song.title}</span>
@@ -258,14 +235,12 @@
             const isPlayingThisItem = item === currentPlayingItem;
             
             if (isPlayingThisItem) {
-              // Se clicco sulla canzone già in play: metto in pausa o riprendo
               if (audioPlayer.paused) {
                 audioPlayer.play();
               } else {
                 audioPlayer.pause();
               }
             } else {
-              // Se clicco su una nuova canzone:
               resetPlayingState(); 
               currentPlayingItem = item;
               audioPlayer.src = item.dataset.src;
@@ -275,7 +250,6 @@
         });
       }
       
-      // --- GESTIONE STATO PLAY/PAUSA ---
       function resetPlayingState() {
         if (currentPlayingItem) {
           currentPlayingItem.classList.remove('playing');
