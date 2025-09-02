@@ -9,7 +9,6 @@
   <style>
     :root { 
       --primary-color: #0693e3; 
-      --secondary-color: #e3a006; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -21,126 +20,36 @@
       overflow: hidden;
     }
     #background-video { 
-      position: fixed; 
-      right: 0; 
-      bottom: 0; 
-      min-width: 100%; 
-      min-height: 100%; 
-      width: auto; 
-      height: auto; 
-      z-index: -1; 
-      object-fit: cover; 
-      filter: brightness(0.4); 
+      position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); 
     }
     .container-wrapper { 
-      min-height: 100vh; 
-      width: 100%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      padding: 20px; 
+      min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 20px; 
     }
-    #login-screen {
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(10px);
-      padding: 40px 30px;
-      max-width: 500px;
-      width: 100%;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 2;
+    #login-screen, #jukebox-container {
+      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); padding: 40px 30px; max-width: 680px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 2;
     }
-    #login-screen h1 {
-      font-size: 1.8em;
-      margin-bottom: 25px;
-      color: var(--primary-color);
-    }
-    #login-form input {
-      width: 100%;
-      padding: 14px;
-      border-radius: 25px;
-      border: 1px solid #555;
-      background-color: #2c2c2c;
-      color: #f0f0f0;
-      font-size: 1em;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .button {
-      display: inline-block;
-      padding: 14px 30px;
-      border: 2px solid var(--primary-color);
-      border-radius: 30px;
-      text-decoration: none;
-      color: #f0f0f0;
-      font-size: 1.1em;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      background-color: transparent;
-      cursor: pointer;
-      width: 100%;
-    }
-    .button:hover {
-      background: var(--primary-color);
-      color: white;
-      transform: translateY(-3px);
-      box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4);
-    }
-    #jukebox-container {
-      display: none;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(10px);
-      padding: 40px 30px;
-      max-width: 680px;
-      width: 100%;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 2;
-    }
-    #jukebox-container h2 {
-        margin-bottom: 25px;
-        font-size: 1.6em;
-    }
-    .song-list-container { 
-      max-height: 50vh; 
-      overflow-y: auto; 
-      margin-top: 20px; 
-    }
-    .song-item { 
-      display: flex; 
-      align-items: center; 
-      padding: 12px; 
-      border-bottom: 1px solid #333; 
-      transition: background-color 0.3s ease; 
-      border-radius: 5px; 
-      cursor: pointer; 
-    }
+    h1 { font-size: 1.8em; margin-bottom: 25px; color: var(--primary-color); }
+    h2 { margin-bottom: 25px; font-size: 1.6em; }
+    input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; }
+    .button { display: inline-block; padding: 14px 30px; border: 2px solid var(--primary-color); border-radius: 30px; text-decoration: none; color: #f0f0f0; font-size: 1.1em; font-weight: 500; transition: all 0.3s ease; background-color: transparent; cursor: pointer; width: 100%; }
+    .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4); }
+    #jukebox-container { display: none; }
+    .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
+    .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: background-color 0.3s ease; border-radius: 5px; cursor: pointer; }
     .song-item:last-child { border-bottom: none; }
-    .song-item .title { 
-      flex-grow: 1; 
-      text-align: left; 
-      font-size: 1.1em;
-    }
-    .song-item .play-btn { 
-      background: none; 
-      border: 2px solid var(--primary-color); 
-      color: var(--primary-color); 
-      border-radius: 50%; 
-      width: 40px; 
-      height: 40px; 
-      flex-shrink: 0; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
+    .song-item .title { flex-grow: 1; text-align: left; font-size: 1.1em; }
+    .song-item .btn { background: none; border: 2px solid var(--primary-color); color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
+    .song-item .lyrics-btn { border-color: #aaa; color: #aaa; }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item.playing { background-color: rgba(6, 147, 227, 0.2); }
-    .song-item.playing .play-btn { 
-      background-color: var(--primary-color); 
-      color: white; 
-    }
+    .song-item.playing .play-btn { background-color: var(--primary-color); color: white; }
+    
+    /* Stili per il Modal dei Testi */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: left; }
+    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; }
+    #lyrics-title { color: var(--primary-color); margin-bottom: 20px; }
+    #lyrics-text { white-space: pre-wrap; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -150,7 +59,6 @@
   </video>
 
   <div class="container-wrapper">
-    
     <div id="login-screen">
       <h1>Jukebox Riservato per MATERA</h1>
       <form id="login-form">
@@ -158,38 +66,41 @@
         <button type="submit" class="button">Accedi al Jukebox</button>
       </form>
     </div>
-
     <div id="jukebox-container">
       <h2>Ascolta i Brani</h2>
-      <div id="song-list-container">
-        <p>Caricamento del catalogo in corso...</p>
-      </div>
+      <div id="song-list-container"><p>Caricamento...</p></div>
       <audio id="jukebox-audio-player" style="display: none;"></audio>
     </div>
+  </div>
 
+  <!-- Finestra Modal per i Testi -->
+  <div id="lyrics-modal" class="modal-overlay">
+    <div class="modal-content">
+      <span id="lyrics-modal-close" class="modal-close">&times;</span>
+      <h3 id="lyrics-title">Testo della canzone</h3>
+      <p id="lyrics-text">Nessun testo disponibile.</p>
+    </div>
   </div>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const loginScreen = document.getElementById('login-screen');
       const loginForm = document.getElementById('login-form');
-      const jukeboxContainer = document.getElementById('jukebox-container');
       const songListContainer = document.getElementById('song-list-container');
       const audioPlayer = document.getElementById('jukebox-audio-player');
+      const lyricsModal = document.getElementById('lyrics-modal');
+      const lyricsModalClose = document.getElementById('lyrics-modal-close');
       
-      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbyyvfsSlgx6J-dIeLaIi3Crd6eqG029DDsGzF3Wy8u1VIfwhTMDZJdTPS_ubYszUyFR/exec';
+      // IMPORTANTE: Usa l'URL della tua App Script e aggiungi "?source=matera" alla fine
+      const sheetApiUrl = 'URL_DELLA_TUA_WEB_APP?source=matera';
       
       let allSongs = [];
       let currentPlayingItem = null;
 
       loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const emailInput = document.getElementById('email-input').value.trim();
-        const allowedEmail = 'faustofusett65@gmail.com';
-
-        if (emailInput.toLowerCase() === allowedEmail) {
-          loginScreen.style.display = 'none';
-          jukeboxContainer.style.display = 'block';
+        if (document.getElementById('email-input').value.trim().toLowerCase() === 'faustofusett65@gmail.com') {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('jukebox-container').style.display = 'block';
           loadMusicFromApi();
         } else {
           alert('Accesso non autorizzato. Email non corretta.');
@@ -200,15 +111,12 @@
         try {
           const response = await fetch(sheetApiUrl);
           if (!response.ok) throw new Error(`Errore di rete`);
-          
           const songs = await response.json();
-          if (songs.error) throw new Error(songs.error);
-          
-          allSongs = songs.slice(0, 10);
+          if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API');
+          allSongs = songs;
           displaySongs();
-
         } catch (error) {
-          songListContainer.innerHTML = `<p style="color: #f44336;">Errore durante il caricamento: ${error.message}</p>`;
+          songListContainer.innerHTML = `<p style="color: #f44336;">Errore: ${error.message}</p>`;
         }
       }
 
@@ -216,38 +124,53 @@
         songListContainer.innerHTML = '';
         if (allSongs.length > 0) {
           allSongs.forEach(song => {
+            const hasLyrics = song.liriche && song.liriche.trim() !== "";
+            const lyricsData = hasLyrics ? song.liriche.replace(/"/g, '&quot;') : "";
             const songItemHTML = `
-              <div class="song-item" data-src="${song.url}" data-title="${song.title}">
+              <div class="song-item" data-src="${song.url}" data-title="${song.title}" data-lyrics="${lyricsData}">
                 <span class="title">${song.title}</span>
-                <button class="play-btn"><i class="fas fa-play"></i></button>
+                ${hasLyrics ? '<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i></button>' : ''}
+                <button class="btn play-btn"><i class="fas fa-play"></i></button>
               </div>`;
             songListContainer.innerHTML += songItemHTML;
           });
           addEventListenersToSongs();
         } else {
-          songListContainer.innerHTML = '<p>Nessun brano trovato nel catalogo.</p>';
+          songListContainer.innerHTML = '<p>Nessun brano trovato.</p>';
         }
       }
 
       function addEventListenersToSongs() {
         document.querySelectorAll('.song-item').forEach(item => {
-          item.addEventListener('click', () => {
-            const isPlayingThisItem = item === currentPlayingItem;
-            
-            if (isPlayingThisItem) {
-              if (audioPlayer.paused) {
-                audioPlayer.play();
-              } else {
-                audioPlayer.pause();
-              }
-            } else {
-              resetPlayingState(); 
-              currentPlayingItem = item;
-              audioPlayer.src = item.dataset.src;
-              audioPlayer.play();
+          item.addEventListener('click', (e) => {
+            // Se il click non è su un pulsante, gestisce il play/pausa
+            if (!e.target.closest('button')) {
+               handlePlayPause(item);
             }
           });
+           item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item));
+
+          item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const title = item.dataset.title;
+            const lyrics = item.dataset.lyrics;
+            document.getElementById('lyrics-title').innerText = title;
+            document.getElementById('lyrics-text').innerText = lyrics;
+            lyricsModal.style.display = 'flex';
+          });
         });
+      }
+
+      function handlePlayPause(item) {
+        const isPlayingThisItem = item === currentPlayingItem;
+        if (isPlayingThisItem) {
+          audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
+        } else {
+          resetPlayingState(); 
+          currentPlayingItem = item;
+          audioPlayer.src = item.dataset.src;
+          audioPlayer.play();
+        }
       }
       
       function resetPlayingState() {
@@ -264,16 +187,18 @@
           currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-pause';
         }
       });
-
       audioPlayer.addEventListener('pause', () => {
         if (currentPlayingItem) {
           currentPlayingItem.classList.remove('playing');
           currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-play';
         }
       });
-
       audioPlayer.addEventListener('ended', resetPlayingState);
-
+      
+      lyricsModalClose.addEventListener('click', () => lyricsModal.style.display = 'none');
+      lyricsModal.addEventListener('click', (e) => {
+        if (e.target === lyricsModal) lyricsModal.style.display = 'none';
+      });
     });
   </script>
 
