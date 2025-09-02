@@ -7,53 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <style>
-    :root { 
-      --primary-color: #0693e3; 
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { 
-      font-family: 'Montserrat', sans-serif; 
-      color: #f0f0f0; 
-      text-align: center; 
-      background-color: #121212;
-      overflow: hidden;
-    }
-    #background-video { 
-      position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); 
-    }
-    .container-wrapper { 
-      min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 20px; 
-    }
-    #login-screen, #jukebox-container {
-      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); padding: 40px 30px; max-width: 680px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 2;
-    }
-    h1 { font-size: 1.8em; margin-bottom: 25px; color: var(--primary-color); }
-    h2 { margin-bottom: 25px; font-size: 1.6em; }
-    input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; }
-    .button { display: inline-block; padding: 14px 30px; border: 2px solid var(--primary-color); border-radius: 30px; text-decoration: none; color: #f0f0f0; font-size: 1.1em; font-weight: 500; transition: all 0.3s ease; background-color: transparent; cursor: pointer; width: 100%; }
-    .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4); }
-    #jukebox-container { display: none; }
-    .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
-    .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: all 0.3s ease; border-radius: 5px; }
-    .song-item .title-container { flex-grow: 1; text-align: left; }
-    .song-item .title { font-size: 1.1em; cursor: pointer; }
-    .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; }
-    .song-item:hover .plays-left { opacity: 1; }
-    .song-item .btn { background: none; border: 2px solid var(--primary-color); color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
-    .song-item .lyrics-btn { border-color: #aaa; color: #aaa; }
-    .song-item:hover { background-color: rgba(255,255,255,0.05); }
-    .song-item.playing { background-color: rgba(6, 147, 227, 0.2); }
-    .song-item.playing .play-btn { background-color: var(--primary-color); color: white; }
-    .song-item.disabled { opacity: 0.5; background-color: transparent !important; cursor: not-allowed; }
-    .song-item.disabled .title { cursor: not-allowed; }
-    .song-item.disabled .btn { cursor: not-allowed; border-color: #555; color: #555; }
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: left; }
-    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; }
-    #lyrics-title { color: var(--primary-color); margin-bottom: 20px; }
-    #lyrics-text { white-space: pre-wrap; line-height: 1.6; }
-    .no-copy { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+    :root { --primary-color: #0693e3; } * { margin: 0; padding: 0; box-sizing: border-box; } html { scroll-behavior: smooth; } body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow: hidden; } #background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); } .container-wrapper { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 20px; } #login-screen, #jukebox-container { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); padding: 40px 30px; max-width: 680px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 2; } h1 { font-size: 1.8em; margin-bottom: 25px; color: var(--primary-color); } h2 { margin-bottom: 25px; font-size: 1.6em; } input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; } .button { display: inline-block; padding: 14px 30px; border: 2px solid var(--primary-color); border-radius: 30px; text-decoration: none; color: #f0f0f0; font-size: 1.1em; font-weight: 500; transition: all 0.3s ease; background-color: transparent; cursor: pointer; width: 100%; } .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4); } #jukebox-container { display: none; } .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; } .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: all 0.3s ease; border-radius: 5px; } .song-item .title-container { flex-grow: 1; text-align: left; } .song-item .title { font-size: 1.1em; cursor: pointer; } .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; } .song-item:hover .plays-left { opacity: 1; } .song-item .btn { background: none; border: 2px solid var(--primary-color); color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; } .song-item .lyrics-btn { border-color: #aaa; color: #aaa; } .song-item:hover { background-color: rgba(255,255,255,0.05); } .song-item.playing { background-color: rgba(6, 147, 227, 0.2); } .song-item.playing .play-btn { background-color: var(--primary-color); color: white; } .song-item.disabled { opacity: 0.5; background-color: transparent !important; cursor: not-allowed; } .song-item.disabled .title { cursor: not-allowed; } .song-item.disabled .btn { cursor: not-allowed; border-color: #555; color: #555; } .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; } .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: left; } .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; } #lyrics-title { color: var(--primary-color); margin-bottom: 20px; } #lyrics-text { white-space: pre-wrap; line-height: 1.6; } .no-copy { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
   </style>
 </head>
 <body>
@@ -66,7 +20,8 @@
     <div id="login-screen">
       <h1>Jukebox Riservato per MATERA</h1>
       <form id="login-form">
-        <input type="email" id="email-input" value="faustofusetti65@gmail.com" placeholder="Inserisci l'email di accesso" required />
+        <!-- Rimosso value="..." per avere il campo vuoto -->
+        <input type="email" id="email-input" placeholder="Inserisci l'email di accesso" required />
         <button type="submit" class="button">Accedi al Jukebox</button>
       </form>
     </div>
@@ -93,10 +48,9 @@
       const lyricsModal = document.getElementById('lyrics-modal');
       const lyricsModalClose = document.getElementById('lyrics-modal-close');
       
-      // CAMBIA QUI IL NUMERO MASSIMO DI ASCOLTI
       const MAX_PLAYS = 3;
-      
-      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbzziUkdI78CZ9vhZ7LNWCFvn6r7JeY2TKuiiDMAdAsAf5uGHZKPsTFJvoy1wxN1wH1t/exec?source=matera';
+      // INSERISCI QUI IL TUO NUOVO URL DI DISTRIBUZIONE
+      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbzQbUunX3NGpRs3b3DxXhvKhzUK75x4G3GYOBR79atXJwGQAMHqy7N7I62EBRGBwZB3/exec?source=matera';
       
       let allSongs = [];
       let currentPlayingItem = null;
@@ -104,16 +58,27 @@
       const modalContent = document.querySelector('#lyrics-modal .modal-content');
       modalContent.addEventListener('contextmenu', (e) => e.preventDefault());
 
-      // --- Funzioni per gestire il LocalStorage ---
-      function getPlayCounts() {
-        return JSON.parse(localStorage.getItem('songPlayCounts')) || {};
-      }
-      function savePlayCounts(counts) {
-        localStorage.setItem('songPlayCounts', JSON.stringify(counts));
+      function getPlayCounts() { return JSON.parse(localStorage.getItem('songPlayCounts')) || {}; }
+      function savePlayCounts(counts) { localStorage.setItem('songPlayCounts', JSON.stringify(counts)); }
+
+      // NUOVA FUNZIONE PER NOTIFICARE LO SCRIPT QUANDO UN BRANO VIENE ASCOLTATO
+      async function trackPlay(songId) {
+        try {
+          const scriptUrlWithoutParams = sheetApiUrl.split('?')[0];
+          await fetch(scriptUrlWithoutParams, {
+            method: 'POST',
+            mode: 'no-cors', // Importante per evitare errori CORS con le POST a Apps Script
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: songId })
+          });
+        } catch (error) {
+          console.error("Impossibile tracciare l'ascolto:", error);
+        }
       }
 
       loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        // L'email viene controllata qui, ma non è visibile all'inizio
         if (document.getElementById('email-input').value.trim().toLowerCase() === 'faustofusetti65@gmail.com') {
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('jukebox-container').style.display = 'block';
@@ -139,7 +104,6 @@
       function displaySongs() {
         songListContainer.innerHTML = '';
         const playCounts = getPlayCounts();
-
         if (allSongs.length > 0) {
           allSongs.forEach(song => {
             const count = playCounts[song.id] || 0;
@@ -147,18 +111,7 @@
             const isLocked = playsLeft <= 0;
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const lyricsData = hasLyrics ? song.liriche.replace(/"/g, '&quot;') : "";
-
-            const songItemHTML = `
-              <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${lyricsData}">
-                <div class="title-container">
-                    <span class="title">${song.title}</span>
-                    <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
-                </div>
-                ${hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo" ${isLocked ? 'disabled' : ''}><i class="fas fa-file-alt"></i></button>` : ''}
-                <button class="btn play-btn" ${isLocked ? 'disabled' : ''}>
-                    <i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i>
-                </button>
-              </div>`;
+            const songItemHTML = `<div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${lyricsData}"><div class="title-container"><span class="title">${song.title}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div></div>${hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo" ${isLocked ? 'disabled' : ''}><i class="fas fa-file-alt"></i></button>` : ''}<button class="btn play-btn" ${isLocked ? 'disabled' : ''}><i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i></button></div>`;
             songListContainer.innerHTML += songItemHTML;
           });
           addEventListenersToSongs();
@@ -170,16 +123,13 @@
       function addEventListenersToSongs() {
         document.querySelectorAll('.song-item').forEach(item => {
           if (item.classList.contains('disabled')) return;
-
           item.querySelector('.title')?.addEventListener('click', () => handlePlayPause(item));
           item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item));
           item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            const title = item.dataset.title;
-            const lyrics = item.dataset.lyrics;
-            document.getElementById('lyrics-title').innerText = title;
-            document.getElementById('lyrics-text').innerText = lyrics || "Testo non disponibile.";
             lyricsModal.style.display = 'flex';
+            document.getElementById('lyrics-title').innerText = item.dataset.title;
+            document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile.";
           });
         });
       }
@@ -187,7 +137,6 @@
       function handlePlayPause(item) {
         if (item.classList.contains('disabled')) return;
         const isPlayingThisItem = item === currentPlayingItem;
-
         if (isPlayingThisItem) {
           audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
         } else {
@@ -196,14 +145,15 @@
           audioPlayer.src = item.dataset.src;
           audioPlayer.play();
           
-          // Incrementa il contatore solo quando parte un NUOVO brano
           const songId = item.dataset.id;
           const counts = getPlayCounts();
           const currentCount = counts[songId] || 0;
-          counts[songId] = currentCount + 1;
-          savePlayCounts(counts);
-
-          // Aggiorna la UI
+          if (currentCount < MAX_PLAYS) {
+            counts[songId] = currentCount + 1;
+            savePlayCounts(counts);
+            trackPlay(songId); // INVIA L'AGGIORNAMENTO AL GOOGLE SHEET
+          }
+          
           const playsLeft = MAX_PLAYS - counts[songId];
           const playsLeftEl = item.querySelector('.plays-left');
           if (playsLeft > 0) {
@@ -218,11 +168,8 @@
       function disableSongItem(item) {
         item.classList.add('disabled');
         const playBtn = item.querySelector('.play-btn');
+        if (playBtn) { playBtn.disabled = true; playBtn.querySelector('i').className = 'fas fa-lock'; }
         const lyricsBtn = item.querySelector('.lyrics-btn');
-        if (playBtn) {
-          playBtn.disabled = true;
-          playBtn.querySelector('i').className = 'fas fa-lock';
-        }
         if (lyricsBtn) lyricsBtn.disabled = true;
       }
 
@@ -230,29 +177,13 @@
         if (currentPlayingItem) {
           currentPlayingItem.classList.remove('playing');
           const playIcon = currentPlayingItem.querySelector('.play-btn i');
-          if(playIcon && !currentPlayingItem.classList.contains('disabled')) {
-             playIcon.className = 'fas fa-play';
-          }
+          if(playIcon && !currentPlayingItem.classList.contains('disabled')) playIcon.className = 'fas fa-play';
           currentPlayingItem = null;
         }
       }
 
-      audioPlayer.addEventListener('play', () => {
-        if (currentPlayingItem) {
-          currentPlayingItem.classList.add('playing');
-          const playIcon = currentPlayingItem.querySelector('.play-btn i');
-          if(playIcon) playIcon.className = 'fas fa-pause';
-        }
-      });
-      audioPlayer.addEventListener('pause', () => {
-        if (currentPlayingItem) {
-          currentPlayingItem.classList.remove('playing');
-          const playIcon = currentPlayingItem.querySelector('.play-btn i');
-          if(playIcon && !currentPlayingItem.classList.contains('disabled')) {
-             playIcon.className = 'fas fa-play';
-          }
-        }
-      });
+      audioPlayer.addEventListener('play', () => { if (currentPlayingItem) { currentPlayingItem.classList.add('playing'); const i = currentPlayingItem.querySelector('.play-btn i'); if(i) i.className = 'fas fa-pause'; } });
+      audioPlayer.addEventListener('pause', () => { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing'); const i = currentPlayingItem.querySelector('.play-btn i'); if(i && !currentPlayingItem.classList.contains('disabled')) i.className = 'fas fa-play'; } });
       audioPlayer.addEventListener('ended', resetPlayingState);
       lyricsModalClose.addEventListener('click', () => lyricsModal.style.display = 'none');
       lyricsModal.addEventListener('click', (e) => { if (e.target === lyricsModal) lyricsModal.style.display = 'none'; });
