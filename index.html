@@ -35,25 +35,25 @@
     .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4); }
     #jukebox-container { display: none; }
     .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
-    .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: background-color 0.3s ease; border-radius: 5px; }
-    .song-item:last-child { border-bottom: none; }
-    .song-item .title { flex-grow: 1; text-align: left; font-size: 1.1em; cursor: pointer; }
+    .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: all 0.3s ease; border-radius: 5px; }
+    .song-item .title-container { flex-grow: 1; text-align: left; }
+    .song-item .title { font-size: 1.1em; cursor: pointer; }
+    .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; }
+    .song-item:hover .plays-left { opacity: 1; }
     .song-item .btn { background: none; border: 2px solid var(--primary-color); color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
     .song-item .lyrics-btn { border-color: #aaa; color: #aaa; }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item.playing { background-color: rgba(6, 147, 227, 0.2); }
     .song-item.playing .play-btn { background-color: var(--primary-color); color: white; }
+    .song-item.disabled { opacity: 0.5; background-color: transparent !important; cursor: not-allowed; }
+    .song-item.disabled .title { cursor: not-allowed; }
+    .song-item.disabled .btn { cursor: not-allowed; border-color: #555; color: #555; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: left; }
     .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; }
     #lyrics-title { color: var(--primary-color); margin-bottom: 20px; }
     #lyrics-text { white-space: pre-wrap; line-height: 1.6; }
-    .no-copy {
-      -webkit-user-select: none; /* Safari */
-      -moz-user-select: none;    /* Firefox */
-      -ms-user-select: none;     /* IE */
-      user-select: none;         /* Standard */
-    }
+    .no-copy { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
   </style>
 </head>
 <body>
@@ -93,15 +93,24 @@
       const lyricsModal = document.getElementById('lyrics-modal');
       const lyricsModalClose = document.getElementById('lyrics-modal-close');
       
+      // CAMBIA QUI IL NUMERO MASSIMO DI ASCOLTI
+      const MAX_PLAYS = 3;
+      
       const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbzziUkdI78CZ9vhZ7LNWCFvn6r7JeY2TKuiiDMAdAsAf5uGHZKPsTFJvoy1wxN1wH1t/exec?source=matera';
       
       let allSongs = [];
       let currentPlayingItem = null;
 
       const modalContent = document.querySelector('#lyrics-modal .modal-content');
-      modalContent.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-      });
+      modalContent.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // --- Funzioni per gestire il LocalStorage ---
+      function getPlayCounts() {
+        return JSON.parse(localStorage.getItem('songPlayCounts')) || {};
+      }
+      function savePlayCounts(counts) {
+        localStorage.setItem('songPlayCounts', JSON.stringify(counts));
+      }
 
       loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -129,26 +138,39 @@
 
       function displaySongs() {
         songListContainer.innerHTML = '';
+        const playCounts = getPlayCounts();
+
         if (allSongs.length > 0) {
           allSongs.forEach(song => {
+            const count = playCounts[song.id] || 0;
+            const playsLeft = MAX_PLAYS - count;
+            const isLocked = playsLeft <= 0;
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const lyricsData = hasLyrics ? song.liriche.replace(/"/g, '&quot;') : "";
+
             const songItemHTML = `
-              <div class="song-item" data-src="${song.url}" data-title="${song.title}" data-lyrics="${lyricsData}">
-                <span class="title">${song.title}</span>
-                ${hasLyrics ? '<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i></button>' : ''}
-                <button class="btn play-btn"><i class="fas fa-play"></i></button>
+              <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${lyricsData}">
+                <div class="title-container">
+                    <span class="title">${song.title}</span>
+                    <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
+                </div>
+                ${hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo" ${isLocked ? 'disabled' : ''}><i class="fas fa-file-alt"></i></button>` : ''}
+                <button class="btn play-btn" ${isLocked ? 'disabled' : ''}>
+                    <i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i>
+                </button>
               </div>`;
             songListContainer.innerHTML += songItemHTML;
           });
           addEventListenersToSongs();
         } else {
-          songListContainer.innerHTML = '<p>Nessun brano trovato nel foglio "Matera".</p>';
+          songListContainer.innerHTML = '<p>Nessun brano trovato.</p>';
         }
       }
 
       function addEventListenersToSongs() {
         document.querySelectorAll('.song-item').forEach(item => {
+          if (item.classList.contains('disabled')) return;
+
           item.querySelector('.title')?.addEventListener('click', () => handlePlayPause(item));
           item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item));
           item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => {
@@ -163,7 +185,9 @@
       }
 
       function handlePlayPause(item) {
+        if (item.classList.contains('disabled')) return;
         const isPlayingThisItem = item === currentPlayingItem;
+
         if (isPlayingThisItem) {
           audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
         } else {
@@ -171,13 +195,44 @@
           currentPlayingItem = item;
           audioPlayer.src = item.dataset.src;
           audioPlayer.play();
+          
+          // Incrementa il contatore solo quando parte un NUOVO brano
+          const songId = item.dataset.id;
+          const counts = getPlayCounts();
+          const currentCount = counts[songId] || 0;
+          counts[songId] = currentCount + 1;
+          savePlayCounts(counts);
+
+          // Aggiorna la UI
+          const playsLeft = MAX_PLAYS - counts[songId];
+          const playsLeftEl = item.querySelector('.plays-left');
+          if (playsLeft > 0) {
+            playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`;
+          } else {
+            playsLeftEl.textContent = 'Limite ascolti raggiunto';
+            disableSongItem(item);
+          }
         }
       }
       
+      function disableSongItem(item) {
+        item.classList.add('disabled');
+        const playBtn = item.querySelector('.play-btn');
+        const lyricsBtn = item.querySelector('.lyrics-btn');
+        if (playBtn) {
+          playBtn.disabled = true;
+          playBtn.querySelector('i').className = 'fas fa-lock';
+        }
+        if (lyricsBtn) lyricsBtn.disabled = true;
+      }
+
       function resetPlayingState() {
         if (currentPlayingItem) {
           currentPlayingItem.classList.remove('playing');
-          currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-play';
+          const playIcon = currentPlayingItem.querySelector('.play-btn i');
+          if(playIcon && !currentPlayingItem.classList.contains('disabled')) {
+             playIcon.className = 'fas fa-play';
+          }
           currentPlayingItem = null;
         }
       }
@@ -185,13 +240,17 @@
       audioPlayer.addEventListener('play', () => {
         if (currentPlayingItem) {
           currentPlayingItem.classList.add('playing');
-          currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-pause';
+          const playIcon = currentPlayingItem.querySelector('.play-btn i');
+          if(playIcon) playIcon.className = 'fas fa-pause';
         }
       });
       audioPlayer.addEventListener('pause', () => {
         if (currentPlayingItem) {
           currentPlayingItem.classList.remove('playing');
-          currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-play';
+          const playIcon = currentPlayingItem.querySelector('.play-btn i');
+          if(playIcon && !currentPlayingItem.classList.contains('disabled')) {
+             playIcon.className = 'fas fa-play';
+          }
         }
       });
       audioPlayer.addEventListener('ended', resetPlayingState);
