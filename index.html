@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jukebox per Matera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+  <style>
+    /* --- STILI GENERALI --- */
+    :root { 
+      --primary-color: #0693e3; 
+      --secondary-color: #e3a006; 
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { 
+      font-family: 'Montserrat', sans-serif; 
+      color: #f0f0f0; 
+      text-align: center; 
+      background-color: #121212;
+      overflow: hidden; /* Impedisce lo scrolling */
+    }
+
+    /* --- SFONDO (puoi usare un video o un'immagine) --- */
+    #background-video { 
+      position: fixed; 
+      right: 0; 
+      bottom: 0; 
+      min-width: 100%; 
+      min-height: 100%; 
+      width: auto; 
+      height: auto; 
+      z-index: -1; 
+      object-fit: cover; 
+      filter: brightness(0.4); 
+    }
+
+    /* --- CONTENITORE PRINCIPALE --- */
+    .container-wrapper { 
+      min-height: 100vh; 
+      width: 100%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 20px; 
+    }
+
+    /* --- SCHERMATA DI ACCESSO --- */
+    #login-screen {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      padding: 40px 30px;
+      max-width: 500px;
+      width: 100%;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 2;
+    }
+    #login-screen h1 {
+      font-size: 1.8em;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+    }
+    #login-screen p {
+      margin-bottom: 25px;
+      font-size: 1.1em;
+    }
+    #login-form input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 25px;
+      border: 1px solid #555;
+      background-color: #2c2c2c;
+      color: #f0f0f0;
+      font-size: 1em;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      padding: 14px 30px;
+      border: 2px solid var(--primary-color);
+      border-radius: 30px;
+      text-decoration: none;
+      color: #f0f0f0;
+      font-size: 1.1em;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      background-color: transparent;
+      cursor: pointer;
+      width: 100%;
+    }
+    .button:hover {
+      background: var(--primary-color);
+      color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4);
+    }
+
+    /* --- CONTENITORE JUKEBOX --- */
+    #jukebox-container {
+      display: none; /* Nascosto di default */
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+      padding: 40px 30px;
+      max-width: 680px;
+      width: 100%;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 2;
+    }
+    #jukebox-container h2 {
+        margin-bottom: 25px;
+        font-size: 1.6em;
+    }
+
+    /* --- LISTA CANZONI --- */
+    .song-list-container { 
+      max-height: 50vh; 
+      overflow-y: auto; 
+      margin-top: 20px; 
+    }
+    .song-item { 
+      display: flex; 
+      align-items: center; 
+      padding: 12px; 
+      border-bottom: 1px solid #333; 
+      transition: background-color 0.3s ease; 
+      border-radius: 5px; 
+      cursor: pointer; 
+    }
+    .song-item:last-child { border-bottom: none; }
+    .song-item .title { 
+      flex-grow: 1; 
+      text-align: left; 
+      font-size: 1.1em;
+    }
+    .song-item .play-btn { 
+      background: none; 
+      border: 2px solid var(--primary-color); 
+      color: var(--primary-color); 
+      border-radius: 50%; 
+      width: 40px; 
+      height: 40px; 
+      flex-shrink: 0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .song-item:hover { background-color: rgba(255,255,255,0.05); }
+    .song-item.playing { background-color: rgba(6, 147, 227, 0.2); }
+    .song-item.playing .play-btn { 
+      background-color: var(--primary-color); 
+      color: white; 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Inserisci qui il tuo video di sfondo. Puoi sostituirlo con un'immagine statica se preferisci -->
+  <video autoplay muted loop playsinline preload="auto" id="background-video">
+    <source src="https://github.com/Rickym2025/fausto-fusetti-links/raw/main/video_sfondo_compressed.mp4" type="video/mp4" />
+  </video>
+
+  <div class="container-wrapper">
+    
+    <!-- 1. Schermata di Accesso -->
+    <div id="login-screen">
+      <h1>Jukebox Riservato</h1>
+      <p>Inserisci la tua email per accedere al catalogo musicale per Matera.</p>
+      <form id="login-form">
+        <input type="email" id="email-input" placeholder="latuaemail@esempio.com" required />
+        <button type="submit" class="button">Accedi al Jukebox</button>
+      </form>
+    </div>
+
+    <!-- 2. Il Jukebox (inizialmente nascosto) -->
+    <div id="jukebox-container">
+      <h2>Ascolta i Brani</h2>
+      <div id="song-list-container">
+        <p>Caricamento del catalogo in corso...</p>
+      </div>
+      <audio id="jukebox-audio-player" style="display: none;"></audio>
+    </div>
+
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // --- ELEMENTI DEL DOM ---
+      const loginScreen = document.getElementById('login-screen');
+      const loginForm = document.getElementById('login-form');
+      const jukeboxContainer = document.getElementById('jukebox-container');
+      const songListContainer = document.getElementById('song-list-container');
+      const audioPlayer = document.getElementById('jukebox-audio-player');
+      
+      // --- URL DEL TUO GOOGLE SHEET ---
+      // IMPORTANTE: Sostituisci questo URL con quello della tua Web App di Google Apps Script.
+      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbyyvfsSlgx6J-dIeLaIi3Crd6eqG029DDsGzF3Wy8u1VIfwhTMDZJdTPS_ubYszUyFR/exec';
+      
+      let allSongs = [];
+      let currentPlayingItem = null;
+
+      // --- GESTIONE ACCESSO ---
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Impedisce al form di ricaricare la pagina
+        const email = document.getElementById('email-input').value;
+        if (email) {
+          // Nasconde la schermata di login e mostra il jukebox
+          loginScreen.style.display = 'none';
+          jukeboxContainer.style.display = 'block';
+          // Carica la musica solo dopo l'accesso
+          loadMusicFromApi();
+        }
+      });
+
+      // --- FUNZIONI PER CARICARE E VISUALIZZARE LA MUSICA ---
+      async function loadMusicFromApi() {
+        try {
+          const response = await fetch(sheetApiUrl);
+          if (!response.ok) throw new Error(`Errore di rete`);
+          
+          const songs = await response.json();
+          if (songs.error) throw new Error(songs.error);
+          
+          allSongs = songs.slice(0, 10); // Mostra solo le prime 10 canzoni
+          displaySongs();
+
+        } catch (error) {
+          songListContainer.innerHTML = `<p style="color: #f44336;">Errore durante il caricamento: ${error.message}</p>`;
+        }
+      }
+
+      function displaySongs() {
+        songListContainer.innerHTML = ''; // Pulisce il contenitore
+        if (allSongs.length > 0) {
+          allSongs.forEach(song => {
+            // Crea un elemento per ogni canzone
+            const songItemHTML = `
+              <div class="song-item" data-src="${song.url}" data-title="${song.title}">
+                <span class="title">${song.title}</span>
+                <button class="play-btn"><i class="fas fa-play"></i></button>
+              </div>`;
+            songListContainer.innerHTML += songItemHTML;
+          });
+          addEventListenersToSongs();
+        } else {
+          songListContainer.innerHTML = '<p>Nessun brano trovato nel catalogo.</p>';
+        }
+      }
+
+      function addEventListenersToSongs() {
+        document.querySelectorAll('.song-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const isPlayingThisItem = item === currentPlayingItem;
+            
+            if (isPlayingThisItem) {
+              // Se clicco sulla canzone già in play: metto in pausa o riprendo
+              if (audioPlayer.paused) {
+                audioPlayer.play();
+              } else {
+                audioPlayer.pause();
+              }
+            } else {
+              // Se clicco su una nuova canzone:
+              resetPlayingState(); 
+              currentPlayingItem = item;
+              audioPlayer.src = item.dataset.src;
+              audioPlayer.play();
+            }
+          });
+        });
+      }
+      
+      // --- GESTIONE STATO PLAY/PAUSA ---
+      function resetPlayingState() {
+        if (currentPlayingItem) {
+          currentPlayingItem.classList.remove('playing');
+          currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-play';
+          currentPlayingItem = null;
+        }
+      }
+
+      audioPlayer.addEventListener('play', () => {
+        if (currentPlayingItem) {
+          currentPlayingItem.classList.add('playing');
+          currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-pause';
+        }
+      });
+
+      audioPlayer.addEventListener('pause', () => {
+        if (currentPlayingItem) {
+          currentPlayingItem.classList.remove('playing');
+          currentPlayingItem.querySelector('.play-btn i').className = 'fas fa-play';
+        }
+      });
+
+      audioPlayer.addEventListener('ended', resetPlayingState);
+
+    });
+  </script>
+
+</body>
+</html>
