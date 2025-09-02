@@ -35,21 +35,25 @@
     .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px rgba(6, 147, 227, 0.4); }
     #jukebox-container { display: none; }
     .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
-    .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: background-color 0.3s ease; border-radius: 5px; cursor: pointer; }
+    .song-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #333; transition: background-color 0.3s ease; border-radius: 5px; }
     .song-item:last-child { border-bottom: none; }
-    .song-item .title { flex-grow: 1; text-align: left; font-size: 1.1em; }
+    .song-item .title { flex-grow: 1; text-align: left; font-size: 1.1em; cursor: pointer; }
     .song-item .btn { background: none; border: 2px solid var(--primary-color); color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
     .song-item .lyrics-btn { border-color: #aaa; color: #aaa; }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item.playing { background-color: rgba(6, 147, 227, 0.2); }
     .song-item.playing .play-btn { background-color: var(--primary-color); color: white; }
-    
-    /* Stili per il Modal dei Testi */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: left; }
     .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; }
     #lyrics-title { color: var(--primary-color); margin-bottom: 20px; }
     #lyrics-text { white-space: pre-wrap; line-height: 1.6; }
+    .no-copy {
+      -webkit-user-select: none; /* Safari */
+      -moz-user-select: none;    /* Firefox */
+      -ms-user-select: none;     /* IE */
+      user-select: none;         /* Standard */
+    }
   </style>
 </head>
 <body>
@@ -62,7 +66,7 @@
     <div id="login-screen">
       <h1>Jukebox Riservato per MATERA</h1>
       <form id="login-form">
-        <input type="email" id="email-input" placeholder="Inserisci l'email di accesso" required />
+        <input type="email" id="email-input" value="faustofusetti65@gmail.com" placeholder="Inserisci l'email di accesso" required />
         <button type="submit" class="button">Accedi al Jukebox</button>
       </form>
     </div>
@@ -73,9 +77,8 @@
     </div>
   </div>
 
-  <!-- Finestra Modal per i Testi -->
   <div id="lyrics-modal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content no-copy"> 
       <span id="lyrics-modal-close" class="modal-close">&times;</span>
       <h3 id="lyrics-title">Testo della canzone</h3>
       <p id="lyrics-text">Nessun testo disponibile.</p>
@@ -90,11 +93,15 @@
       const lyricsModal = document.getElementById('lyrics-modal');
       const lyricsModalClose = document.getElementById('lyrics-modal-close');
       
-      // IMPORTANTE: Usa l'URL della tua App Script e aggiungi "?source=matera" alla fine
       const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbzziUkdI78CZ9vhZ7LNWCFvn6r7JeY2TKuiiDMAdAsAf5uGHZKPsTFJvoy1wxN1wH1t/exec?source=matera';
       
       let allSongs = [];
       let currentPlayingItem = null;
+
+      const modalContent = document.querySelector('#lyrics-modal .modal-content');
+      modalContent.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      });
 
       loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -110,13 +117,13 @@
       async function loadMusicFromApi() {
         try {
           const response = await fetch(sheetApiUrl);
-          if (!response.ok) throw new Error(`Errore di rete`);
+          if (!response.ok) throw new Error(`Il server ha risposto con un errore.`);
           const songs = await response.json();
-          if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API');
+          if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API');
           allSongs = songs;
           displaySongs();
         } catch (error) {
-          songListContainer.innerHTML = `<p style="color: #f44336;">Errore: ${error.message}</p>`;
+          songListContainer.innerHTML = `<p style="color: #f44336; font-weight: bold;">Errore: ${error.message}.</p>`;
         }
       }
 
@@ -136,26 +143,20 @@
           });
           addEventListenersToSongs();
         } else {
-          songListContainer.innerHTML = '<p>Nessun brano trovato.</p>';
+          songListContainer.innerHTML = '<p>Nessun brano trovato nel foglio "Matera".</p>';
         }
       }
 
       function addEventListenersToSongs() {
         document.querySelectorAll('.song-item').forEach(item => {
-          item.addEventListener('click', (e) => {
-            // Se il click non è su un pulsante, gestisce il play/pausa
-            if (!e.target.closest('button')) {
-               handlePlayPause(item);
-            }
-          });
-           item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item));
-
+          item.querySelector('.title')?.addEventListener('click', () => handlePlayPause(item));
+          item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item));
           item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             const title = item.dataset.title;
             const lyrics = item.dataset.lyrics;
             document.getElementById('lyrics-title').innerText = title;
-            document.getElementById('lyrics-text').innerText = lyrics;
+            document.getElementById('lyrics-text').innerText = lyrics || "Testo non disponibile.";
             lyricsModal.style.display = 'flex';
           });
         });
@@ -194,11 +195,8 @@
         }
       });
       audioPlayer.addEventListener('ended', resetPlayingState);
-      
       lyricsModalClose.addEventListener('click', () => lyricsModal.style.display = 'none');
-      lyricsModal.addEventListener('click', (e) => {
-        if (e.target === lyricsModal) lyricsModal.style.display = 'none';
-      });
+      lyricsModal.addEventListener('click', (e) => { if (e.target === lyricsModal) lyricsModal.style.display = 'none'; });
     });
   </script>
 
