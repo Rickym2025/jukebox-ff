@@ -16,6 +16,7 @@
     #login-screen, #jukebox-container { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(12px); padding: 40px 30px; max-width: 850px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 2; }
     h1 { font-size: 2em; margin-bottom: 25px; color: var(--primary-color); }
     h2 { margin-bottom: 25px; font-size: 1.8em; }
+    h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.4em; }
     input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; }
     .button { display: inline-block; padding: 14px 30px; border: 2px solid var(--primary-color); border-radius: 30px; text-decoration: none; color: #f0f0f0; font-size: 1.1em; font-weight: 500; transition: all 0.3s ease; background-color: transparent; cursor: pointer; width: 100%; }
     .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px var(--glow-color); }
@@ -36,25 +37,20 @@
     .song-item .title { font-size: 1.2em; cursor: pointer; font-weight: 500; }
     .song-details { display: flex; gap: 15px; font-size: 0.85em; color: #bbb; margin-top: 5px; align-items: center; }
     .song-details span { display: flex; align-items: center; gap: 5px; }
-    .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; margin-top: 5px; }
-    .song-item:hover .plays-left { opacity: 1; }
-    .song-item .actions-container { display: flex; align-items: center; gap: 10px; margin-left: auto; } /* <-- NUOVO CONTENITORE PER I PULSANTI */
+    .song-item .actions-container { display: flex; align-items: center; gap: 10px; margin-left: auto; }
     .song-item .btn { background: none; border-radius: 50%; width: 45px; height: 45px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
     .song-item .play-btn, .song-item .video-btn { border: 2px solid var(--primary-color); color: var(--primary-color); }
     .song-item .lyrics-btn { border: 2px solid #888; color: #888; }
-    .song-item .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 10px 20px; width: auto; border-radius: 25px; text-decoration: none; font-size: 0.9em; font-weight: 600; white-space: nowrap; margin-left: 15px; } /* <-- AGGIUNTO MARGINE SINISTRO */
+    .song-item .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 10px 20px; width: auto; border-radius: 25px; text-decoration: none; font-size: 0.9em; font-weight: 600; white-space: nowrap; margin-left: 15px; }
     .song-item .acquista-btn:disabled { background-color: #555; border-color: #555; color: #999; cursor: not-allowed; }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item.playing-audio .play-btn, .song-item.playing-video .video-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { box-shadow: 0 0 5px var(--glow-color); } 50% { box-shadow: 0 0 20px var(--glow-color); } 100% { box-shadow: 0 0 5px var(--glow-color); } }
-    .song-item.disabled { opacity: 0.5; cursor: not-allowed; }
-    .song-item.disabled .title, .song-item.disabled .btn, .song-item.disabled .acquista-btn { cursor: not-allowed; }
-    .song-item.disabled .btn { border-color: #555; color: #555; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: left; }
+    .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; } /* Testo centrato per il nuovo modal */
+    .modal-content p { line-height: 1.6; margin-bottom: 20px; }
+    .modal-content .button { width: 100%; margin-top: 10px; }
     .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; }
-    #lyrics-title { color: var(--primary-color); margin-bottom: 20px; }
-    #lyrics-text { white-space: pre-wrap; line-height: 1.6; }
     .no-copy { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
     #contact-form { display: flex; flex-direction: column; gap: 15px; }
     #contact-form input, #contact-form textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; }
@@ -84,9 +80,10 @@
         <p>Musicista, autore, compositore e cantante con oltre 40 anni di esperienza, in collaborazione con giovani talenti del conservatorio.</p>
       </div>
       <div class="extra-actions">
-        <a href="https://ff-music-store.printify.me/" target="_blank" class="button">
+        <!-- Il vecchio link è ora un pulsante che apre il modal -->
+        <button id="show-gadget-modal-btn" class="button">
           <i class="fas fa-tshirt"></i> Gadget Personalizzati
-        </a>
+        </button>
         <button id="show-custom-request-btn" class="button">
           <i class="fas fa-pen"></i> Richieste Personalizzate
         </button>
@@ -107,36 +104,66 @@
     </div>
   </div>
 
-  <div id="lyrics-modal" class="modal-overlay"> <div class="modal-content no-copy"> <span id="lyrics-modal-close" class="modal-close">&times;</span> <h3 id="lyrics-title">Testo della canzone</h3> <p id="lyrics-text">Nessun testo disponibile.</p> </div> </div>
-  <div id="contact-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close" id="contact-modal-close">&times;</span> <h2>Contattami per il tuo Progetto</h2> <form id="contact-form" action="https://api.web3forms.com/submit" method="POST"> <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/> <input type="text" name="name" placeholder="Il tuo Nome" required/> <input type="email" name="email" placeholder="La tua Email" required/> <textarea name="message" rows="4" placeholder="Descrivi la tua richiesta..." required></textarea> <button type="submit" class="button">Invia Messaggio</button> </form> </div> </div>
+  <div id="lyrics-modal" class="modal-overlay"> <div class="modal-content no-copy" style="text-align: left;"> <span id="lyrics-modal-close" class="modal-close">&times;</span> <h3 id="lyrics-title">Testo della canzone</h3> <p id="lyrics-text">Nessun testo disponibile.</p> </div> </div>
+  <div id="contact-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close" id="contact-modal-close">&times;</span> <h3>Contattami per il tuo Progetto</h3> <form id="contact-form" action="https://api.web3forms.com/submit" method="POST"> <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/> <input type="text" name="name" placeholder="Il tuo Nome" required/> <input type="email" name="email" placeholder="La tua Email" required/> <textarea name="message" rows="4" placeholder="Descrivi la tua richiesta..." required></textarea> <button type="submit" class="button">Invia Messaggio</button> </form> </div> </div>
   
+  <!-- NUOVO MODAL PER I GADGET -->
+  <div id="gadget-modal" class="modal-overlay">
+    <div class="modal-content">
+      <span class="modal-close" id="gadget-modal-close">&times;</span>
+      <h3><i class="fas fa-gem" style="margin-right: 10px;"></i>Crea la Tua Linea di Gadget Esclusiva</h3>
+      <p>
+        Vuoi offrire ai tuoi fan qualcosa di unico? Possiamo creare una linea completa di merchandising con il <strong>TUO logo</strong>: magliette, tazze, cappellini e molto altro.
+      </p>
+      <p>
+        Gestiamo tutto noi, dal design alla pubblicazione in un negozio online a tuo nome, <strong>senza costi iniziali</strong>.
+      </p>
+      <a href="https://ff-music-store.printify.me/" target="_blank" class="button" style="background-color: transparent; margin-bottom: 10px;">
+        <i class="fas fa-eye"></i> Guarda un Esempio
+      </a>
+      <button id="contact-for-gadgets-btn" class="button" style="background-color: var(--primary-color); border-color: var(--primary-color);">
+        <i class="fas fa-paper-plane"></i> Richiedi un Preventivo
+      </button>
+    </div>
+  </div>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Dichiarazione variabili (invariata)
       const loginForm = document.getElementById('login-form');
       const songListContainer = document.getElementById('song-list-container');
       const audioPlayer = document.getElementById('jukebox-audio-player');
       const videoPlayer = document.getElementById('jukebox-video-player');
-      const lyricsModal = document.getElementById('lyrics-modal');
-      const lyricsModalClose = document.getElementById('lyrics-modal-close');
       const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbxIeTu4FM9_69NM16LgVx1zpFjidw4aIdXAYh871fD5wBrAjs2CEUec0IL94Vnqp8my/exec';
       const MAX_PLAYS = 3;
       let allSongs = [];
       let currentPlayingItem = null;
-      let currentPlayingType = null; // 'audio' or 'video'
+      let currentPlayingType = null;
 
+      // Gestione Modals
+      const lyricsModal = document.getElementById('lyrics-modal');
+      const contactModal = document.getElementById('contact-modal');
+      const gadgetModal = document.getElementById('gadget-modal'); // <-- Nuovo modal
+
+      const lyricsModalClose = document.getElementById('lyrics-modal-close');
+      const contactModalClose = contactModal.querySelector('.modal-close');
+      const gadgetModalClose = document.getElementById('gadget-modal-close'); // <-- Nuovo close
+
+      // Prevenzione download (invariata)
       audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
       videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
       lyricsModal.querySelector('.modal-content').addEventListener('contextmenu', e => e.preventDefault());
 
+      // Funzioni di base (invariate)
       function getPlayCounts() { return JSON.parse(localStorage.getItem('songPlayCounts_FF')) || {}; }
       function savePlayCounts(counts) { localStorage.setItem('songPlayCounts_FF', JSON.stringify(counts)); }
-
       async function trackPlay(songId) { try { const scriptUrlWithoutParams = sheetApiUrl.split('?')[0]; await fetch(scriptUrlWithoutParams, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
 
+      // Logica Login e Caricamento API (invariate)
       loginForm.addEventListener('submit', async function(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } const loginButton = this.querySelector('button'); loginButton.textContent = 'Verifico...'; loginButton.disabled = true; try { const validationUrl = `${sheetApiUrl}?emailCheck=${encodeURIComponent(email)}`; const response = await fetch(validationUrl); const result = await response.json(); if (result.status === "ok") { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (error) { alert('Errore di comunicazione con il server. Riprova più tardi.'); } finally { loginButton.textContent = 'Accedi al Jukebox'; loginButton.disabled = false; } });
-
       async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento brani per ${userEmail}...</p>`; try { const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`); if (!response.ok) throw new Error(`Il server ha risposto con un errore.`); const songs = await response.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API'); allSongs = songs; displaySongs(); } catch (error) { songListContainer.innerHTML = `<p style="color: #f44336; font-weight: bold;">Errore: ${error.message}.</p>`; } }
 
+      // Funzione displaySongs (invariata, legge i dati già aggiornati dall'API)
       function displaySongs() {
         songListContainer.innerHTML = '';
         if (allSongs.length > 0) {
@@ -178,90 +205,36 @@
           songListContainer.innerHTML = '<p>Nessun brano trovato per il tuo account.</p>';
         }
       }
-
-      function addEventListenersToSongs() {
-          document.querySelectorAll('.song-item').forEach(item => {
-              item.querySelector('.title')?.addEventListener('click', (e) => handlePlay(item, 'audio'));
-              item.querySelector('.play-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); });
-              item.querySelector('.video-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'video', e.currentTarget.dataset.videoSrc); });
-              item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => { e.stopPropagation(); showLyrics(item); });
-          });
-      }
-
-      function showLyrics(item) {
-          document.getElementById('lyrics-title').innerText = item.dataset.title;
-          document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile.";
-          lyricsModal.style.display = 'flex';
-      }
-
-      function handlePlay(item, type, videoSrc = null) {
-          const isPlayingThisItem = item === currentPlayingItem;
-          const isSwitchingType = isPlayingThisItem && type !== currentPlayingType;
-
-          if (isPlayingThisItem && !isSwitchingType) { // Clicco sullo stesso pulsante (play/pausa)
-              if (type === 'audio') { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); }
-              else { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); }
-          } else { // Nuovo brano o cambio tipo (audio/video)
-              handlePlayAction(item); // Gestisce solo il conteggio
-              resetPlayingState();
-              currentPlayingItem = item;
-              currentPlayingType = type;
-
-              if (type === 'audio') {
-                  videoPlayer.style.display = 'none'; videoPlayer.pause();
-                  audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play();
-              } else {
-                  audioPlayer.style.display = 'none'; audioPlayer.pause();
-                  videoPlayer.style.display = 'block'; videoPlayer.src = videoSrc; videoPlayer.play();
-              }
-          }
-      }
       
-      function handlePlayAction(item) {
-          const counts = getPlayCounts();
-          const songId = item.dataset.id;
-          const currentCount = counts[songId] || 0;
-          if (currentCount < MAX_PLAYS) {
-              counts[songId] = currentCount + 1;
-              savePlayCounts(counts);
-              trackPlay(songId);
-          }
-          // Questa funzione non aggiorna più l'UI, lo fa displaySongs all'inizio
-      }
-
-      function resetPlayingState() {
-          if (currentPlayingItem) {
-              currentPlayingItem.classList.remove('playing-audio', 'playing-video');
-          }
-          currentPlayingItem = null;
-          currentPlayingType = null;
-      }
-
-      function updatePlayingUI() {
-          if (currentPlayingItem) {
-              currentPlayingItem.classList.remove('playing-audio', 'playing-video'); // Pulisce prima
-              if (currentPlayingType === 'audio') { currentPlayingItem.classList.add('playing-audio'); }
-              else { currentPlayingItem.classList.add('playing-video'); }
-          }
-      }
-      
-      function updatePausedUI() {
-          if (currentPlayingItem) {
-              currentPlayingItem.classList.remove('playing-audio', 'playing-video');
-          }
-      }
-
+      // Funzioni di Playback e UI (invariate)
+      function addEventListenersToSongs() { document.querySelectorAll('.song-item').forEach(item => { item.querySelector('.title')?.addEventListener('click', (e) => handlePlay(item, 'audio')); item.querySelector('.play-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); }); item.querySelector('.video-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'video', e.currentTarget.dataset.videoSrc); }); item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => { e.stopPropagation(); showLyrics(item); }); }); }
+      function showLyrics(item) { document.getElementById('lyrics-title').innerText = item.dataset.title; document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; lyricsModal.style.display = 'flex'; }
+      function handlePlay(item, type, videoSrc = null) { const isPlayingThisItem = item === currentPlayingItem; const isSwitchingType = isPlayingThisItem && type !== currentPlayingType; if (isPlayingThisItem && !isSwitchingType) { if (type === 'audio') { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); } else { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); } } else { handlePlayAction(item); resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { videoPlayer.style.display = 'none'; videoPlayer.pause(); audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play(); } else { audioPlayer.style.display = 'none'; audioPlayer.pause(); videoPlayer.style.display = 'block'; videoPlayer.src = videoSrc; videoPlayer.play(); } } }
+      function handlePlayAction(item) { const counts = getPlayCounts(); const songId = item.dataset.id; const currentCount = counts[songId] || 0; if (currentCount < MAX_PLAYS) { counts[songId] = currentCount + 1; savePlayCounts(counts); trackPlay(songId); } }
+      function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; }
+      function updatePlayingUI() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); if (currentPlayingType === 'audio') { currentPlayingItem.classList.add('playing-audio'); } else { currentPlayingItem.classList.add('playing-video'); } } }
+      function updatePausedUI() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } }
       audioPlayer.addEventListener('play', updatePlayingUI); videoPlayer.addEventListener('play', updatePlayingUI);
       audioPlayer.addEventListener('pause', updatePausedUI); videoPlayer.addEventListener('pause', updatePausedUI);
       audioPlayer.addEventListener('ended', resetPlayingState); videoPlayer.addEventListener('ended', resetPlayingState);
 
-      lyricsModalClose.addEventListener('click', () => lyricsModal.style.display = 'none');
-      lyricsModal.addEventListener('click', (e) => { if (e.target === lyricsModal) lyricsModal.style.display = 'none'; });
+      // Gestione chiusura modals
+      function setupModal(modal, openBtn, closeBtn) {
+        if (openBtn) openBtn.addEventListener('click', () => modal.style.display = 'flex');
+        if (closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+      }
+
+      setupModal(lyricsModal, null, lyricsModalClose);
+      setupModal(contactModal, document.getElementById('show-custom-request-btn'), contactModalClose);
+      setupModal(gadgetModal, document.getElementById('show-gadget-modal-btn'), gadgetModalClose); // <-- Setup nuovo modal
       
-      const contactModal = document.getElementById('contact-modal'); const contactModalClose = contactModal.querySelector('.modal-close');
-      document.getElementById('show-custom-request-btn').addEventListener('click', () => { contactModal.style.display = 'flex'; });
-      contactModalClose.addEventListener('click', () => { contactModal.style.display = 'none'; });
-      contactModal.addEventListener('click', (e) => { if (e.target === contactModal) contactModal.style.display = 'none'; });
+      // Logica per il pulsante "Richiedi Preventivo" dentro il modal gadget
+      document.getElementById('contact-for-gadgets-btn').addEventListener('click', () => {
+        gadgetModal.style.display = 'none'; // Chiude il modal gadget
+        contactModal.style.display = 'flex'; // Apre il modal contatti
+      });
+
     });
   </script>
 
