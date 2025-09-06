@@ -52,10 +52,10 @@
     h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.4em; }
     .subtitle { font-size: 1.1em; color: #ccc; margin-bottom: 25px; }
     
-    /* --- STILI AGGIORNATI PER NOME CLIENTE --- */
     #client-name {
         color: var(--primary-color);
-        font-size: 1.3em;
+        font-size: 1.4em;
+        font-weight: 600;
         text-shadow: 0 0 8px var(--glow-color);
         animation: subtle-glow 3s infinite ease-in-out;
     }
@@ -86,8 +86,7 @@
     .song-list-container { max-height: 45vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
     .song-item { display: flex; align-items: center; gap: 15px; padding: 12px; border-bottom: 1px solid #333; transition: background-color 0.3s ease; border-radius: 5px; }
     
-    /* --- STILI AGGIORNATI PER PULSANTI E THUMBNAIL --- */
-    .song-item .thumbnail { width: 50px; height: 50px; flex-shrink: 0; border-radius: 8px; object-fit: cover; background-color: #2c2c2c; display: flex; align-items: center; justify-content: center; font-size: 1.5em; } /* Rimpicciolito */
+    .song-item .thumbnail { width: 50px; height: 50px; flex-shrink: 0; border-radius: 8px; object-fit: cover; background-color: #2c2c2c; display: flex; align-items: center; justify-content: center; font-size: 1.5em; }
     .song-item .title-container { flex-grow: 1; text-align: left; }
     .song-item .title { font-size: 1.2em; cursor: pointer; font-weight: 500; }
     .song-details { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.85em; color: #bbb; margin-top: 5px; align-items: center; }
@@ -96,25 +95,25 @@
     .song-item .btn {
         background: none;
         border-radius: 50%;
-        width: 50px; /* Ingrandito */
-        height: 50px; /* Ingrandito */
+        width: 50px;
+        height: 50px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease;
         cursor: pointer;
-        border-width: 2px; /* Spessore bordo */
+        border-width: 2px;
+        border-style: solid;
     }
-    .song-item .btn i { font-size: 1.2em; } /* Icona più grande */
-    .song-item .btn:hover { background-color: rgba(255, 255, 255, 0.1); }
-    .song-item .play-btn, .song-item .video-btn { border-style: solid; border-color: var(--primary-color); color: var(--primary-color); }
-    .song-item .lyrics-btn { border-style: solid; border-color: #888; color: #888; }
+    .song-item .btn i { font-size: 1.2em; }
+    .song-item .btn:hover { background-color: rgba(255, 255, 255, 0.1); transform: scale(1.1); }
+    .song-item .play-btn, .song-item .video-btn { border-color: var(--primary-color); color: var(--primary-color); }
+    .song-item .lyrics-btn { border-color: #888; color: #888; }
     .song-item .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 10px 20px; width: auto; border-radius: 25px; text-decoration: none; font-size: 0.9em; font-weight: 600; white-space: nowrap; margin-left: 15px; }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item.playing-audio .play-btn, .song-item.playing-video .video-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
     
-    /* Stili Modals, Form e Azioni Extra (invariati) */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; }
     .modal-content p { line-height: 1.6; margin-bottom: 20px; }
