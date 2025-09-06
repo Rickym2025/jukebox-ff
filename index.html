@@ -19,7 +19,7 @@
         background: rgba(0, 0, 0, 0.75);
         backdrop-filter: blur(12px);
         padding: 40px 30px;
-        padding-top: 100px; /* Spazio per il logo */
+        padding-top: 100px;
         max-width: 850px;
         width: 100%;
         border-radius: 20px;
@@ -34,17 +34,22 @@
         transform: translate(-50%, -50%);
         z-index: 10;
     }
-    .profile-logo img {
-        width: 160px; /* Logo più grande */
+    .profile-logo-image {
+        width: 160px;
         height: 160px;
         border-radius: 50%;
         border: 6px solid #2c2c2c;
         box-shadow: 0 5px 25px rgba(0,0,0,0.7);
+        background-image: url('https://pub-89945f8350374b50818d716fdc3c108b.r2.dev/logo%20png.png');
+        background-size: 180%; /* <-- CONTROLLA LO ZOOM DELL'IMMAGINE INTERNA */
+        background-position: center;
+        background-repeat: no-repeat;
     }
     
     h1, h2 { color: var(--primary-color); }
     h1 { font-size: 2em; margin-bottom: 25px; }
     h2 { font-size: 1.8em; margin-bottom: 10px; }
+    h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.4em; }
     .subtitle { font-size: 1.1em; color: #ccc; margin-bottom: 25px; }
     input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; }
     .button { display: inline-block; padding: 14px 30px; border: 2px solid var(--primary-color); border-radius: 30px; text-decoration: none; color: #f0f0f0; font-size: 1.1em; font-weight: 500; transition: all 0.3s ease; background-color: transparent; cursor: pointer; width: 100%; }
@@ -97,6 +102,15 @@
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item.playing-audio .play-btn, .song-item.playing-video .video-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { box-shadow: 0 0 5px var(--glow-color); } 50% { box-shadow: 0 0 20px var(--glow-color); } 100% { box-shadow: 0 0 5px var(--glow-color); } }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; }
+    .modal-content p { line-height: 1.6; margin-bottom: 20px; }
+    .modal-content .button { width: 100%; margin-top: 10px; }
+    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2em; color: white; cursor: pointer; line-height: 1; }
+    .no-copy { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+    #contact-form { display: flex; flex-direction: column; gap: 15px; text-align: left;}
+    #contact-form input, #contact-form textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; }
+    #contact-form button { width: auto; align-self: flex-end; }
   </style>
 </head>
 <body>
@@ -108,7 +122,7 @@
   <div class="container-wrapper">
     <div id="login-screen">
       <div class="profile-logo">
-          <img src="https://pub-89945f8350374b50818d716fdc3c108b.r2.dev/logo%20png.png" alt="Logo FF">
+          <div class="profile-logo-image"></div>
       </div>
       <h1>Jukebox FF Riservato</h1>
       <form id="login-form">
@@ -119,7 +133,7 @@
     
     <div id="jukebox-container">
       <div class="profile-logo">
-          <img src="https://pub-89945f8350374b50818d716fdc3c108b.r2.dev/logo%20png.png" alt="Logo FF">
+          <div class="profile-logo-image"></div>
       </div>
       <h2>Jukebox Personalizzato</h2>
       <p class="subtitle">per <strong id="client-name"></strong></p>
@@ -147,8 +161,8 @@
     </div>
   </div>
   
-  <div id="lyrics-modal" class="modal-overlay"> <!-- Modal per i testi (omesso per brevità) --> </div>
-  <div id="contact-modal" class="modal-overlay"> <!-- Modal per i contatti (omesso per brevità) --> </div>
+  <div id="lyrics-modal" class="modal-overlay"> <div class="modal-content no-copy" style="text-align: left;"> <span class="modal-close">&times;</span> <h3 id="lyrics-title">Testo della canzone</h3> <p id="lyrics-text">Nessun testo disponibile.</p> </div> </div>
+  <div id="contact-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close">&times;</span> <h3>Contattami per il tuo Progetto</h3> <form id="contact-form" action="https://api.web3forms.com/submit" method="POST"> <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/> <input type="text" name="name" placeholder="Il tuo Nome" required/> <input type="email" name="email" placeholder="La tua Email" required/> <textarea name="message" rows="4" placeholder="Descrivi la tua richiesta..." required></textarea> <button type="submit" class="button">Invia Messaggio</button> </form> </div> </div>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -156,9 +170,24 @@
       const jukeboxContainer = document.getElementById('jukebox-container');
       const clientNameEl = document.getElementById('client-name');
       const songListContainer = document.getElementById('song-list-container');
+      const audioPlayer = document.getElementById('jukebox-audio-player');
+      const videoPlayer = document.getElementById('jukebox-video-player');
       const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbys4S4YBJZRWZni_kfA3rZIuf56EwVJyCl8ggiQntAxFKY6ZlL96lIpemiU5x4cSttn/exec';
       let allSongs = [];
-      // (Altre dichiarazioni di variabili e modals rimangono invariate)
+      let currentPlayingItem = null;
+      let currentPlayingType = null;
+      
+      const modals = {
+        lyrics: document.getElementById('lyrics-modal'),
+        contact: document.getElementById('contact-modal'),
+      };
+
+      function closeAllModals() { for (const key in modals) { modals[key].style.display = 'none'; } }
+      document.querySelectorAll('.modal-overlay').forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); }); modal.querySelector('.modal-close').addEventListener('click', () => closeAllModals()); });
+
+      audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
+      videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
+      modals.lyrics.querySelector('.modal-content').addEventListener('contextmenu', e => e.preventDefault());
 
       loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -193,7 +222,7 @@
           const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`);
           if (!response.ok) throw new Error(`Il server ha risposto con un errore.`);
           const songs = await response.json();
-          if (songs.error) throw new Error(songs.message);
+          if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API');
           allSongs = songs;
           populateFilters(allSongs);
           applyFilters();
@@ -203,41 +232,29 @@
       }
       
       function populateFilters(songs) {
-        const filters = {
-            categoria: new Set(),
-            argomento: new Set(),
-            bpm: new Set()
-        };
-
+        const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
         songs.forEach(song => {
             if (song.categoria) filters.categoria.add(song.categoria);
             if (song.argomento) filters.argomento.add(song.argomento);
             if (song.bpm) filters.bpm.add(song.bpm);
         });
 
-        const createFilterButtons = (filterType, items) => {
+        const createFilterButtons = (filterType, items, label) => {
             const container = document.getElementById(`filter-${filterType}`);
-            container.innerHTML = ''; // Pulisce i vecchi pulsanti
-            
-            // Pulsante "Tutti"
+            container.innerHTML = '';
             const allButton = document.createElement('button');
-            allButton.textContent = 'Tutti';
+            allButton.textContent = label;
             allButton.value = '';
-            allButton.className = 'active'; // Attivo di default
+            allButton.className = 'active';
             container.appendChild(allButton);
-            
-            // Altri pulsanti
             [...items].sort().forEach(item => {
                 const button = document.createElement('button');
                 button.textContent = item;
                 button.value = item;
                 container.appendChild(button);
             });
-
-            // Aggiungi event listener
             container.addEventListener('click', (e) => {
                 if (e.target.tagName === 'BUTTON') {
-                    // Gestisce la classe 'active'
                     container.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                     e.target.classList.add('active');
                     applyFilters();
@@ -245,18 +262,16 @@
             });
         };
 
-        createFilterButtons('categoria', filters.categoria);
-        createFilterButtons('argomento', filters.argomento);
-        createFilterButtons('bpm', filters.bpm);
+        createFilterButtons('categoria', filters.categoria, 'Tutte le Categorie');
+        createFilterButtons('argomento', filters.argomento, 'Tutti gli Argomenti');
+        createFilterButtons('bpm', filters.bpm, 'Tutti i BPM');
       }
 
       function applyFilters() {
         const getActiveFilter = (id) => document.querySelector(`#filter-${id} button.active`).value;
-        
         const categoria = getActiveFilter('categoria');
         const argomento = getActiveFilter('argomento');
         const bpm = getActiveFilter('bpm');
-
         const filteredSongs = allSongs.filter(song => {
             const matchCategoria = !categoria || song.categoria === categoria;
             const matchArgomento = !argomento || song.argomento === argomento;
@@ -270,7 +285,6 @@
         songListContainer.innerHTML = '';
         if (songsToRender.length > 0) {
           songsToRender.forEach(song => {
-            // Questa parte è identica alla versione precedente
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const hasVideo = song.video_url && song.video_url.trim() !== "";
             const thumbnailHTML = song.thumbnail ? `<img src="${song.thumbnail}" class="thumbnail" alt="Thumbnail">` : `<div class="thumbnail"><i class="fas fa-music"></i></div>`;
