@@ -163,16 +163,29 @@
       async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento brani per ${userEmail}...</p>`; try { const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`); if (!response.ok) throw new Error(`Il server ha risposto con un errore.`); const songs = await response.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API'); allSongs = songs; displaySongs(); } catch (error) { songListContainer.innerHTML = `<p style="color: #f44336; font-weight: bold;">Errore: ${error.message}.</p>`; } }
 
       function displaySongs() {
-        songListContainer.innerHTML = '';
-        if (allSongs.length > 0) {
-          allSongs.forEach(song => {
+    songListContainer.innerHTML = '';
+    if (allSongs.length > 0) {
+        allSongs.forEach(song => {
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const hasVideo = song.video_url && song.video_url.trim() !== "";
             const thumbnailHTML = song.thumbnail ? `<img src="${song.thumbnail}" class="thumbnail" alt="Thumbnail">` : `<div class="thumbnail"><i class="fas fa-music"></i></div>`;
             const lyricsBtnHTML = hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i></button>` : '';
             const videoBtnHTML = hasVideo ? `<button class="btn video-btn" title="Guarda il video" data-video-src="${song.video_url}"><i class="fas fa-video"></i></button>` : '';
+            
             let purchaseBtnHTML = '';
-            if (song.prezzo) { const buttonText = `Acquista - €${song.prezzo}`; if (song.stripe_link) { purchaseBtnHTML = `<a href="${song.stripe_link}" target="_blank" class="acquista-btn">${buttonText}</a>`; } else { purchaseBtnHTML = `<button class="acquista-btn" disabled>${buttonText}</button>`; } }
+            if (song.prezzo) {
+                const buttonText = `Acquista - €${song.prezzo}`;
+                if (song.stripe_link) {
+                    // --- INIZIO MODIFICA IMPORTANTE ---
+                    // Aggiungiamo ?client_reference_id={song.id} all'URL di Stripe
+                    // Questo ID verrà passato a n8n per identificare il brano.
+                    const stripeUrlWithId = `${song.stripe_link}?client_reference_id=${song.id}`;
+                    purchaseBtnHTML = `<a href="${stripeUrlWithId}" target="_blank" class="acquista-btn">${buttonText}</a>`;
+                    // --- FINE MODIFICA IMPORTANTE ---
+                } else {
+                    purchaseBtnHTML = `<button class="acquista-btn" disabled>${buttonText}</button>`;
+                }
+            }
             
             let detailsHTML = '';
             if (song.bpm || song.durata) {
@@ -197,12 +210,12 @@
                 </div>
               </div>`;
             songListContainer.innerHTML += songItemHTML;
-          });
-          addEventListenersToSongs();
-        } else {
-          songListContainer.innerHTML = '<p>Nessun brano trovato per il tuo account.</p>';
-        }
-      }
+        });
+        addEventListenersToSongs();
+    } else {
+        songListContainer.innerHTML = '<p>Nessun brano trovato per il tuo account.</p>';
+    }
+}
       
       function addEventListenersToSongs() { document.querySelectorAll('.song-item').forEach(item => { item.querySelector('.title')?.addEventListener('click', (e) => handlePlay(item, 'audio')); item.querySelector('.play-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); }); item.querySelector('.video-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'video', e.currentTarget.dataset.videoSrc); }); item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => { e.stopPropagation(); showLyrics(item); }); }); }
       function showLyrics(item) { document.getElementById('lyrics-title').innerText = item.dataset.title; document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; }
