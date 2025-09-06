@@ -22,8 +22,7 @@
     #jukebox-container { display: none; }
     .header-info { margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 20px; }
     .header-info p { font-size: 1.1em; color: #ccc; line-height: 1.6; }
-    .info-box { background-color: rgba(6, 147, 227, 0.1); border-left: 4px solid var(--primary-color); padding: 15px; border-radius: 5px; margin: 25px 0; text-align: left; }
-    .info-box p { color: #d0d0d0; font-weight: 400; font-size: 0.9em;}
+    .info-box { background-color: rgba(6, 147, 227, 0.1); border-left: 4px solid var(--primary-color); padding: 15px 20px; border-radius: 5px; margin: 25px 0; text-align: left; }
     #player-container { width: 100%; max-width: 640px; margin: 25px auto 0; }
     #jukebox-video-player, #jukebox-audio-player { width: 100%; border-radius: 10px; }
     .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
@@ -31,7 +30,9 @@
     .song-item .thumbnail { width: 60px; height: 60px; flex-shrink: 0; border-radius: 8px; object-fit: cover; background-color: #2c2c2c; display: flex; align-items: center; justify-content: center; font-size: 1.8em; }
     .song-item .title-container { flex-grow: 1; text-align: left; }
     .song-item .title { font-size: 1.2em; cursor: pointer; font-weight: 500; }
-    .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; }
+    .song-details { display: flex; gap: 15px; font-size: 0.85em; color: #bbb; margin-top: 5px; align-items: center; }
+    .song-details span { display: flex; align-items: center; gap: 5px; }
+    .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; margin-top: 5px; }
     .song-item:hover .plays-left { opacity: 1; }
     .song-item .btn-group { display: flex; align-items: center; gap: 10px; margin-left: auto; }
     .song-item .btn { background: none; border-radius: 50%; width: 45px; height: 45px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
@@ -57,6 +58,11 @@
     #contact-form button { width: auto; align-self: flex-end; }
     .extra-actions { margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
     .extra-actions .button { width: auto; font-size: 1em; padding: 12px 25px; }
+    /* Stili per la nuova lista informativa */
+    .info-box ul { list-style: none; padding-left: 0; margin-top: 0; }
+    .info-box li { padding-left: 1.5em; position: relative; margin-bottom: 8px; text-align: left; }
+    .info-box li:last-child { margin-bottom: 0; }
+    .info-box li::before { content: '•'; color: var(--primary-color); font-weight: bold; position: absolute; left: 0.5em; }
   </style>
 </head>
 <body>
@@ -90,7 +96,12 @@
       </div>
 
       <div class="info-box">
-        <p><b>Nota informativa:</b> i brani in questa raccolta sono creazioni originali non depositate presso SIAE. Ogni brano può essere ascoltato per un massimo di 3 volte per garantire l'esclusività.</p>
+        <p style="font-weight: bold; margin-bottom: 10px;">Nota Informativa:</p>
+        <ul>
+          <li>Brani originali non depositati presso SIAE.</li>
+          <li>Limite di 3 ascolti per garantire l'esclusività.</li>
+          <li>Tutti i diritti sono riservati.</li>
+        </ul>
       </div>
 
       <div id="song-list-container"><p>Caricamento...</p></div>
@@ -102,27 +113,8 @@
     </div>
   </div>
 
-  <div id="lyrics-modal" class="modal-overlay">
-    <div class="modal-content no-copy"> 
-      <span id="lyrics-modal-close" class="modal-close">&times;</span>
-      <h3 id="lyrics-title">Testo della canzone</h3>
-      <p id="lyrics-text">Nessun testo disponibile.</p>
-    </div>
-  </div>
-
-  <div id="contact-modal" class="modal-overlay">
-    <div class="modal-content">
-      <span class="modal-close" id="contact-modal-close">&times;</span>
-      <h2>Contattami per il tuo Progetto</h2>
-      <form id="contact-form" action="https://api.web3forms.com/submit" method="POST">
-        <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/>
-        <input type="text" name="name" placeholder="Il tuo Nome" required/>
-        <input type="email" name="email" placeholder="La tua Email" required/>
-        <textarea name="message" rows="4" placeholder="Descrivi la tua richiesta..." required></textarea>
-        <button type="submit" class="button">Invia Messaggio</button>
-      </form>
-    </div>
-  </div>
+  <div id="lyrics-modal" class="modal-overlay"> <div class="modal-content no-copy"> <span id="lyrics-modal-close" class="modal-close">&times;</span> <h3 id="lyrics-title">Testo della canzone</h3> <p id="lyrics-text">Nessun testo disponibile.</p> </div> </div>
+  <div id="contact-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close" id="contact-modal-close">&times;</span> <h2>Contattami per il tuo Progetto</h2> <form id="contact-form" action="https://api.web3forms.com/submit" method="POST"> <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/> <input type="text" name="name" placeholder="Il tuo Nome" required/> <input type="email" name="email" placeholder="La tua Email" required/> <textarea name="message" rows="4" placeholder="Descrivi la tua richiesta..." required></textarea> <button type="submit" class="button">Invia Messaggio</button> </form> </div> </div>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -132,9 +124,7 @@
       const videoPlayer = document.getElementById('jukebox-video-player');
       const lyricsModal = document.getElementById('lyrics-modal');
       const lyricsModalClose = document.getElementById('lyrics-modal-close');
-      
-      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbxY1irKEPkEZMwRChyF2e5MDBh230BO_msj6-i-iX2Ssj7H_GYTNUv4iPMr8NuD4Epn/exec';
-      
+      const sheetApiUrl = 'ttps://script.google.com/macros/s/AKfycbxIeTu4FM9_69NM16LgVx1zpFjidw4aIdXAYh871fD5wBrAjs2CEUec0IL94Vnqp8my/exec';
       const MAX_PLAYS = 3;
       let allSongs = [];
       let currentPlayingItem = null;
@@ -146,52 +136,11 @@
       function getPlayCounts() { return JSON.parse(localStorage.getItem('songPlayCounts_FF')) || {}; }
       function savePlayCounts(counts) { localStorage.setItem('songPlayCounts_FF', JSON.stringify(counts)); }
 
-      async function trackPlay(songId) {
-        try {
-          const scriptUrlWithoutParams = sheetApiUrl.split('?')[0];
-          await fetch(scriptUrlWithoutParams, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId }) });
-        } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); }
-      }
+      async function trackPlay(songId) { try { const scriptUrlWithoutParams = sheetApiUrl.split('?')[0]; await fetch(scriptUrlWithoutParams, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
 
-      loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const email = document.getElementById('email-input').value.trim().toLowerCase();
-        if (!email) { alert('Per favore, inserisci un\'email.'); return; }
-        const loginButton = this.querySelector('button');
-        loginButton.textContent = 'Verifico...';
-        loginButton.disabled = true;
-        try {
-          const validationUrl = `${sheetApiUrl}?emailCheck=${encodeURIComponent(email)}`;
-          const response = await fetch(validationUrl);
-          const result = await response.json();
-          if (result.status === "ok") {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('jukebox-container').style.display = 'block';
-            loadMusicFromApi(email);
-          } else {
-            alert(result.message || 'Accesso non autorizzato.');
-          }
-        } catch (error) {
-          alert('Errore di comunicazione con il server. Riprova più tardi.');
-        } finally {
-          loginButton.textContent = 'Accedi al Jukebox';
-          loginButton.disabled = false;
-        }
-      });
+      loginForm.addEventListener('submit', async function(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } const loginButton = this.querySelector('button'); loginButton.textContent = 'Verifico...'; loginButton.disabled = true; try { const validationUrl = `${sheetApiUrl}?emailCheck=${encodeURIComponent(email)}`; const response = await fetch(validationUrl); const result = await response.json(); if (result.status === "ok") { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (error) { alert('Errore di comunicazione con il server. Riprova più tardi.'); } finally { loginButton.textContent = 'Accedi al Jukebox'; loginButton.disabled = false; } });
 
-      async function loadMusicFromApi(userEmail) {
-        songListContainer.innerHTML = `<p>Caricamento brani per ${userEmail}...</p>`;
-        try {
-          const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`);
-          if (!response.ok) throw new Error(`Il server ha risposto con un errore.`);
-          const songs = await response.json();
-          if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API');
-          allSongs = songs;
-          displaySongs();
-        } catch (error) {
-          songListContainer.innerHTML = `<p style="color: #f44336; font-weight: bold;">Errore: ${error.message}.</p>`;
-        }
-      }
+      async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento brani per ${userEmail}...</p>`; try { const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`); if (!response.ok) throw new Error(`Il server ha risposto con un errore.`); const songs = await response.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API'); allSongs = songs; displaySongs(); } catch (error) { songListContainer.innerHTML = `<p style="color: #f44336; font-weight: bold;">Errore: ${error.message}.</p>`; } }
 
       function displaySongs() {
         songListContainer.innerHTML = '';
@@ -204,22 +153,23 @@
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const thumbnailHTML = song.tipo === 'video' && song.thumbnail ? `<img src="${song.thumbnail}" class="thumbnail" alt="Thumbnail">` : `<div class="thumbnail"><i class="fas fa-music"></i></div>`;
             const lyricsBtnHTML = hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i></button>` : '';
-            
             let purchaseBtnHTML = '';
-            if (song.prezzo) {
-                const buttonText = `Acquista - €${song.prezzo}`;
-                if (song.stripe_link) {
-                    purchaseBtnHTML = `<a href="${song.stripe_link}" target="_blank" class="acquista-btn">${buttonText}</a>`;
-                } else {
-                    purchaseBtnHTML = `<button class="acquista-btn" disabled>${buttonText}</button>`;
-                }
-            }
+            if (song.prezzo) { const buttonText = `Acquista - €${song.prezzo}`; if (song.stripe_link) { purchaseBtnHTML = `<a href="${song.stripe_link}" target="_blank" class="acquista-btn">${buttonText}</a>`; } else { purchaseBtnHTML = `<button class="acquista-btn" disabled>${buttonText}</button>`; } }
             
+            let detailsHTML = '';
+            if (song.bpm || song.durata) {
+                detailsHTML += '<div class="song-details">';
+                if (song.bpm) { detailsHTML += `<span><i class="fas fa-heart-pulse"></i> ${song.bpm} BPM</span>`; }
+                if (song.durata) { detailsHTML += `<span><i class="fas fa-clock"></i> ${song.durata}</span>`; }
+                detailsHTML += '</div>';
+            }
+
             const songItemHTML = `
               <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-tipo="${song.tipo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
                 ${thumbnailHTML}
                 <div class="title-container">
                   <span class="title">${song.title}</span>
+                  ${detailsHTML}
                   <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
                 </div>
                 <div class="btn-group">
@@ -236,85 +186,18 @@
         }
       }
 
-      function addEventListenersToSongs() {
-        document.querySelectorAll('.song-item').forEach(item => {
-          if (item.classList.contains('disabled')) return;
-          item.querySelector('.title')?.addEventListener('click', () => handlePlayPause(item));
-          item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item));
-          const lyricsBtn = item.querySelector('.lyrics-btn');
-          if (lyricsBtn) {
-            lyricsBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              document.getElementById('lyrics-title').innerText = item.dataset.title;
-              document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile.";
-              lyricsModal.style.display = 'flex';
-            });
-          }
-        });
-      }
-
-      function handlePlayPause(item) {
-        if (item.classList.contains('disabled')) return;
-        const isPlayingThisItem = item === currentPlayingItem;
-        if (isPlayingThisItem) {
-          if (item.dataset.tipo === 'video') { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); } 
-          else { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); }
-        } else {
-          resetPlayingState(); 
-          currentPlayingItem = item;
-          const songId = item.dataset.id;
-          const counts = getPlayCounts();
-          const currentCount = counts[songId] || 0;
-          if (currentCount < MAX_PLAYS) {
-            counts[songId] = currentCount + 1;
-            savePlayCounts(counts);
-            trackPlay(songId);
-          }
-          const playsLeft = MAX_PLAYS - (counts[songId] || 0);
-          const playsLeftEl = item.querySelector('.plays-left');
-          if (playsLeft > 0) {
-            playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`;
-          } else {
-            playsLeftEl.textContent = 'Limite ascolti raggiunto';
-            disableSongItem(item);
-          }
-          if (item.dataset.tipo === 'video') {
-            audioPlayer.style.display = 'none'; audioPlayer.pause();
-            videoPlayer.style.display = 'block'; videoPlayer.src = item.dataset.src; videoPlayer.play();
-          } else {
-            videoPlayer.style.display = 'none'; videoPlayer.pause();
-            audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play();
-          }
-        }
-      }
-      
-      function disableSongItem(item) {
-        item.classList.add('disabled');
-        const playBtn = item.querySelector('.play-btn');
-        if (playBtn) { playBtn.disabled = true; playBtn.querySelector('i').className = 'fas fa-lock'; }
-      }
-
-      function resetPlayingState() {
-        if (currentPlayingItem) {
-          currentPlayingItem.classList.remove('playing');
-          const playIcon = currentPlayingItem.querySelector('.play-btn i');
-          if(playIcon && !currentPlayingItem.classList.contains('disabled')) playIcon.className = 'fas fa-play';
-        }
-        currentPlayingItem = null;
-      }
-
+      function addEventListenersToSongs() { document.querySelectorAll('.song-item').forEach(item => { if (item.classList.contains('disabled')) return; item.querySelector('.title')?.addEventListener('click', () => handlePlayPause(item)); item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item)); const lyricsBtn = item.querySelector('.lyrics-btn'); if (lyricsBtn) { lyricsBtn.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('lyrics-title').innerText = item.dataset.title; document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; lyricsModal.style.display = 'flex'; }); } }); }
+      function handlePlayPause(item) { if (item.classList.contains('disabled')) return; const isPlayingThisItem = item === currentPlayingItem; if (isPlayingThisItem) { if (item.dataset.tipo === 'video') { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); } else { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); } } else { resetPlayingState(); currentPlayingItem = item; const songId = item.dataset.id; const counts = getPlayCounts(); const currentCount = counts[songId] || 0; if (currentCount < MAX_PLAYS) { counts[songId] = currentCount + 1; savePlayCounts(counts); trackPlay(songId); } const playsLeft = MAX_PLAYS - (counts[songId] || 0); const playsLeftEl = item.querySelector('.plays-left'); if (playsLeft > 0) { playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`; } else { playsLeftEl.textContent = 'Limite ascolti raggiunto'; disableSongItem(item); } if (item.dataset.tipo === 'video') { audioPlayer.style.display = 'none'; audioPlayer.pause(); videoPlayer.style.display = 'block'; videoPlayer.src = item.dataset.src; videoPlayer.play(); } else { videoPlayer.style.display = 'none'; videoPlayer.pause(); audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play(); } } }
+      function disableSongItem(item) { item.classList.add('disabled'); const playBtn = item.querySelector('.play-btn'); if (playBtn) { playBtn.disabled = true; playBtn.querySelector('i').className = 'fas fa-lock'; } }
+      function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing'); const playIcon = currentPlayingItem.querySelector('.play-btn i'); if(playIcon && !currentPlayingItem.classList.contains('disabled')) playIcon.className = 'fas fa-play'; } currentPlayingItem = null; }
       function updatePlayingUI() { if (currentPlayingItem) { currentPlayingItem.classList.add('playing'); const i = currentPlayingItem.querySelector('.play-btn i'); if(i) i.className = 'fas fa-pause'; } }
       function updatePausedUI() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing'); const i = currentPlayingItem.querySelector('.play-btn i'); if(i && !currentPlayingItem.classList.contains('disabled')) i.className = 'fas fa-play'; } }
-
       audioPlayer.addEventListener('play', updatePlayingUI); videoPlayer.addEventListener('play', updatePlayingUI);
       audioPlayer.addEventListener('pause', updatePausedUI); videoPlayer.addEventListener('pause', updatePausedUI);
       audioPlayer.addEventListener('ended', resetPlayingState); videoPlayer.addEventListener('ended', resetPlayingState);
-
       lyricsModalClose.addEventListener('click', () => lyricsModal.style.display = 'none');
       lyricsModal.addEventListener('click', (e) => { if (e.target === lyricsModal) lyricsModal.style.display = 'none'; });
-
-      const contactModal = document.getElementById('contact-modal');
-      const contactModalClose = contactModal.querySelector('.modal-close');
+      const contactModal = document.getElementById('contact-modal'); const contactModalClose = contactModal.querySelector('.modal-close');
       document.getElementById('show-custom-request-btn').addEventListener('click', () => { contactModal.style.display = 'flex'; });
       contactModalClose.addEventListener('click', () => { contactModal.style.display = 'none'; });
       contactModal.addEventListener('click', (e) => { if (e.target === contactModal) contactModal.style.display = 'none'; });
