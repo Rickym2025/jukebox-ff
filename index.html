@@ -23,6 +23,10 @@
     .header-info { margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 20px; }
     .header-info p { font-size: 1.1em; color: #ccc; line-height: 1.6; }
     .info-box { background-color: rgba(6, 147, 227, 0.1); border-left: 4px solid var(--primary-color); padding: 15px 20px; border-radius: 5px; margin: 25px 0; text-align: left; }
+    .info-box ul { list-style: none; padding-left: 0; margin-top: 0; }
+    .info-box li { padding-left: 1.5em; position: relative; margin-bottom: 8px; text-align: left; }
+    .info-box li:last-child { margin-bottom: 0; }
+    .info-box li::before { content: '•'; color: var(--primary-color); font-weight: bold; position: absolute; left: 0.5em; }
     #player-container { width: 100%; max-width: 640px; margin: 25px auto 0; }
     #jukebox-video-player, #jukebox-audio-player { width: 100%; border-radius: 10px; }
     .song-list-container { max-height: 50vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
@@ -34,15 +38,14 @@
     .song-details span { display: flex; align-items: center; gap: 5px; }
     .song-item .plays-left { font-size: 0.8em; color: #aaa; opacity: 0; transition: opacity 0.3s; margin-top: 5px; }
     .song-item:hover .plays-left { opacity: 1; }
-    .song-item .btn-group { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .song-item .actions-container { display: flex; align-items: center; gap: 10px; margin-left: auto; } /* <-- NUOVO CONTENITORE PER I PULSANTI */
     .song-item .btn { background: none; border-radius: 50%; width: 45px; height: 45px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; }
-    .song-item .play-btn { border: 2px solid var(--primary-color); color: var(--primary-color); }
+    .song-item .play-btn, .song-item .video-btn { border: 2px solid var(--primary-color); color: var(--primary-color); }
     .song-item .lyrics-btn { border: 2px solid #888; color: #888; }
-    .song-item .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 10px 20px; width: auto; border-radius: 25px; text-decoration: none; font-size: 0.9em; font-weight: 600; white-space: nowrap; }
+    .song-item .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 10px 20px; width: auto; border-radius: 25px; text-decoration: none; font-size: 0.9em; font-weight: 600; white-space: nowrap; margin-left: 15px; } /* <-- AGGIUNTO MARGINE SINISTRO */
     .song-item .acquista-btn:disabled { background-color: #555; border-color: #555; color: #999; cursor: not-allowed; }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
-    .song-item.playing { background-color: rgba(6, 147, 227, 0.2); }
-    .song-item.playing .play-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
+    .song-item.playing-audio .play-btn, .song-item.playing-video .video-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { box-shadow: 0 0 5px var(--glow-color); } 50% { box-shadow: 0 0 20px var(--glow-color); } 100% { box-shadow: 0 0 5px var(--glow-color); } }
     .song-item.disabled { opacity: 0.5; cursor: not-allowed; }
     .song-item.disabled .title, .song-item.disabled .btn, .song-item.disabled .acquista-btn { cursor: not-allowed; }
@@ -58,11 +61,6 @@
     #contact-form button { width: auto; align-self: flex-end; }
     .extra-actions { margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
     .extra-actions .button { width: auto; font-size: 1em; padding: 12px 25px; }
-    /* Stili per la nuova lista informativa */
-    .info-box ul { list-style: none; padding-left: 0; margin-top: 0; }
-    .info-box li { padding-left: 1.5em; position: relative; margin-bottom: 8px; text-align: left; }
-    .info-box li:last-child { margin-bottom: 0; }
-    .info-box li::before { content: '•'; color: var(--primary-color); font-weight: bold; position: absolute; left: 0.5em; }
   </style>
 </head>
 <body>
@@ -85,7 +83,6 @@
         <h2 style="margin-bottom: 10px;">Jukebox Esclusivo di Fausto Fusetti</h2>
         <p>Musicista, autore, compositore e cantante con oltre 40 anni di esperienza, in collaborazione con giovani talenti del conservatorio.</p>
       </div>
-      
       <div class="extra-actions">
         <a href="https://ff-music-store.printify.me/" target="_blank" class="button">
           <i class="fas fa-tshirt"></i> Gadget Personalizzati
@@ -94,7 +91,6 @@
           <i class="fas fa-pen"></i> Richieste Personalizzate
         </button>
       </div>
-
       <div class="info-box">
         <p style="font-weight: bold; margin-bottom: 10px;">Nota Informativa:</p>
         <ul>
@@ -103,9 +99,7 @@
           <li>Tutti i diritti sono riservati.</li>
         </ul>
       </div>
-
       <div id="song-list-container"><p>Caricamento...</p></div>
-
       <div id="player-container">
         <video id="jukebox-video-player" style="display: none;" controls></video>
         <audio id="jukebox-audio-player" style="display: none;" controls></audio>
@@ -124,10 +118,11 @@
       const videoPlayer = document.getElementById('jukebox-video-player');
       const lyricsModal = document.getElementById('lyrics-modal');
       const lyricsModalClose = document.getElementById('lyrics-modal-close');
-      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbxIeTu4FM9_69NM16LgVx1zpFjidw4aIdXAYh871fD5wBrAjs2CEUec0IL94Vnqp8my/exec';
+      const sheetApiUrl = 'https://script.google.com/macros/library/d/1VLLXlmdS4UDk_AKY9ZBitA2nGsPIDvCzeHWY5Z975z4lk0-2kQp0_Toz/13';
       const MAX_PLAYS = 3;
       let allSongs = [];
       let currentPlayingItem = null;
+      let currentPlayingType = null; // 'audio' or 'video'
 
       audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
       videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
@@ -144,15 +139,13 @@
 
       function displaySongs() {
         songListContainer.innerHTML = '';
-        const playCounts = getPlayCounts();
         if (allSongs.length > 0) {
           allSongs.forEach(song => {
-            const count = playCounts[song.id] || 0;
-            const playsLeft = MAX_PLAYS - count;
-            const isLocked = playsLeft <= 0;
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const thumbnailHTML = song.tipo === 'video' && song.thumbnail ? `<img src="${song.thumbnail}" class="thumbnail" alt="Thumbnail">` : `<div class="thumbnail"><i class="fas fa-music"></i></div>`;
+            const hasVideo = song.video_url && song.video_url.trim() !== "";
+            const thumbnailHTML = song.thumbnail ? `<img src="${song.thumbnail}" class="thumbnail" alt="Thumbnail">` : `<div class="thumbnail"><i class="fas fa-music"></i></div>`;
             const lyricsBtnHTML = hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i></button>` : '';
+            const videoBtnHTML = hasVideo ? `<button class="btn video-btn" title="Guarda il video" data-video-src="${song.video_url}"><i class="fas fa-video"></i></button>` : '';
             let purchaseBtnHTML = '';
             if (song.prezzo) { const buttonText = `Acquista - €${song.prezzo}`; if (song.stripe_link) { purchaseBtnHTML = `<a href="${song.stripe_link}" target="_blank" class="acquista-btn">${buttonText}</a>`; } else { purchaseBtnHTML = `<button class="acquista-btn" disabled>${buttonText}</button>`; } }
             
@@ -165,17 +158,17 @@
             }
 
             const songItemHTML = `
-              <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-tipo="${song.tipo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
+              <div class="song-item" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
                 ${thumbnailHTML}
                 <div class="title-container">
                   <span class="title">${song.title}</span>
                   ${detailsHTML}
-                  <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
                 </div>
-                <div class="btn-group">
-                  ${purchaseBtnHTML}
+                <div class="actions-container">
                   ${lyricsBtnHTML}
-                  <button class="btn play-btn" ${isLocked ? 'disabled' : ''}><i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i></button>
+                  ${videoBtnHTML}
+                  <button class="btn play-btn" title="Ascolta l'audio"><i class="fas fa-play"></i></button>
+                  ${purchaseBtnHTML}
                 </div>
               </div>`;
             songListContainer.innerHTML += songItemHTML;
@@ -186,17 +179,85 @@
         }
       }
 
-      function addEventListenersToSongs() { document.querySelectorAll('.song-item').forEach(item => { if (item.classList.contains('disabled')) return; item.querySelector('.title')?.addEventListener('click', () => handlePlayPause(item)); item.querySelector('.play-btn')?.addEventListener('click', () => handlePlayPause(item)); const lyricsBtn = item.querySelector('.lyrics-btn'); if (lyricsBtn) { lyricsBtn.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('lyrics-title').innerText = item.dataset.title; document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; lyricsModal.style.display = 'flex'; }); } }); }
-      function handlePlayPause(item) { if (item.classList.contains('disabled')) return; const isPlayingThisItem = item === currentPlayingItem; if (isPlayingThisItem) { if (item.dataset.tipo === 'video') { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); } else { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); } } else { resetPlayingState(); currentPlayingItem = item; const songId = item.dataset.id; const counts = getPlayCounts(); const currentCount = counts[songId] || 0; if (currentCount < MAX_PLAYS) { counts[songId] = currentCount + 1; savePlayCounts(counts); trackPlay(songId); } const playsLeft = MAX_PLAYS - (counts[songId] || 0); const playsLeftEl = item.querySelector('.plays-left'); if (playsLeft > 0) { playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`; } else { playsLeftEl.textContent = 'Limite ascolti raggiunto'; disableSongItem(item); } if (item.dataset.tipo === 'video') { audioPlayer.style.display = 'none'; audioPlayer.pause(); videoPlayer.style.display = 'block'; videoPlayer.src = item.dataset.src; videoPlayer.play(); } else { videoPlayer.style.display = 'none'; videoPlayer.pause(); audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play(); } } }
-      function disableSongItem(item) { item.classList.add('disabled'); const playBtn = item.querySelector('.play-btn'); if (playBtn) { playBtn.disabled = true; playBtn.querySelector('i').className = 'fas fa-lock'; } }
-      function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing'); const playIcon = currentPlayingItem.querySelector('.play-btn i'); if(playIcon && !currentPlayingItem.classList.contains('disabled')) playIcon.className = 'fas fa-play'; } currentPlayingItem = null; }
-      function updatePlayingUI() { if (currentPlayingItem) { currentPlayingItem.classList.add('playing'); const i = currentPlayingItem.querySelector('.play-btn i'); if(i) i.className = 'fas fa-pause'; } }
-      function updatePausedUI() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing'); const i = currentPlayingItem.querySelector('.play-btn i'); if(i && !currentPlayingItem.classList.contains('disabled')) i.className = 'fas fa-play'; } }
+      function addEventListenersToSongs() {
+          document.querySelectorAll('.song-item').forEach(item => {
+              item.querySelector('.title')?.addEventListener('click', (e) => handlePlay(item, 'audio'));
+              item.querySelector('.play-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); });
+              item.querySelector('.video-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'video', e.currentTarget.dataset.videoSrc); });
+              item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => { e.stopPropagation(); showLyrics(item); });
+          });
+      }
+
+      function showLyrics(item) {
+          document.getElementById('lyrics-title').innerText = item.dataset.title;
+          document.getElementById('lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile.";
+          lyricsModal.style.display = 'flex';
+      }
+
+      function handlePlay(item, type, videoSrc = null) {
+          const isPlayingThisItem = item === currentPlayingItem;
+          const isSwitchingType = isPlayingThisItem && type !== currentPlayingType;
+
+          if (isPlayingThisItem && !isSwitchingType) { // Clicco sullo stesso pulsante (play/pausa)
+              if (type === 'audio') { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); }
+              else { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); }
+          } else { // Nuovo brano o cambio tipo (audio/video)
+              handlePlayAction(item); // Gestisce solo il conteggio
+              resetPlayingState();
+              currentPlayingItem = item;
+              currentPlayingType = type;
+
+              if (type === 'audio') {
+                  videoPlayer.style.display = 'none'; videoPlayer.pause();
+                  audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play();
+              } else {
+                  audioPlayer.style.display = 'none'; audioPlayer.pause();
+                  videoPlayer.style.display = 'block'; videoPlayer.src = videoSrc; videoPlayer.play();
+              }
+          }
+      }
+      
+      function handlePlayAction(item) {
+          const counts = getPlayCounts();
+          const songId = item.dataset.id;
+          const currentCount = counts[songId] || 0;
+          if (currentCount < MAX_PLAYS) {
+              counts[songId] = currentCount + 1;
+              savePlayCounts(counts);
+              trackPlay(songId);
+          }
+          // Questa funzione non aggiorna più l'UI, lo fa displaySongs all'inizio
+      }
+
+      function resetPlayingState() {
+          if (currentPlayingItem) {
+              currentPlayingItem.classList.remove('playing-audio', 'playing-video');
+          }
+          currentPlayingItem = null;
+          currentPlayingType = null;
+      }
+
+      function updatePlayingUI() {
+          if (currentPlayingItem) {
+              currentPlayingItem.classList.remove('playing-audio', 'playing-video'); // Pulisce prima
+              if (currentPlayingType === 'audio') { currentPlayingItem.classList.add('playing-audio'); }
+              else { currentPlayingItem.classList.add('playing-video'); }
+          }
+      }
+      
+      function updatePausedUI() {
+          if (currentPlayingItem) {
+              currentPlayingItem.classList.remove('playing-audio', 'playing-video');
+          }
+      }
+
       audioPlayer.addEventListener('play', updatePlayingUI); videoPlayer.addEventListener('play', updatePlayingUI);
       audioPlayer.addEventListener('pause', updatePausedUI); videoPlayer.addEventListener('pause', updatePausedUI);
       audioPlayer.addEventListener('ended', resetPlayingState); videoPlayer.addEventListener('ended', resetPlayingState);
+
       lyricsModalClose.addEventListener('click', () => lyricsModal.style.display = 'none');
       lyricsModal.addEventListener('click', (e) => { if (e.target === lyricsModal) lyricsModal.style.display = 'none'; });
+      
       const contactModal = document.getElementById('contact-modal'); const contactModalClose = contactModal.querySelector('.modal-close');
       document.getElementById('show-custom-request-btn').addEventListener('click', () => { contactModal.style.display = 'flex'; });
       contactModalClose.addEventListener('click', () => { contactModal.style.display = 'none'; });
