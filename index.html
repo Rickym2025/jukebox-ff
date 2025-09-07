@@ -13,48 +13,12 @@
     body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; }
     #background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); }
     
-    .container-wrapper {
-        min-height: 100vh;
-        width: 100%;
-        display: flex;
-        align-items: center; /* Centra verticalmente */
-        justify-content: center;
-        padding: 20px;
-    }
-    
-    .main-content {
-        position: relative;
-        width: 100%;
-        max-width: 850px;
-    }
+    .container-wrapper { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .main-content { position: relative; width: 100%; max-width: 850px; }
+    .profile-logo { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); z-index: 10; }
+    .profile-logo-image { width: 160px; height: 160px; border-radius: 50%; border: 6px solid #2c2c2c; box-shadow: 0 5px 25px rgba(0,0,0,0.7); background-image: url('https://pub-89945f8350374b50818d716fdc3c108b.r2.dev/logo%20png.png'); background-size: 180%; background-position: center; }
 
-    .profile-logo {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-    }
-    .profile-logo-image {
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        border: 6px solid #2c2c2c;
-        box-shadow: 0 5px 25px rgba(0,0,0,0.7);
-        background-image: url('https://pub-89945f8350374b50818d716fdc3c108b.r2.dev/logo%20png.png');
-        background-size: 180%;
-        background-position: center;
-    }
-
-    #login-screen, #jukebox-container {
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(12px);
-        padding: 40px 30px;
-        padding-top: 100px;
-        width: 100%;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    #login-screen, #jukebox-container { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 40px 30px; padding-top: 100px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
     #jukebox-container { display: none; }
     
     h1, h2 { color: var(--primary-color); }
@@ -103,6 +67,9 @@
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; }
     .extra-actions { margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+    .package-list { list-style: none; padding-left: 0; text-align: left; }
+    .package-list li { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.95em; }
+    .package-list li i { color: var(--primary-color); width: 20px; text-align: center; }
   </style>
 </head>
 <body>
@@ -111,34 +78,43 @@
   
   <div class="container-wrapper">
     <div class="main-content">
-      <div class="profile-logo"><div class="profile-logo-image"></div></div>
-      <div id="login-screen">
-        <h1>Jukebox FF Riservato</h1>
-        <form id="login-form">
-          <input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required />
-          <button type="submit" class="button">Accedi</button>
-        </form>
-      </div>
-      <div id="jukebox-container">
-        <h2>Jukebox Personalizzato</h2>
-        <p class="subtitle">per <strong id="client-name"></strong></p>
-        <div id="filter-container"><!-- Contenuto filtri --></div>
-        <div class="extra-actions"><!-- Contenuto azioni extra --></div>
-        <div id="song-list-container"><p>Caricamento brani...</p></div>
-        <div id="player-container"><!-- Contenuto player --></div>
-      </div>
+        <div class="profile-logo"><div class="profile-logo-image"></div></div>
+        <div id="login-screen">
+          <h1>Jukebox FF Riservato</h1>
+          <form id="login-form">
+            <input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required />
+            <button type="submit" class="button">Accedi</button>
+          </form>
+        </div>
+        <div id="jukebox-container">
+          <h2>Jukebox Personalizzato</h2>
+          <p class="subtitle">per <strong id="client-name"></strong></p>
+          <div id="filter-container">
+            <div class="filter-group"> <span class="filter-label">Categoria:</span> <div id="filter-categoria" class="filter-buttons"></div> </div>
+            <div class="filter-group"> <span class="filter-label">Argomento:</span> <div id="filter-argomento" class="filter-buttons"></div> </div>
+            <div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div>
+          </div>
+          <div class="extra-actions">
+            <button id="show-gadget-modal-btn" class="button"> <i class="fas fa-tshirt"></i> Gadget </button>
+            <button id="show-contact-modal-btn" class="button"> <i class="fas fa-pen"></i> Richieste </button>
+          </div>
+          <div id="song-list-container"><p>Caricamento brani...</p></div>
+          <div id="player-container">
+            <video id="jukebox-video-player" style="display: none;" controls controlsList="nodownload"></video>
+            <audio id="jukebox-audio-player" style="display: none;" controls controlsList="nodownload"></audio>
+          </div>
+        </div>
     </div>
   </div>
   
-  <!-- Tutti i modals -->
-  <div id="lyrics-modal" class="modal-overlay"><!-- ... --></div>
-  <div id="contact-modal" class="modal-overlay"><!-- ... --></div>
-  <div id="gadget-modal" class="modal-overlay"><!-- ... --></div>
-  <div id="purchase-info-modal" class="modal-overlay"><!-- ... --></div>
+  <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
+  <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Contattami</h3><form id="contact-form" action="https://api.web3forms.com/submit" method="POST"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Nome" required/><input type="email" name="email" placeholder="Email" required/><textarea name="message" rows="4" placeholder="Messaggio..." required></textarea><button type="submit" class="button">Invia</button></form></div></div>
+  <div id="gadget-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3><i class="fas fa-gem"></i>Crea i Tuoi Gadget</h3><p>Crea una linea di merchandising con il <strong>TUO logo</strong>, gestita da noi, <strong>senza costi iniziali</strong>.</p><a href="https://ff-music-store.printify.me/" target="_blank" class="button" style="background-color: transparent; margin-bottom: 10px;"><i class="fas fa-eye"></i> Guarda un Esempio</a><button id="contact-for-gadgets-btn" class="button" style="background-color: var(--primary-color); border-color: var(--primary-color);"><i class="fas fa-paper-plane"></i> Richiedi un Preventivo</button></div></div>
+  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Include l'Acquisto?</h3><p style="text-align: left; font-size: 0.9em; color: #ccc;">Riceverai un'email con un link per scaricare il pacchetto completo del brano, che ti garantirà la piena proprietà e utilizzo.</p><ul class="package-list"><li><i class="fas fa-file-contract"></i><strong>Cessione Totale dei Diritti</strong></li><li><i class="fas fa-share-alt"></i><strong>Video Promozionale</strong></li><li><i class="fas fa-music"></i><strong>Brano Master</strong> (.wav)</li><li><i class="fas fa-sliders-h"></i><strong>Tracce Separate</strong> (.wav)</li><li><i class="fas fa-file-alt"></i><strong>Testo del Brano</strong> (.pdf)</li><li><i class="fas fa-guitar"></i><strong>Spartiti Completi</strong> (.pdf)</li></ul></div></div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // --- DICHIARAZIONI ---
+    // Sposto l'intero script alla fine del body per garantire che l'HTML sia caricato
+    function initializeJukebox() {
       const loginScreen = document.getElementById('login-screen');
       const jukeboxContainer = document.getElementById('jukebox-container');
       const loginForm = document.getElementById('login-form');
@@ -146,13 +122,22 @@
       const songListContainer = document.getElementById('song-list-container');
       const audioPlayer = document.getElementById('jukebox-audio-player');
       const videoPlayer = document.getElementById('jukebox-video-player');
-      // !!! INSERISCI QUI IL TUO NUOVO URL DEDICATO ESCLUSIVAMENTE AL JUKEBOX !!!
       const sheetApiUrl = 'https://script.google.com/macros/s/AKfycby9RdvpMsYSc3HlAQDVV7zDYJJjbVYB1erjHfyRGsXQ8hGY3_GDEjSQSAOl21-MZkTg/exec';
       let allSongs = [];
       let currentPlayingItem = null;
       let currentPlayingType = null;
       
-      // --- LOGICA PRINCIPALE (LOGIN E CARICAMENTO DATI) ---
+      const modals = { lyrics: document.getElementById('lyrics-modal'), contact: document.getElementById('contact-modal'), gadget: document.getElementById('gadget-modal'), purchaseInfo: document.getElementById('purchase-info-modal') };
+      function closeAllModals() { for (const key in modals) { if(modals[key]) modals[key].style.display = 'none'; } }
+      document.querySelectorAll('.modal-overlay').forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); }); const closeBtn = modal.querySelector('.modal-close'); if(closeBtn) closeBtn.addEventListener('click', () => closeAllModals()); });
+      document.getElementById('show-contact-modal-btn').addEventListener('click', () => modals.contact.style.display = 'flex');
+      document.getElementById('show-gadget-modal-btn').addEventListener('click', () => modals.gadget.style.display = 'flex');
+      const contactForGadgetsBtn = document.getElementById('contact-for-gadgets-btn');
+      if(contactForGadgetsBtn) contactForGadgetsBtn.addEventListener('click', () => { closeAllModals(); modals.contact.style.display = 'flex'; });
+
+      audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
+      videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
+
       loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const email = document.getElementById('email-input').value.trim().toLowerCase();
@@ -161,8 +146,9 @@
         loginButton.textContent = 'Verifico...';
         loginButton.disabled = true;
         try {
-          const validationUrl = `${sheetApiUrl}?emailCheck=${encodeURIComponent(email)}`;
-          const response = await fetch(validationUrl);
+          const url = new URL(sheetApiUrl);
+          url.searchParams.append('emailCheck', email);
+          const response = await fetch(url);
           if (!response.ok) throw new Error('Errore di rete o del server.');
           const result = await response.json();
           if (result.status === "ok" && result.name) {
@@ -185,7 +171,9 @@
       async function loadMusicFromApi(userEmail) {
         songListContainer.innerHTML = `<p>Caricamento brani...</p>`;
         try {
-          const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`);
+          const url = new URL(sheetApiUrl);
+          url.searchParams.append('userEmail', userEmail);
+          const response = await fetch(url);
           if (!response.ok) throw new Error('Errore di rete o del server.');
           const songs = await response.json();
           if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API');
@@ -198,17 +186,6 @@
         }
       }
       
-      // --- TUTTE LE ALTRE FUNZIONI (FILTRI, RENDER, PLAYER, MODALS) SONO IDENTICHE ALLA MIA RISPOSTA PRECEDENTE ---
-      // Le incollo qui sotto per la massima completezza.
-      
-      const modals = { lyrics: document.getElementById('lyrics-modal'), contact: document.getElementById('contact-modal'), gadget: document.getElementById('gadget-modal'), purchaseInfo: document.getElementById('purchase-info-modal') };
-      function closeAllModals() { for (const key in modals) { if(modals[key]) modals[key].style.display = 'none'; } }
-      document.querySelectorAll('.modal-overlay').forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); }); const closeBtn = modal.querySelector('.modal-close'); if(closeBtn) closeBtn.addEventListener('click', () => closeAllModals()); });
-      // ... (Qui andrebbero gli event listener per aprire i modals)
-
-      audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
-      videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
-
       function populateFilters(songs) {
         const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
         songs.forEach(song => {
@@ -218,6 +195,7 @@
         });
         const createFilterButtons = (filterType, items, allLabel) => {
             const container = document.getElementById(`filter-${filterType}`);
+            if(!container) return; // Controllo di sicurezza
             container.innerHTML = '';
             const allButton = document.createElement('button');
             allButton.textContent = allLabel;
@@ -297,7 +275,11 @@
       audioPlayer.addEventListener('play', updatePlayingUI); videoPlayer.addEventListener('play', updatePlayingUI);
       audioPlayer.addEventListener('pause', updatePausedUI); videoPlayer.addEventListener('pause', updatePausedUI);
       audioPlayer.addEventListener('ended', resetPlayingState); videoPlayer.addEventListener('ended', resetPlayingState);
-    });
+    }
+    
+    // Esegui lo script solo quando tutto l'HTML è pronto
+    document.addEventListener('DOMContentLoaded', initializeJukebox);
   </script>
+
 </body>
 </html>
