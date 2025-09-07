@@ -185,7 +185,7 @@
       async function loadMusicFromApi(userEmail) {
         songListContainer.innerHTML = `<p>Caricamento brani...</p>`;
         try {
-          const response = await fetch(`${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`);
+          const response = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`);
           if (!response.ok) throw new Error('Errore di rete o del server.');
           const songs = await response.json();
           if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore restituito dall\'API');
