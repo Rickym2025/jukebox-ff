@@ -224,22 +224,33 @@
       contactForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(contactForm);
+        const submitButton = contactForm.querySelector('button');
         formResult.innerHTML = "Invio in corso...";
+        submitButton.disabled = true;
+
         try {
             const response = await fetch('https://api.web3forms.com/submit', {
                 method: 'POST',
                 body: formData
             });
+
             const result = await response.json();
+
             if (result.success) {
-                formResult.innerHTML = "Messaggio inviato con successo!";
+                formResult.innerHTML = "<span style='color: #4CAF50;'>Messaggio inviato con successo!</span>";
                 contactForm.reset();
-                setTimeout(() => { formResult.innerHTML = ''; }, 4000);
+                setTimeout(() => {
+                    formResult.innerHTML = '';
+                    closeAllModals();
+                }, 4000);
             } else {
-                formResult.innerHTML = `Errore: ${result.message}`;
+                formResult.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`;
             }
         } catch (error) {
-            formResult.innerHTML = "Errore nell'invio del messaggio.";
+            console.error('Errore invio form:', error);
+            formResult.innerHTML = "<span style='color: #e53935;'>Errore nell'invio del messaggio.</span>";
+        } finally {
+            submitButton.disabled = false;
         }
       });
 
