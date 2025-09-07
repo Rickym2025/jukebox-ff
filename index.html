@@ -42,7 +42,7 @@
     .filter-buttons button:hover { background-color: #444; }
     .filter-buttons button.active { background-color: var(--primary-color); border-color: var(--primary-color); color: white; font-weight: 600; }
     
-    #player-container { width: 100%; max-width: 640px; margin: 25px auto 0; }
+    #player-container { width: 100%; margin: 25px auto 0; }
     .song-list-container { max-height: 45vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
     
     .song-item { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; background-color: rgba(0,0,0,0.2); }
@@ -53,20 +53,30 @@
     .song-info .title { font-size: 1.2em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     .song-details { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.85em; color: #bbb; margin-top: 5px; align-items: center; }
     .song-details span { display: flex; align-items: center; gap: 5px; }
-    .song-actions { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding-top: 15px; border-top: 1px solid #333; margin-top: 15px;}
+    .song-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 15px; border-top: 1px solid #444; margin-top: 15px;}
     .song-actions .acquista-btn { grid-column: 1 / -1; }
+    
     .btn { background: none; border-radius: 12px; width: 100%; height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; border-width: 2px; border-style: solid; font-family: 'Montserrat', sans-serif; }
     .btn i { font-size: 1.2em; margin-right: 8px; }
     .btn:hover { background-color: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
+    
     .playback-btn { width: 50px; height: 50px; border-radius: 50%; }
+    .playback-btn i { margin-right: 0; } /* Centra l'icona */
     .play-btn, .video-btn { border-color: var(--primary-color); color: var(--primary-color); }
-    .lyrics-btn, .info-btn { border-color: #888; color: #888; font-size: 0.9em; }
+    .lyrics-btn { border-color: #888; color: #888; font-size: 0.9em; }
     .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 12px 20px; width: 100%; border-radius: 12px; text-decoration: none; font-size: 1em; font-weight: 600; white-space: nowrap; display: flex; align-items: center; justify-content: center; }
+    .info-btn { width: 50px; height: 50px; border-radius: 50%; border-color: #aaa; color: #aaa; margin-left: auto; } /* Sposta a destra nella riga del titolo */
+    
     .song-item.playing-audio .play-btn, .song-item.playing-video .video-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
     
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; }
-    .extra-actions { margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2.5em; /* Più grande */ color: #aaa; cursor: pointer; line-height: 1; transition: color 0.2s ease; }
+    .modal-close:hover { color: white; }
+    
+    .extra-actions { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; }
+    .extra-actions .button { width: 48%; }
+    
     .package-list { list-style: none; padding-left: 0; text-align: left; }
     .package-list li { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.95em; }
     .package-list li i { color: var(--primary-color); width: 20px; text-align: center; }
@@ -110,11 +120,10 @@
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Contattami</h3><form id="contact-form" action="https://api.web3forms.com/submit" method="POST"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Nome" required/><input type="email" name="email" placeholder="Email" required/><textarea name="message" rows="4" placeholder="Messaggio..." required></textarea><button type="submit" class="button">Invia</button></form></div></div>
   <div id="gadget-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3><i class="fas fa-gem"></i>Crea i Tuoi Gadget</h3><p>Crea una linea di merchandising con il <strong>TUO logo</strong>, gestita da noi, <strong>senza costi iniziali</strong>.</p><a href="https://ff-music-store.printify.me/" target="_blank" class="button" style="background-color: transparent; margin-bottom: 10px;"><i class="fas fa-eye"></i> Guarda un Esempio</a><button id="contact-for-gadgets-btn" class="button" style="background-color: var(--primary-color); border-color: var(--primary-color);"><i class="fas fa-paper-plane"></i> Richiedi un Preventivo</button></div></div>
-  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Include l'Acquisto?</h3><p style="text-align: left; font-size: 0.9em; color: #ccc;">Riceverai un'email con un link per scaricare il pacchetto completo del brano, che ti garantirà la piena proprietà e utilizzo.</p><ul class="package-list"><li><i class="fas fa-file-contract"></i><strong>Cessione Totale dei Diritti</strong></li><li><i class="fas fa-share-alt"></i><strong>Video Promozionale</strong></li><li><i class="fas fa-music"></i><strong>Brano Master</strong> (.wav)</li><li><i class="fas fa-sliders-h"></i><strong>Tracce Separate</strong> (.wav)</li><li><i class="fas fa-file-alt"></i><strong>Testo del Brano</strong> (.pdf)</li><li><i class="fas fa-guitar"></i><strong>Spartiti Completi</strong> (.pdf)</li></ul></div></div>
+  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><p style="text-align: left; font-size: 0.9em; color: #ccc;">Premendo "Acquista", finalizzerai la transazione su Stripe. Subito dopo, riceverai un'email con un link per scaricare il pacchetto completo del brano, che ti garantirà la piena proprietà e utilizzo.</p><ul class="package-list"><li><i class="fas fa-file-contract"></i> <strong>Cessione Totale dei Diritti:</strong> Diventi l'unico proprietario dell'opera (Master e Publishing).</li><li><i class="fas fa-share-alt"></i> <strong>Video Promozionale</strong> per i social.</li><li><i class="fas fa-music"></i> <strong>Brano Master</strong> in alta qualità (.wav).</li><li><i class="fas fa-sliders-h"></i> <strong>Tracce Strumentali Separate</strong> (.wav).</li><li><i class="fas fa-file-alt"></i> <strong>Testo del Brano</strong> in .pdf.</li><li><i class="fas fa-guitar"></i> <strong>Spartiti Completi</strong> per Pianoforte e Basso in .pdf.</li></ul></div></div>
 
   <script>
-    // Sposto l'intero script alla fine del body per garantire che l'HTML sia caricato
-    function initializeJukebox() {
+    document.addEventListener('DOMContentLoaded', function() {
       const loginScreen = document.getElementById('login-screen');
       const jukeboxContainer = document.getElementById('jukebox-container');
       const loginForm = document.getElementById('login-form');
@@ -195,7 +204,7 @@
         });
         const createFilterButtons = (filterType, items, allLabel) => {
             const container = document.getElementById(`filter-${filterType}`);
-            if(!container) return; // Controllo di sicurezza
+            if(!container) return;
             container.innerHTML = '';
             const allButton = document.createElement('button');
             allButton.textContent = allLabel;
@@ -258,7 +267,7 @@
                 if (song.durata) { detailsHTML += `<span><i class="fas fa-clock"></i> ${song.durata}</span>`; }
                 detailsHTML += '</div>';
             }
-            const songItemHTML = `<div class="song-item" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}"><div class="song-item-top"><div class="song-playback-buttons">${playBtnHTML}${videoBtnHTML}</div><div class="song-info"><span class="title">${song.title}</span>${detailsHTML}</div></div><div class="song-actions">${lyricsBtnHTML}${infoBtnHTML}${purchaseBtnHTML}</div></div>`;
+            const songItemHTML = `<div class="song-item" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}"><div class="song-item-top"><div class="song-playback-buttons">${playBtnHTML}${videoBtnHTML}</div><div class="song-info"><span class="title">${song.title}</span>${detailsHTML}</div><button class="btn info-btn" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions">${lyricsBtnHTML}${purchaseBtnHTML}</div></div>`;
             songListContainer.innerHTML += songItemHTML;
           });
           addEventListenersToSongs();
@@ -275,10 +284,7 @@
       audioPlayer.addEventListener('play', updatePlayingUI); videoPlayer.addEventListener('play', updatePlayingUI);
       audioPlayer.addEventListener('pause', updatePausedUI); videoPlayer.addEventListener('pause', updatePausedUI);
       audioPlayer.addEventListener('ended', resetPlayingState); videoPlayer.addEventListener('ended', resetPlayingState);
-    }
-    
-    // Esegui lo script solo quando tutto l'HTML è pronto
-    document.addEventListener('DOMContentLoaded', initializeJukebox);
+    });
   </script>
 
 </body>
