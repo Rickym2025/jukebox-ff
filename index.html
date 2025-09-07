@@ -20,39 +20,35 @@
     #login-screen, #jukebox-container { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 40px 30px; padding-top: 100px; max-width: 850px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 2; }
     #jukebox-container { display: none; }
     
-    h1, h2 { color: var(--primary-color); }
-    h1 { font-size: 2em; margin-bottom: 25px; }
-    h2 { font-size: 1.8em; margin-bottom: 10px; }
-    h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.4em; }
+    h1, h2 { color: var(--primary-color); } h1 { font-size: 2em; margin-bottom: 25px; } h2 { font-size: 1.8em; margin-bottom: 10px; } h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.4em; }
     .subtitle { font-size: 1.1em; color: #ccc; margin-bottom: 25px; }
     
     #client-name { color: var(--primary-color); font-size: 1.4em; font-weight: 600; text-shadow: 0 0 8px var(--glow-color); animation: subtle-glow 3s infinite ease-in-out; }
     @keyframes subtle-glow { 0%, 100% { text-shadow: 0 0 8px var(--glow-color); } 50% { text-shadow: 0 0 16px var(--glow-color); } }
 
-    input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; }
-    .button { display: inline-block; padding: 14px 30px; border: 2px solid var(--primary-color); border-radius: 30px; text-decoration: none; color: #f0f0f0; font-size: 1.1em; font-weight: 500; transition: all 0.3s ease; background-color: transparent; cursor: pointer; width: 100%; }
-    .button:hover { background: var(--primary-color); color: white; transform: translateY(-3px); box-shadow: 0 4px 15px var(--glow-color); }
-
-    #filter-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid #444; }
-    .filter-group { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
-    .filter-group .filter-label { font-weight: 500; color: #ccc; margin-right: 10px; font-size: 0.9em; flex-shrink: 0;}
-    .filter-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-    .filter-buttons button { background-color: #2c2c2c; border: 1px solid #555; color: #f0f0f0; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 0.85em; transition: all 0.2s ease; }
+    /* --- NUOVI STILI FILTRI MOBILE --- */
+    #filter-container { display: flex; flex-direction: column; gap: 20px; /* Aumentata distanza */ margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid #444; }
+    .filter-group { display: flex; flex-direction: column; /* Impilati su mobile */ align-items: flex-start; /* Allineati a sx */ gap: 10px; }
+    .filter-group .filter-label { font-weight: 600; font-size: 1em; color: var(--primary-color); }
+    .filter-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; /* Allineati a sx */ }
+    .filter-buttons button { background-color: #2c2c2c; border: 1px solid #555; color: #f0f0f0; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.85em; transition: all 0.2s ease; }
     .filter-buttons button:hover { background-color: #444; }
     .filter-buttons button.active { background-color: var(--primary-color); border-color: var(--primary-color); color: white; font-weight: 600; }
     
     #player-container { width: 100%; max-width: 640px; margin: 25px auto 0; }
     .song-list-container { max-height: 45vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
     
+    /* --- NUOVI STILI SCHEDE BRANI --- */
     .song-item {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 15px;
         padding: 15px;
-        border-bottom: 1px solid #333;
-        transition: background-color 0.3s ease;
-        border-radius: 8px;
+        border: 1px solid #333; /* Bordo per separare */
+        border-radius: 12px;
+        margin-bottom: 15px; /* Spazio tra le schede */
+        background-color: rgba(0,0,0,0.2);
     }
     .song-item:hover { background-color: rgba(255,255,255,0.05); }
     .song-item-top { display: flex; width: 100%; align-items: center; gap: 15px; }
@@ -61,34 +57,34 @@
     .song-info .title { font-size: 1.2em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     .song-details { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.85em; color: #bbb; margin-top: 5px; align-items: center; }
     .song-details span { display: flex; align-items: center; gap: 5px; }
-
     .song-actions {
         width: 100%;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 10px;
-        margin-left: 0;
         padding-top: 15px;
-        border-top: 1px solid #444;
+        border-top: 1px solid #333;
     }
-    .btn { background: none; border-radius: 50%; width: 50px; height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; border-width: 2px; border-style: solid; }
-    .btn i { font-size: 1.2em; }
-    .btn:hover { background-color: rgba(255, 255, 255, 0.1); transform: scale(1.1); }
+    .btn { background: none; border-radius: 12px; /* Bordi smussati */ width: 100%; height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; cursor: pointer; border-width: 2px; border-style: solid; }
+    .btn i { font-size: 1.2em; margin-right: 8px; }
+    .btn:hover { background-color: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
+    
+    .playback-btn { width: 50px; border-radius: 50%; } /* Pulsanti tondi solo per play/video */
     .play-btn, .video-btn { border-color: var(--primary-color); color: var(--primary-color); }
-    .lyrics-btn, .info-btn { border-color: #888; color: #888; width: 100%; }
-    .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 12px 20px; width: 100%; border-radius: 25px; text-decoration: none; font-size: 1em; font-weight: 600; white-space: nowrap; display: flex; align-items: center; justify-content: center; }
+    .lyrics-btn, .info-btn { border-color: #888; color: #888; font-size: 0.9em; }
+    .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 12px 20px; width: 100%; border-radius: 12px; text-decoration: none; font-size: 1em; font-weight: 600; white-space: nowrap; display: flex; align-items: center; justify-content: center; }
     
     .song-item.playing-audio .play-btn, .song-item.playing-video .video-btn { background-color: var(--primary-color); color: white; box-shadow: 0 0 15px var(--glow-color); animation: pulse 1.5s infinite; }
     
+    /* Stili Modals (invariati) */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; }
     .extra-actions { margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
-    .extra-actions .button { width: auto; font-size: 1em; padding: 12px 25px; }
   </style>
 </head>
 <body>
 
-  <video autoplay muted loop playsinline preload="auto" id="background-video"><source src="https://github.com/Rickym2025/fausto-fusetti-links/raw/main/video_sfondo_compressed.mp4" type="video/mp4" /></video>
+  <video autoplay muted loop playsinline preload="auto" id="background-video"><!-- source --></video>
   
   <div class="container-wrapper">
     <div class="profile-logo"><div class="profile-logo-image"></div></div>
@@ -123,10 +119,11 @@
     </div>
   </div>
   
-  <div id="lyrics-modal" class="modal-overlay"> <!-- ... Contenuto modal ... --> </div>
-  <div id="contact-modal" class="modal-overlay"> <!-- ... Contenuto modal ... --> </div>
-  <div id="gadget-modal" class="modal-overlay"> <!-- ... Contenuto modal ... --> </div>
-  <div id="purchase-info-modal" class="modal-overlay"> <!-- ... Contenuto modal ... --> </div>
+  <!-- Tutti i modals sono qui per completezza -->
+  <div id="lyrics-modal" class="modal-overlay"> <div class="modal-content no-copy" style="text-align: left;"> <span class="modal-close">&times;</span> <h3 id="lyrics-title">Testo della canzone</h3> <p id="lyrics-text">Nessun testo disponibile.</p> </div> </div>
+  <div id="contact-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close">&times;</span> <h3>Contattami per il tuo Progetto</h3> <form id="contact-form" action="https://api.web3forms.com/submit" method="POST"> <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/> <input type="text" name="name" placeholder="Il tuo Nome" required/> <input type="email" name="email" placeholder="La tua Email" required/> <textarea name="message" rows="4" placeholder="Descrivi la tua richiesta..." required></textarea> <button type="submit" class="button">Invia Messaggio</button> </form> </div> </div>
+  <div id="gadget-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close">&times;</span> <h3><i class="fas fa-gem" style="margin-right: 10px;"></i>Crea la Tua Linea di Gadget Esclusiva</h3> <p>Vuoi offrire ai tuoi fan qualcosa di unico? Possiamo creare una linea completa di merchandising con il <strong>TUO logo</strong>.</p> <p>Gestiamo tutto noi, dal design alla pubblicazione in un negozio online a tuo nome, <strong>senza costi iniziali</strong>.</p> <a href="https://ff-music-store.printify.me/" target="_blank" class="button" style="background-color: transparent; margin-bottom: 10px;"> <i class="fas fa-eye"></i> Guarda un Esempio </a> <button id="contact-for-gadgets-btn" class="button" style="background-color: var(--primary-color); border-color: var(--primary-color);"> <i class="fas fa-paper-plane"></i> Richiedi un Preventivo </button> </div> </div>
+  <div id="purchase-info-modal" class="modal-overlay"> <div class="modal-content"> <span class="modal-close">&times;</span> <h3>Cosa Ricevi con l'Acquisto?</h3> <p style="text-align: left; font-size: 0.9em; color: #ccc;">Premendo "Acquista", finalizzerai la transazione su Stripe. Subito dopo, riceverai un'email con un link per scaricare il pacchetto completo del brano, che ti garantirà la piena proprietà e utilizzo.</p> <ul class="package-list"><li><i class="fas fa-file-contract"></i> <strong>Cessione Totale dei Diritti</strong></li><li><i class="fas fa-share-alt"></i> <strong>Video Promozionale</strong></li><li><i class="fas fa-music"></i> <strong>Brano Master</strong> (.wav)</li><li><i class="fas fa-sliders-h"></i> <strong>Tracce Separate</strong> (.wav)</li><li><i class="fas fa-file-alt"></i> <strong>Testo del Brano</strong> (.pdf)</li><li><i class="fas fa-guitar"></i> <strong>Spartiti Completi</strong> (.pdf)</li></ul> </div> </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -137,7 +134,8 @@
       const songListContainer = document.getElementById('song-list-container');
       const audioPlayer = document.getElementById('jukebox-audio-player');
       const videoPlayer = document.getElementById('jukebox-video-player');
-      const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbwAFssspLr2nMOiwnMtzWlF5fCvBAoXOcXIYzdipcVqBKYS2WwAcXDyb6SyDNCyWcQx/exec?source=jukebox';
+      // !!! RICORDA DI INSERIRE QUI IL TUO NUOVO URL DELLO SCRIPT DEDICATO AL JUKEBOX !!!
+      const sheetApiUrl = 'INSERISCI_QUI_IL_TUO_NUOVO_URL_PER_IL_JUKEBOX';
       let allSongs = [];
       let currentPlayingItem = null;
       let currentPlayingType = null;
@@ -164,7 +162,7 @@
         loginButton.textContent = 'Verifico...';
         loginButton.disabled = true;
         try {
-          const validationUrl = `${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`;
+          const validationUrl = `${sheetApiUrl}?emailCheck=${encodeURIComponent(email)}`;
           const response = await fetch(validationUrl);
           const result = await response.json();
           if (result.status === "ok" && result.name) {
@@ -245,17 +243,17 @@
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const hasVideo = song.video_url && song.video_url.trim() !== "";
             
-            const playBtnHTML = `<button class="btn play-btn" title="Ascolta l'audio"><i class="fas fa-play"></i></button>`;
-            const videoBtnHTML = hasVideo ? `<button class="btn video-btn" title="Guarda il video" data-video-src="${song.video_url}"><i class="fas fa-video"></i></button>` : '';
+            const playBtnHTML = `<button class="btn playback-btn play-btn" title="Ascolta l'audio"><i class="fas fa-play"></i></button>`;
+            const videoBtnHTML = hasVideo ? `<button class="btn playback-btn video-btn" title="Guarda il video" data-video-src="${song.video_url}"><i class="fas fa-video"></i></button>` : '';
             
-            const lyricsBtnHTML = hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i></button>` : '';
+            const lyricsBtnHTML = hasLyrics ? `<button class="btn lyrics-btn" title="Leggi il testo"><i class="fas fa-file-alt"></i> Testo</button>` : '';
             let purchaseBtnHTML = '';
             if (song.prezzo) { 
                 const buttonText = `Acquista - €${song.prezzo}`;
                 const stripeUrlWithId = song.stripe_link ? `${song.stripe_link}?client_reference_id=${song.id}` : '#';
                 purchaseBtnHTML = `<a href="${stripeUrlWithId}" ${!song.stripe_link ? 'onclick="return false;"' : 'target="_blank"'} class="acquista-btn" ${!song.stripe_link ? 'disabled' : ''}>${buttonText}</a>`;
             }
-            const infoBtnHTML = `<button class="btn info-btn" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
+            const infoBtnHTML = `<button class="btn info-btn" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i> Info</button>`;
 
             let detailsHTML = '';
             if (song.bpm || song.durata) {
@@ -274,7 +272,7 @@
                     ${detailsHTML}
                   </div>
                 </div>
-                <div class="song-actions">${lyricsBtnHTML}${purchaseBtnHTML}${infoBtnHTML}</div>
+                <div class="song-actions">${lyricsBtnHTML}${infoBtnHTML}${purchaseBtnHTML}</div>
               </div>`;
             songListContainer.innerHTML += songItemHTML;
           });
@@ -283,8 +281,8 @@
       }
       
       function addEventListenersToSongs() { document.querySelectorAll('.song-item').forEach(item => { item.querySelector('.title')?.addEventListener('click', (e) => handlePlay(item, 'audio')); item.querySelector('.play-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); }); item.querySelector('.video-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'video', e.currentTarget.dataset.videoSrc); }); item.querySelector('.lyrics-btn')?.addEventListener('click', (e) => { e.stopPropagation(); showLyrics(item); }); item.querySelector('.info-btn')?.addEventListener('click', (e) => { e.stopPropagation(); modals.purchaseInfo.style.display = 'flex'; }); }); }
-      function showLyrics(item) { if(modals.lyrics) { modals.lyrics.querySelector('#lyrics-title').innerText = item.dataset.title; modals.lyrics.querySelector('#lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; } }
-      function handlePlay(item, type, videoSrc = null) { const isPlayingThisItem = item === currentPlayingItem; const isSwitchingType = isPlayingThisItem && type !== currentPlayingType; if (isPlayingThisItem && !isSwitchingType) { if (type === 'audio') { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); } else { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); } } else { resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { videoPlayer.style.display = 'none'; videoPlayer.pause(); audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play(); } else { videoPlayer.style.display = 'none'; videoPlayer.pause(); videoPlayer.style.display = 'block'; videoPlayer.src = videoSrc; videoPlayer.play(); } } }
+      function showLyrics(item) { if(modals.lyrics) { const titleEl = modals.lyrics.querySelector('#lyrics-title'); if(titleEl) titleEl.innerText = item.dataset.title; const textEl = modals.lyrics.querySelector('#lyrics-text'); if(textEl) textEl.innerText = item.dataset.lyrics || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; } }
+      function handlePlay(item, type, videoSrc = null) { const isPlayingThisItem = item === currentPlayingItem; const isSwitchingType = isPlayingThisItem && type !== currentPlayingType; if (isPlayingThisItem && !isSwitchingType) { if (type === 'audio') { audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); } else { videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); } } else { resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { videoPlayer.style.display = 'none'; videoPlayer.pause(); audioPlayer.style.display = 'block'; audioPlayer.src = item.dataset.src; audioPlayer.play(); } else { audioPlayer.style.display = 'none'; videoPlayer.pause(); videoPlayer.style.display = 'block'; videoPlayer.src = videoSrc; videoPlayer.play(); } } }
       function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; }
       function updatePlayingUI() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); if (currentPlayingType === 'audio') { currentPlayingItem.classList.add('playing-audio'); } else { currentPlayingItem.classList.add('playing-video'); } } }
       function updatePausedUI() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } }
