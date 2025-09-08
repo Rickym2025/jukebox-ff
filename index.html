@@ -223,6 +223,34 @@
       let currentPlayingItem = null;
       let currentPlayingType = null;
       let currentUserEmail = '';
+
+      // --- NUOVO BLOCCO: GESTIONE RESET PLAYCOUNT DA URL ---
+      function handleResetFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+        const email = urlParams.get('email');
+        const password = urlParams.get('password');
+
+        // Imposta qui la tua password di sicurezza per il reset
+        const resetPassword = 'reset_ff_2025'; 
+
+        if (action === 'reset' && email && password) {
+          if (password === resetPassword) {
+            const key = `jukeboxPlayCounts_${email.toLowerCase()}`;
+            localStorage.removeItem(key);
+            
+            // Rimuovi i parametri dall'URL per non rieseguire il reset al refresh
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            alert(`Conteggio ascolti per l'utente ${email} resettato con successo!`);
+          } else {
+            alert('Password per il reset non corretta.');
+          }
+        }
+      }
+      // Esegui la funzione al caricamento della pagina
+      handleResetFromUrl();
+      // --- FINE NUOVO BLOCCO ---
       
       const modals = { lyrics: document.getElementById('lyrics-modal'), contact: document.getElementById('contact-modal'), gadget: document.getElementById('gadget-modal'), purchaseInfo: document.getElementById('purchase-info-modal'), video: document.getElementById('video-modal') };
       
