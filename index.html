@@ -82,31 +82,55 @@
     .package-list li div { text-align: left; }
     .package-list li span { font-size: 0.9em; color: #bbb; }
 
-    /* --- INIZIO NUOVA SEZIONE RESPONSIVE PER MOBILE --- */
+    /* --- INIZIO SEZIONE RESPONSIVE OTTIMIZZATA PER MOBILE --- */
     @media (max-width: 600px) {
-      .song-item-top {
-        gap: 10px; /* Riduci lo spazio tra i gruppi di elementi */
-      }
+      /* 1. ELIMINA I PULSANTI TONDI DI PLAYBACK (MP3/MP4) */
       .song-playback-buttons {
-        gap: 8px; /* Riduci lo spazio tra i pulsanti play e video */
+        display: none;
       }
-      .btn {
-        width: 40px;     /* Riduci la larghezza dei pulsanti tondi */
-        height: 40px;    /* Riduci l'altezza per mantenerli circolari */
-        flex-shrink: 0;  /* Impedisce ai pulsanti di restringersi e deformarsi */
-      }
-      .btn i {
-        font-size: 1em;  /* Riduci la dimensione dell'icona interna */
+
+      /* 2. ADATTA IL LAYOUT SUPERIORE DEL BRANO */
+      .song-item-top {
+        gap: 10px;
       }
       .song-info .title {
-        font-size: 1.1em; /* Riduci leggermente la dimensione del titolo per dargli più spazio */
+        font-size: 1.1em;
       }
+       /* Mantiene il pulsante info in alto a destra di dimensioni corrette */
+      .info-btn.top-row {
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
+      }
+
+      /* 3. RENDI I PULSANTI DI AZIONE RETTANGOLARI, PIÙ GRANDI E CLICCABILI */
+      .song-actions {
+        display: grid;
+        /* Layout flessibile per i pulsanti Audio, Video, Testo */
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px; /* Aumenta lo spazio tra i pulsanti */
+      }
+
+      /* Stile generale per i pulsanti rettangolari (Audio, Video, Testo) */
+      .action-btn {
+        padding: 14px 10px;   /* Aumenta l'altezza per renderli più cliccabili */
+        font-size: 0.95em;    /* Aumenta leggermente il testo */
+        border-radius: 10px;  /* Angoli smussati come richiesto */
+      }
+
+      /* Assicura che il pulsante Acquista occupi tutta la larghezza */
+      .song-actions .acquista-btn {
+        grid-column: 1 / -1;
+        padding: 14px;
+      }
+
+       /* Adegua gli altri pulsanti presenti nella schermata mobile */
       .extra-actions .button {
-        padding: 12px 15px; /* Rendi i pulsanti "Gadget" e "Richieste" più compatti */
+        padding: 12px 15px;
         font-size: 1em;
       }
     }
-    /* --- FINE NUOVA SEZIONE RESPONSIVE PER MOBILE --- */
+    /* --- FINE SEZIONE RESPONSIVE OTTIMIZZATA PER MOBILE --- */
 
   </style>
 </head>
@@ -410,7 +434,7 @@
       function addEventListenersToSongs() {
         document.querySelectorAll('.song-item').forEach(item => {
           if (item.classList.contains('disabled')) return;
-          const videoSrc = item.querySelector('.video-btn')?.dataset.videoSrc;
+          const videoSrc = item.querySelector('.video-btn')?.dataset.videoSrc || item.querySelector('.action-btn.video')?.dataset.videoSrc;
           item.querySelector('.title')?.addEventListener('click', () => handlePlay(item, 'audio'));
           item.querySelector('.play-btn')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); });
           item.querySelector('.action-btn.audio')?.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(item, 'audio'); });
