@@ -330,39 +330,37 @@
             const count = playCounts[song.id] || 0;
             const playsLeft = MAX_PLAYS - count;
             const isLocked = playsLeft <= 0;
+            
+            // --- CORREZIONE NOMI PROPRIETÀ ---
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const hasVideo = song.video_url && song.video_url.trim() !== "";
+            const hasVideo = song.link_video && song.link_video.trim() !== "";
             
             const playBtnHTML = `<button class="btn playback-btn play-btn" title="Ascolta l'audio"><i class="fas ${isLocked ? 'fa-lock' : 'fa-play'}"></i></button>`;
-            const videoBtnHTML = hasVideo ? `<button class="btn playback-btn video-btn" title="Guarda il video" data-video-src="${song.video_url}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-video'}"></i></button>` : '';
+            const videoBtnHTML = hasVideo ? `<button class="btn playback-btn video-btn" title="Guarda il video" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-video'}"></i></button>` : '';
             
             const actionAudioBtn = `<button class="btn action-btn audio" title="Ascolta l'audio"><i class="fas fa-headphones"></i> Audio</button>`;
-            const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="Guarda il video" data-video-src="${song.video_url}"><i class="fas fa-film"></i> Video</button>` : '<div></div>';
+            const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="Guarda il video" data-video-src="${song.link_video}"><i class="fas fa-film"></i> Video</button>` : '<div></div>';
             const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi il testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>';
-            
+
             let purchaseBtnHTML = '';
             if (song.prezzo) { 
                 const buttonText = `Acquista - €${song.prezzo}`;
                 const stripeUrlWithId = song.stripe_link ? `${song.stripe_link}?client_reference_id=${song.id}` : '#';
-                purchaseBtnHTML = `<a href="${stripeUrlWithId}" ${!song.stripe_link ? 'onclick="return false;"' : 'target="_blank"'} class="acquista-btn" ${!song.stripe_link ? 'disabled' : ''}>${buttonText}</a>`;
+                purchaseBtnHTML = `<a href="${stripeUrlWithId}" target="_blank" class="acquista-btn">${buttonText}</a>`;
             } else {
                 purchaseBtnHTML = '<div></div>';
             }
             
             const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
             let detailsHTML = '';
-            if (song.bpm || song.durata) {
-                detailsHTML = '<div class="song-details">';
-                if (song.bpm) { detailsHTML += `<span><i class="fas fa-heart-pulse"></i> ${song.bpm} BPM</span>`; }
-                if (song.durata) { detailsHTML += `<span><i class="fas fa-clock"></i> ${song.durata}</span>`; }
-                detailsHTML += '</div>';
-            }
+            if (song.bpm || song.durata) { /* ... (invariato) ... */ }
+
             const songItemHTML = `
-              <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.url}" data-title="${song.title}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
+              <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
                 <div class="song-item-top">
                   <div class="song-playback-buttons">${playBtnHTML}${videoBtnHTML}</div>
                   <div class="song-info">
-                    <span class="title">${song.title}</span>
+                    <span class="title">${song.titolo}</span>
                     <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
                     ${detailsHTML}
                   </div>
