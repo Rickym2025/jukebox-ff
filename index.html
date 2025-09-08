@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <style>
-    /* ... (TUTTO IL CSS RIMANE IDENTICO ALLA RISPOSTA PRECEDENTE) ... */
+    /* ... (TUTTO IL CSS PRECEDENTE RIMANE IDENTICO) ... */
     :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -81,6 +81,33 @@
     .package-list li i { color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em; }
     .package-list li div { text-align: left; }
     .package-list li span { font-size: 0.9em; color: #bbb; }
+
+    /* --- INIZIO NUOVA SEZIONE RESPONSIVE PER MOBILE --- */
+    @media (max-width: 600px) {
+      .song-item-top {
+        gap: 10px; /* Riduci lo spazio tra i gruppi di elementi */
+      }
+      .song-playback-buttons {
+        gap: 8px; /* Riduci lo spazio tra i pulsanti play e video */
+      }
+      .btn {
+        width: 40px;     /* Riduci la larghezza dei pulsanti tondi */
+        height: 40px;    /* Riduci l'altezza per mantenerli circolari */
+        flex-shrink: 0;  /* Impedisce ai pulsanti di restringersi e deformarsi */
+      }
+      .btn i {
+        font-size: 1em;  /* Riduci la dimensione dell'icona interna */
+      }
+      .song-info .title {
+        font-size: 1.1em; /* Riduci leggermente la dimensione del titolo per dargli più spazio */
+      }
+      .extra-actions .button {
+        padding: 12px 15px; /* Rendi i pulsanti "Gadget" e "Richieste" più compatti */
+        font-size: 1em;
+      }
+    }
+    /* --- FINE NUOVA SEZIONE RESPONSIVE PER MOBILE --- */
+
   </style>
 </head>
 <body>
@@ -125,7 +152,8 @@
     <audio controls controlsList="nodownload" id="jukebox-audio-player"></audio>
   </div>
 
-    <script>
+  <script>
+    // --- IL TUO JAVASCRIPT RIMANE INVARIATO ---
     document.addEventListener('DOMContentLoaded', function() {
       // --- DICHIARAZIONI ---
       const loginScreen = document.getElementById('login-screen');
