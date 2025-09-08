@@ -383,7 +383,6 @@
             const playsLeft = MAX_PLAYS - count;
             const isLocked = playsLeft <= 0;
             
-            // --- CORREZIONE NOMI PROPRIETÀ ---
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const hasVideo = song.link_video && song.link_video.trim() !== "";
             
@@ -404,8 +403,19 @@
             }
             
             const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
+            
+            // --- CODICE RIPRISTINATO PER BPM E DURATA ---
             let detailsHTML = '';
-            if (song.bpm || song.durata) { /* ... (invariato) ... */ }
+            if (song.bpm || song.durata) {
+                detailsHTML = '<div class="song-details">';
+                if (song.bpm) {
+                    detailsHTML += `<span><i class="fas fa-tachometer-alt" style="margin-right: 5px;"></i>${song.bpm} BPM</span>`;
+                }
+                if (song.durata) {
+                    detailsHTML += `<span><i class="far fa-clock" style="margin-right: 5px;"></i>${song.durata}</span>`;
+                }
+                detailsHTML += '</div>';
+            }
 
             const songItemHTML = `
               <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
