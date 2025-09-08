@@ -410,7 +410,7 @@
             const videoBtnHTML = hasVideo ? `<button class="btn playback-btn video-btn" title="Guarda il video" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-video'}"></i></button>` : '';
             
             // --- MODIFICA: Icone e titolo dei pulsanti cambiano se bloccati ---
-            const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti raggiunto' : 'Ascolta l\'audio'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
+            const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti raggiunto - Contattaci' : 'Ascolta l\'audio'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
             const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti raggiunto' : 'Guarda il video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
             const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti raggiunto' : 'Leggi il testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
 
