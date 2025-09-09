@@ -452,14 +452,131 @@
             const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti raggiunto' : 'Guarda il video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
             const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti raggiunto' : 'Leggi il testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
 
-            let purchaseBtnHTML = '';
-            if (song.prezzo) { 
-                const buttonText = `Acquista - €${song.prezzo}`;
-                const stripeUrlWithId = song.stripe_link ? `${song.stripe_link}?client_reference_id=${song.id}` : '#';
-                purchaseBtnHTML = `<a href="${stripeUrlWithId}" target="_blank" class="acquista-btn">${buttonText}</a>`;
-            } else {
-                purchaseBtnHTML = '<div></div>';
-            }
+let purchaseBtnHTML = '';
+if (song.prezzo && song.titolo && song.id && song.tier) {
+    const buttonText = `Acquista da ${song.prezzo}€`;
+    purchaseBtnHTML = `
+      <div class="purchase-box" style="padding-top: 15px;">
+        <div style="text-align: left; margin-bottom: 10px;">
+          <input type="checkbox" id="video_${song.id}" class="upsell-check" data-price="49">
+          <label for="video_${song.id}" style="font-size: 0.9em;">Aggiungi Video per Social (+49€)</label>
+        </div>
+        <div style="text-align: left; margin-bottom: 15px;">
+          <input type="checkbox" id="gadget_${song.id}" class="upsell-check" data-price="49">
+          <label for="gadget_${song.id}" style="font-size: 0.9em;">Aggiungi T-Shirt Brandizzata (+49€)</label>
+        </div>
+        <button class="acquista-btn" 
+          data-song-id="${song.id}"
+          data-song-title="${song.titolo}"
+          data-song-price="${song.prezzo}"
+          data-song-tier="${song.tier}">
+          Acquista Ora - ${song.prezzo}€
+        </button>
+      </div>
+    `;
+}
+
+            function addPurchaseListeners() {
+    // Listener per le checkbox di upsell
+    document.querySelectorAll('.purchase-box').forEach(box => {
+        const checkboxes = box.querySelectorAll('.upsell-check');
+        const purchaseBtn = box.querySelector('.acquista-btn');
+        const basePrice = parseFloat(purchaseBtn.dataset.songPrice);
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                let currentTotal = basePrice;
+                checkboxes.forEach(innerCb => {
+                    if (innerCb.checked) {
+                        currentTotal += parseFloat(innerCb.dataset.price);
+                    }
+                });
+                purchaseBtn.textContent = `Acquista Ora - ${currentTotal}€`;
+            });
+        });
+    });
+
+    // Listener per il pulsante di acquisto
+    document.querySelectorAll('.acquista-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const songId = e.target.dataset.songId;
+            const songTitle = e.target.dataset.songTitle;
+            const songPrice = e.target.dataset.songPrice;
+            const songTier = e.target.dataset.songTier;
+
+            const videoCheckbox = document.getElementById(`video_${songId}`);
+            const gadgetCheckbox = document.getElementById(`gadget_${songId}`);
+
+            const addVideo = videoCheckbox.checked;
+            const addGadget = gadgetCheckbox.checked;
+
+            redirectToDynamicCheckout({
+                songId,
+                songTitle,
+                songPrice,
+                songTier,
+                addVideo,
+                addGadget
+            });
+        });
+    });
+}
+
+// Assicurati di chiamare addPurchaseListeners() ogni volta che renderizzi le canzoni (alla fine di applyFilters)
+// function applyFilters() { ... renderSongs(filteredSongs); addPurchaseListeners(); }
+
+// E questa è la funzione magica!
+function redirectToDynamicCheckout(data) {
+    const publishableKey = "pk_test_...TUACHIAVEPUBBLICA"; // <-- METTI LA TUA CHIAVE
+
+    // 1. Costruiamo gli item per il carrello
+    const lineItems = [{
+        price_data: {
+            currency: 'eur',
+            product_data: {
+                name: `Brano "${data.songTier}" - ${data.songTitle}`
+            },
+            unit_amount: data.songPrice * 100 // Prezzo in centesimi
+        },
+        quantity: 1
+    }];
+
+    if (data.addVideo) {
+        lineItems.push({
+            price_data: {
+                currency: 'eur',
+                product_data: {
+                    name: 'Add-on: Video per Social'
+                },
+                unit_amount: 49 * 100
+            },
+            quantity: 1
+        });
+    }
+
+    if (data.addGadget) {
+        lineItems.push({
+            price_data: {
+                currency: 'eur',
+                product_data: {
+                    name: 'Add-on: T-Shirt Brandizzata'
+                },
+                unit_amount: 49 * 100
+            },
+            quantity: 1
+        });
+    }
+
+    // 2. Usiamo la funzione di Stripe per il redirect
+    const stripe = Stripe(publishableKey);
+    stripe.redirectToCheckout({
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: 'https://TUO-SITO/success.html', // <-- Crea una pagina di successo
+        cancel_url: 'https://TUO-SITO/cancel.html',   // <-- Crea una pagina di cancellazione
+        client_reference_id: data.songId // L'ID per collegare tutto!
+    });
+}
             
             const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
             
