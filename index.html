@@ -430,6 +430,16 @@
             const count = playCounts[song.id] || 0;
             const playsLeft = MAX_PLAYS - count;
             const isLocked = playsLeft <= 0;
+
+            // NUOVA PARTE: Aggiungi un badge per il Tier
+            let tierBadge = '';
+            if (song.tier) {
+            let tierColor = '#c0c0c0'; // Argento
+            if (song.tier.toLowerCase().includes('oro')) tierColor = '#ffd700'; // Oro
+            if (song.tier.toLowerCase().includes('platino')) tierColor = '#e5e4e2'; // Platino
+    
+            tierBadge = `<span style="background-color: ${tierColor}; color: #121212; padding: 3px 8px; font-size: 0.7em; font-weight: 600; border-radius: 10px; margin-left: 10px;">${song.tier}</span>`;
+            }
             
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const hasVideo = song.link_video && song.link_video.trim() !== "";
@@ -473,7 +483,7 @@
                 <div class="song-item-top">
                   <div class="song-playback-buttons">${playBtnHTML}${videoBtnHTML}</div>
                   <div class="song-info">
-                    <span class="title">${song.titolo}</span>
+                    <span class="title">${song.titolo}${tierBadge}</span> 
                     <div class="plays-left">${playsLeftText}</div>
                     ${detailsHTML}
                   </div>
