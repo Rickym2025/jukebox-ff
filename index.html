@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); }
+    :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; }
@@ -49,7 +49,7 @@
     .action-btn.audio { border-color: #0693e3; color: #0693e3; }
     .action-btn.video { border-color: #e53935; color: #e53935; }
     .action-btn.lyrics { border-color: #757575; color: #757575; }
-    .acquista-btn { background-color: #4CAF50; border: 2px solid #4CAF50; color: white; padding: 12px 20px; border-radius: 12px; font-size: 1em; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; grid-column: 1 / -1; font-family: 'Montserrat', sans-serif; cursor: pointer; }
+    .acquista-btn { background-color: var(--success-color); border: 2px solid var(--success-color); color: white; padding: 12px 20px; border-radius: 12px; font-size: 1em; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; grid-column: 1 / -1; font-family: 'Montserrat', sans-serif; cursor: pointer; }
     .song-item.playing-audio .action-btn.audio, .song-item.playing-video .action-btn.video { background-color: currentColor; color: white; }
     .song-item.disabled { opacity: 0.5; cursor: not-allowed; }
     .song-item.disabled .title, .song-item.disabled .btn { cursor: not-allowed; }
@@ -84,12 +84,13 @@
     #purchase-modal-content h3 { font-size: 1.5em; margin-bottom: 10px; }
     #purchase-modal-content .song-title-highlight { color: var(--primary-color); display: block; font-size: 1.2em; margin-bottom: 25px; font-weight: 600; }
     .upsell-options { text-align: left; margin: 0 auto 25px auto; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
-    .upsell-item { display: flex; align-items: center; gap: 15px; background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 1px solid #444; cursor: pointer; transition: all 0.2s ease-in-out; }
-    .upsell-item:hover { border-color: var(--primary-color); }
-    .upsell-item input[type="checkbox"] { width: 20px; height: 20px; margin: 0; flex-shrink: 0; accent-color: var(--primary-color); }
-    .upsell-item label { cursor: pointer; line-height: 1.4; }
-    .upsell-item label strong { color: #f0f0f0; font-size: 1.1em; }
-    .upsell-item label span { font-size: 0.9em; color: #bbb; display: block; }
+    .upsell-item { display: flex; align-items: center; gap: 15px; background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 2px solid #444; cursor: pointer; transition: all 0.2s ease-in-out; }
+    .upsell-item .check-icon { font-size: 1.2em; color: #555; transition: color 0.2s ease-in-out; }
+    .upsell-item.selected { border-color: var(--success-color); background-color: rgba(76, 175, 80, 0.1); }
+    .upsell-item.selected .check-icon { color: var(--success-color); }
+    .upsell-item-details { text-align: left; }
+    .upsell-item-details strong { color: #f0f0f0; font-size: 1.1em; }
+    .upsell-item-details span { font-size: 0.9em; color: #bbb; display: block; }
     #purchase-summary { margin-top: 20px; padding-top: 20px; border-top: 1px solid #444; }
     #final-purchase-btn { width: 100%; max-width: 400px; margin: 0 auto; font-size: 1.2em; padding: 15px; }
     @media (max-width: 600px) {
@@ -158,8 +159,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
+    
     // !!! IMPORTANTE: INSERISCI LA TUA CHIAVE PUBBLICABILE DI STRIPE QUI !!!
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
+    
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
 
@@ -191,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     handleResetFromUrl();
 
-    // --- LOGICA DI ACQUISTO (NUOVA E MIGLIORATA) ---
     function openPurchaseModal(songData) {
         const modalContent = modals.purchase.querySelector('#purchase-modal-content');
         const basePrice = parseFloat(songData.price);
@@ -201,19 +203,19 @@ document.addEventListener('DOMContentLoaded', function() {
             <p>Stai per acquistare il brano:</p>
             <span class="song-title-highlight">${songData.title}</span>
             <div class="upsell-options">
-                <div class="upsell-item" onclick="document.getElementById('add-video').click()">
-                    <input type="checkbox" id="add-video" data-price="49">
-                    <label for="add-video">
+                <div class="upsell-item" data-price="49" data-id="add-video">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    <div class="upsell-item-details">
                         <strong>Aggiungi Video per Social</strong>
                         <span>Ottimizzato per i tuoi canali (+49.00€)</span>
-                    </label>
+                    </div>
                 </div>
-                <div class="upsell-item" onclick="document.getElementById('add-gadget').click()">
-                    <input type="checkbox" id="add-gadget" data-price="49">
-                    <label for="add-gadget">
+                <div class="upsell-item" data-price="49" data-id="add-gadget">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    <div class="upsell-item-details">
                         <strong>Aggiungi T-Shirt Brandizzata</strong>
                         <span>Con il tuo logo, design incluso (+49.00€)</span>
-                    </label>
+                    </div>
                 </div>
             </div>
             <div id="purchase-summary">
@@ -226,23 +228,32 @@ document.addEventListener('DOMContentLoaded', function() {
         modals.purchase.style.display = 'flex';
         
         const finalBtn = modalContent.querySelector('#final-purchase-btn');
-        const checkboxes = modalContent.querySelectorAll('.upsell-options input');
+        const upsellItems = modalContent.querySelectorAll('.upsell-item');
 
         const updateTotal = () => {
             let currentTotal = basePrice;
-            checkboxes.forEach(cb => {
-                if (cb.checked) {
-                    currentTotal += parseFloat(cb.dataset.price);
+            upsellItems.forEach(item => {
+                if (item.classList.contains('selected')) {
+                    currentTotal += parseFloat(item.dataset.price);
                 }
             });
             finalBtn.textContent = `Vai al Pagamento - ${currentTotal.toFixed(2)}€`;
         };
 
-        checkboxes.forEach(cb => cb.addEventListener('change', updateTotal));
+        upsellItems.forEach(item => {
+            item.addEventListener('click', () => {
+                item.classList.toggle('selected');
+                updateTotal();
+            });
+        });
 
         finalBtn.addEventListener('click', () => {
-            const addVideo = modalContent.querySelector('#add-video').checked;
-            const addGadget = modalContent.querySelector('#add-gadget').checked;
+            const addVideo = modalContent.querySelector('.upsell-item[data-id="add-video"]').classList.contains('selected');
+            const addGadget = modalContent.querySelector('.upsell-item[data-id="add-gadget"]').classList.contains('selected');
+            
+            finalBtn.textContent = 'Reindirizzo...';
+            finalBtn.disabled = true;
+
             redirectToDynamicCheckout({
                 songId: songData.id,
                 songTitle: songData.title,
@@ -273,7 +284,15 @@ document.addEventListener('DOMContentLoaded', function() {
             success_url: window.location.href.split('?')[0],
             cancel_url: window.location.href.split('?')[0],
             client_reference_id: data.songId
-        }).catch(error => console.error("Errore Stripe:", error));
+        }).catch(error => {
+            console.error("Errore Stripe:", error);
+            // Riabilita il pulsante in caso di errore
+            const finalBtn = document.getElementById('final-purchase-btn');
+            if (finalBtn) {
+                finalBtn.textContent = 'Riprova Pagamento';
+                finalBtn.disabled = false;
+            }
+        });
     }
 
     function renderSongs(songsToRender) {
@@ -492,20 +511,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 savePlayCounts(counts);
                 trackPlay(songId);
                 applyFilters(); 
-            } else { return; }
+                return; 
+            } else { 
+                return; 
+            }
         }
-        resetPlayingState();
-        currentPlayingItem = item;
-        currentPlayingType = type;
+        
+        // La logica di play/pausa
         if (type === 'audio') {
-            footerPlayer.classList.add('visible');
-            footerPlayerTitle.textContent = item.dataset.title;
-            audioPlayer.src = item.dataset.src;
-            audioPlayer.play();
-        } else {
-            videoPlayer.src = sourceUrl;
-            modals.video.style.display = 'flex';
-            videoPlayer.play();
+            if (audioPlayer.paused || audioPlayer.src !== item.dataset.src) {
+                resetPlayingState();
+                currentPlayingItem = item;
+                currentPlayingType = 'audio';
+                footerPlayer.classList.add('visible');
+                footerPlayerTitle.textContent = item.dataset.title;
+                audioPlayer.src = item.dataset.src;
+                audioPlayer.play();
+            } else {
+                audioPlayer.pause();
+            }
+        } else if (type === 'video') {
+             resetPlayingState();
+             currentPlayingItem = item;
+             currentPlayingType = 'video';
+             videoPlayer.src = sourceUrl;
+             modals.video.style.display = 'flex';
+             videoPlayer.play();
         }
     }
 
@@ -554,7 +585,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPlayingType = null;
         footerPlayer.classList.remove('visible');
         audioPlayer.pause();
-        audioPlayer.src = '';
     }
 
     function updatePlayingUI() {
