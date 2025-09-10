@@ -265,35 +265,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function redirectToDynamicCheckout(data) {
-        if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
-            alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
-            return;
-        }
-        const lineItems = [{
-            price_data: { currency: 'eur', product_data: { name: `Brano "${data.tier}" - ${data.title}` }, unit_amount: Math.round(data.price * 100)},
-            quantity: 1
-        }];
-        if (data.addVideo) { lineItems.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: Video per Social' }, unit_amount: 49 * 100 }, quantity: 1 }); }
-        if (data.addGadget) { lineItems.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: T-Shirt Brandizzata' }, unit_amount: 49 * 100 }, quantity: 1 }); }
-        
-        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-        stripe.redirectToCheckout({
-            line_items: lineItems,
-            mode: 'payment',
-            success_url: window.location.href.split('?')[0],
-            cancel_url: window.location.href.split('?')[0],
-            client_reference_id: data.songId
-        }).catch(error => {
-            console.error("Errore Stripe:", error);
-            // Riabilita il pulsante in caso di errore
-            const finalBtn = document.getElementById('final-purchase-btn');
-            if (finalBtn) {
-                finalBtn.textContent = 'Riprova Pagamento';
-                finalBtn.disabled = false;
-            }
-        });
+function redirectToDynamicCheckout(data) {
+    console.log("Dati ricevuti per il checkout:", data);
+
+    if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
+        alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
+        return;
     }
+
+    // Correzione: il prezzo deve essere un numero prima di fare i calcoli
+    const prezzoNumerico = parseFloat(data.songPrice);
+    if (isNaN(prezzoNumerico)) {
+        alert(`Errore: il prezzo del brano "${data.songTitle}" non è un numero valido.`);
+        return;
+    }
+
+    const lineItemsPayload = [{
+        price_data: { currency: 'eur', product_data: { name: `Brano "${data.songTier}" - ${data.songTitle}` }, unit_amount: Math.round(prezzoNumerico * 100)},
+        quantity: 1
+    }];
+    if (data.addVideo) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: Video per Social' }, unit_amount: 49 * 100 }, quantity: 1 }); }
+    if (data.addGadget) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: T-Shirt Brandizzata' }, unit_amount: 49 * 100 }, quantity: 1 }); }
+    
+    console.log("Dati inviati a Stripe:", lineItemsPayload);
+
+    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    
+    // --- ECCO LA CORREZIONE CHIAVE ---
+    stripe.redirectToCheckout({
+        lineItems: lineItemsPayload, // CORRETTO: da line_items a lineItems
+        mode: 'payment',
+        success_url: window.location.href.split('?')[0],
+        cancel_url: window.location.href.split('?')[0],
+        client_reference_id: data.songId
+    }).catch(error => {
+        console.error("ERRORE DA STRIPE:", error);
+        alert("Si è verificato un errore durante la comunicazione con Stripe. Controlla la console per i dettagli.");
+        const finalBtn = document.getElementById('final-purchase-btn');
+        if (finalBtn) {
+            finalBtn.textContent = 'Errore - Riprova Pagamento';
+            finalBtn.disabled = false;
+        }
+    });
+}
 
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
