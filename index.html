@@ -266,16 +266,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
- function redirectToDynamicCheckout(data) {
+function redirectToDynamicCheckout(data) {
     if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
-        alert("Errore: Chiave Pubblicabile di Stripe non configurata.");
+        alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
         const finalBtn = document.getElementById('final-purchase-btn');
         if (finalBtn) { finalBtn.disabled = false; }
         return;
     }
 
-    // --- CONFIGURAZIONE DEGLI ID DEI PREZZI ---
-    // !!! INCOLLA QUI GLI ID CHE HAI COPIATO DALLA TUA DASHBOARD DI STRIPE !!!
+    // --- CONFIGURAZIONE DEGLI ID DEI PREZZI (con i tuoi ID reali) ---
     const priceIds = {
         argento: "price_1S5jNgLyZ8FXl87P615MFyDd", 
         oro:     "price_1S5jNgLyZ8FXl87PqUvZChRT",     
@@ -294,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Costruiamo il carrello usando gli ID dei prezzi (metodo corretto)
+    // Costruiamo il carrello usando gli ID dei prezzi
     const lineItemsPayload = [{
         price: songPriceId,
         quantity: 1
@@ -317,7 +316,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     
-    // --- CHIAMATA STRIPE SEMPLIFICATA E CORRETTA ---
+    // --- CHIAMATA A STRIPE CON I PARAMETRI ESSENZIALI ---
+    // NOTA: La possibilità di aggiungere una 'description' qui è stata rimossa da Stripe
+    // per le integrazioni client-only che usano Price ID. Il nome del prodotto
+    // sarà quello che hai definito in Stripe per quel Price ID.
     stripe.redirectToCheckout({
         lineItems: lineItemsPayload,
         mode: 'payment',
