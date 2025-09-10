@@ -317,19 +317,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     
+    // --- CHIAMATA STRIPE SEMPLIFICATA E CORRETTA ---
     stripe.redirectToCheckout({
         lineItems: lineItemsPayload,
         mode: 'payment',
         successUrl: window.location.href.split('?')[0] + '?payment=success',
         cancelUrl: window.location.href.split('?')[0] + '?payment=cancel',
-        clientReferenceId: data.songId,
-        // Aggiungiamo metadati per sapere il titolo del brano nella dashboard di Stripe
-        payment_intent_data: {
-            metadata: {
-                titolo_brano: data.songTitle,
-                id_brano: data.songId
-            }
-        }
+        clientReferenceId: data.songId
     }).catch(error => {
         console.error("ERRORE DA STRIPE:", error);
         alert("Si è verificato un errore con Stripe. Controlla la console.");
