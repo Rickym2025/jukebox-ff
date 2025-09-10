@@ -281,24 +281,54 @@ function redirectToDynamicCheckout(data) {
         return;
     }
 
+    // --- CORREZIONE FINALE APPLICATA QUI ---
     const lineItemsPayload = [{
-        price_data: { currency: 'eur', product_data: { name: `Brano "${data.songTier}" - ${data.songTitle}` }, unit_amount: Math.round(prezzoNumerico * 100)},
+        priceData: { // CORRETTO
+            currency: 'eur',
+            productData: { // CORRETTO
+                name: `Brano "${data.songTier}" - ${data.songTitle}`
+            },
+            unitAmount: Math.round(prezzoNumerico * 100) // CORRETTO
+        },
         quantity: 1
     }];
-    if (data.addVideo) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: Video per Social' }, unit_amount: 49 * 100 }, quantity: 1 }); }
-    if (data.addGadget) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: T-Shirt Brandizzata' }, unit_amount: 49 * 100 }, quantity: 1 }); }
+
+    if (data.addVideo) {
+        lineItemsPayload.push({
+            priceData: { // CORRETTO
+                currency: 'eur',
+                productData: { // CORRETTO
+                    name: 'Add-on: Video per Social'
+                },
+                unitAmount: 49 * 100 // CORRETTO
+            },
+            quantity: 1
+        });
+    }
+
+    if (data.addGadget) {
+        lineItemsPayload.push({
+            priceData: { // CORRETTO
+                currency: 'eur',
+                productData: { // CORRETTO
+                    name: 'Add-on: T-Shirt Brandizzata'
+                },
+                unitAmount: 49 * 100 // CORRETTO
+            },
+            quantity: 1
+        });
+    }
     
-    console.log("Dati inviati a Stripe:", lineItemsPayload);
+    console.log("Dati inviati a Stripe (corretti):", lineItemsPayload);
 
     const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     
-    // --- CORREZIONE FINALE ---
     stripe.redirectToCheckout({
         lineItems: lineItemsPayload,
         mode: 'payment',
         successUrl: window.location.href.split('?')[0],
         cancelUrl: window.location.href.split('?')[0],
-        clientReferenceId: data.songId // CORRETTO: da client_reference_id a clientReferenceId
+        clientReferenceId: data.songId
     }).catch(error => {
         console.error("ERRORE DA STRIPE:", error);
         alert("Si è verificato un errore durante la comunicazione con Stripe. Controlla la console per i dettagli.");
