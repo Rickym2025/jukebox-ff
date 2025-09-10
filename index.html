@@ -266,48 +266,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function redirectToDynamicCheckout(data) {
-        if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
-            alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
-            const finalBtn = document.getElementById('final-purchase-btn');
-            if (finalBtn) { finalBtn.disabled = false; }
-            return;
-        }
-        const prezzoNumerico = parseFloat(data.songPrice);
-        if (isNaN(prezzoNumerico)) {
-            alert(`Errore: il prezzo del brano "${data.songTitle}" non è un numero valido.`);
-            const finalBtn = document.getElementById('final-purchase-btn');
-            if (finalBtn) { finalBtn.disabled = false; }
-            return;
-        }
-        const lineItemsPayload = [{
-            price_data: { currency: 'eur', product_data: { name: `Brano "${data.songTier}" - ${data.songTitle}` }, unit_amount: Math.round(prezzoNumerico * 100)},
+ function redirectToDynamicCheckout(data) {
+    if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
+        alert("Errore: Chiave Pubblicabile di Stripe non configurata.");
+        const finalBtn = document.getElementById('final-purchase-btn');
+        if (finalBtn) { finalBtn.disabled = false; }
+        return;
+    }
+
+    // --- CONFIGURAZIONE DEGLI ID DEI PREZZI ---
+    // !!! INCOLLA QUI GLI ID CHE HAI COPIATO DALLA TUA DASHBOARD DI STRIPE !!!
+    const priceIds = {
+        argento: "price_1S5jNgLyZ8FXl87P615MFyDd", 
+        oro:     "price_1S5jNgLyZ8FXl87PqUvZChRT",     
+        platino: "price_1S5jNgLyZ8FXl87PtN7o5rQj", 
+        video:   "price_1S5QcrLyZ8FXl87PipiY314W",    
+        gadget:  "price_1S5NN8LyZ8FXl87PRrpQOXDm"  
+    };
+
+    const tierKey = data.songTier.toLowerCase();
+    const songPriceId = priceIds[tierKey];
+
+    if (!songPriceId || !songPriceId.startsWith("price_")) {
+        alert(`Errore: Tier "${data.songTier}" non valido o ID Prezzo non configurato correttamente.`);
+        const finalBtn = document.getElementById('final-purchase-btn');
+        if (finalBtn) { finalBtn.disabled = false; }
+        return;
+    }
+
+    // Costruiamo il carrello usando gli ID dei prezzi (metodo corretto)
+    const lineItemsPayload = [{
+        price: songPriceId,
+        quantity: 1
+    }];
+
+    if (data.addVideo) {
+        lineItemsPayload.push({
+            price: priceIds.video,
             quantity: 1
-        }];
-        if (data.addVideo) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: Video per Social' }, unit_amount: 49 * 100 }, quantity: 1 }); }
-        if (data.addGadget) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: T-Shirt Brandizzata' }, unit_amount: 49 * 100 }, quantity: 1 }); }
-        
-        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-        
-        stripe.redirectToCheckout({
-            lineItems: lineItemsPayload.map(item => ({ // Correzione: `price_data` -> `price`, `product_data` -> `price`
-                price: item.price_data, // Manteniamo la struttura precedente per coerenza
-                quantity: item.quantity
-            })),
-            mode: 'payment',
-            successUrl: window.location.href.split('?')[0] + '?payment=success',
-            cancelUrl: window.location.href.split('?')[0] + '?payment=cancel',
-            clientReferenceId: data.songId
-        }).catch(error => {
-            console.error("ERRORE DA STRIPE:", error);
-            alert("Si è verificato un errore durante la comunicazione con Stripe. Controlla la console per i dettagli.");
-            const finalBtn = document.getElementById('final-purchase-btn');
-            if (finalBtn) {
-                finalBtn.textContent = 'Errore - Riprova Pagamento';
-                finalBtn.disabled = false;
-            }
         });
     }
+    if (data.addGadget) {
+        lineItemsPayload.push({
+            price: priceIds.gadget,
+            quantity: 1
+        });
+    }
+
+    console.log("Dati finali inviati a Stripe (con Price ID):", lineItemsPayload);
+
+    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+    
+    stripe.redirectToCheckout({
+        lineItems: lineItemsPayload,
+        mode: 'payment',
+        successUrl: window.location.href.split('?')[0] + '?payment=success',
+        cancelUrl: window.location.href.split('?')[0] + '?payment=cancel',
+        clientReferenceId: data.songId,
+        // Aggiungiamo metadati per sapere il titolo del brano nella dashboard di Stripe
+        payment_intent_data: {
+            metadata: {
+                titolo_brano: data.songTitle,
+                id_brano: data.songId
+            }
+        }
+    }).catch(error => {
+        console.error("ERRORE DA STRIPE:", error);
+        alert("Si è verificato un errore con Stripe. Controlla la console.");
+        const finalBtn = document.getElementById('final-purchase-btn');
+        if (finalBtn) {
+            finalBtn.textContent = 'Errore - Riprova Pagamento';
+            finalBtn.disabled = false;
+        }
+    });
+}
 
 
     // --- RENDER DEI BRANI ---
