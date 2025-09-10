@@ -6,7 +6,6 @@
   <title>Jukebox FF</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
-  <script src="https://js.stripe.com/v3/"></script>
   <style>
     :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -81,18 +80,6 @@
     .package-list li i { color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em; }
     .package-list li div { text-align: left; }
     .package-list li span { font-size: 0.9em; color: #bbb; }
-    #purchase-modal-content h3 { font-size: 1.5em; margin-bottom: 10px; }
-    #purchase-modal-content .song-title-highlight { color: var(--primary-color); display: block; font-size: 1.2em; margin-bottom: 25px; font-weight: 600; }
-    .upsell-options { text-align: left; margin: 0 auto 25px auto; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
-    .upsell-item { display: flex; align-items: center; gap: 15px; background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 2px solid #444; cursor: pointer; transition: all 0.2s ease-in-out; }
-    .upsell-item .check-icon { font-size: 1.2em; color: #555; transition: color 0.2s ease-in-out; }
-    .upsell-item.selected { border-color: var(--success-color); background-color: rgba(76, 175, 80, 0.1); }
-    .upsell-item.selected .check-icon { color: var(--success-color); }
-    .upsell-item-details { text-align: left; }
-    .upsell-item-details strong { color: #f0f0f0; font-size: 1.1em; }
-    .upsell-item-details span { font-size: 0.9em; color: #bbb; display: block; }
-    #purchase-summary { margin-top: 20px; padding-top: 20px; border-top: 1px solid #444; }
-    #final-purchase-btn { width: 100%; max-width: 400px; margin: 0 auto; font-size: 1.2em; padding: 15px; }
     @media (max-width: 600px) {
         #footer-player { flex-direction: column; gap: 8px; padding: 10px 15px; }
         #footer-player-title { text-align: center; width: 100%; }
@@ -148,29 +135,16 @@
     <audio controls controlsList="nodownload" id="jukebox-audio-player"></audio>
   </div>
 
-  <div id="purchase-modal" class="modal-overlay">
-    <div class="modal-content">
-      <span class="modal-close">&times;</span>
-      <div id="purchase-modal-content"></div>
-    </div>
-  </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
-    
-    // !!! IMPORTANTE: INSERISCI LA TUA CHIAVE PUBBLICABILE DI STRIPE QUI !!!
-    const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
-    
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
-
     let allSongs = [];
     let currentPlayingItem = null;
     let currentPlayingType = null;
     let currentUserEmail = '';
-
     const loginScreen = document.getElementById('login-screen');
     const jukeboxContainer = document.getElementById('jukebox-container');
     const loginForm = document.getElementById('login-form');
@@ -187,159 +161,31 @@ document.addEventListener('DOMContentLoaded', function() {
         contact: document.getElementById('contact-modal'), 
         gadget: document.getElementById('gadget-modal'), 
         purchaseInfo: document.getElementById('purchase-info-modal'), 
-        video: document.getElementById('video-modal'),
-        purchase: document.getElementById('purchase-modal')
+        video: document.getElementById('video-modal')
     };
-
     setupEventListeners();
     handleResetFromUrl();
 
-    function openPurchaseModal(songData) {
-        const modalContent = modals.purchase.querySelector('#purchase-modal-content');
-        const basePrice = parseFloat(songData.price);
-        
-        modalContent.innerHTML = `
-            <h3>Finalizza il Tuo Acquisto</h3>
-            <p>Stai per acquistare il brano:</p>
-            <span class="song-title-highlight">${songData.title}</span>
-            <div class="upsell-options">
-                <div class="upsell-item" data-price="49" data-id="add-video">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Aggiungi Video per Social</strong>
-                        <span>Ottimizzato per i tuoi canali (+49.00€)</span>
-                    </div>
-                </div>
-                <div class="upsell-item" data-price="49" data-id="add-gadget">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Aggiungi T-Shirt Brandizzata</strong>
-                        <span>Con il tuo logo, design incluso (+49.00€)</span>
-                    </div>
-                </div>
-            </div>
-            <div id="purchase-summary">
-                <button id="final-purchase-btn" class="acquista-btn">
-                    Vai al Pagamento - ${basePrice.toFixed(2)}€
-                </button>
-            </div>
-        `;
-        
-        modals.purchase.style.display = 'flex';
-        
-        const finalBtn = modalContent.querySelector('#final-purchase-btn');
-        const upsellItems = modalContent.querySelectorAll('.upsell-item');
-
-        const updateTotal = () => {
-            let currentTotal = basePrice;
-            upsellItems.forEach(item => {
-                if (item.classList.contains('selected')) {
-                    currentTotal += parseFloat(item.dataset.price);
-                }
-            });
-            finalBtn.textContent = `Vai al Pagamento - ${currentTotal.toFixed(2)}€`;
+    // --- LOGICA DI ACQUISTO CON PAYMENT LINKS ---
+    function redirectToPaymentLink(data) {
+        console.log("Dati per il Payment Link:", data);
+        const paymentLinks = {
+            argento: "https://buy.stripe.com/test_dRmfZibhb5qG64T6507g403",
+            oro: "https://buy.stripe.com/test_aFabJ2dpjcT83WL8d87g402",
+            platino: "https://buy.stripe.com/test_dRmbJ270V1aqeBp0KG7g401"
         };
-
-        upsellItems.forEach(item => {
-            item.addEventListener('click', () => {
-                item.classList.toggle('selected');
-                updateTotal();
-            });
-        });
-
-        finalBtn.addEventListener('click', () => {
-            const addVideo = modalContent.querySelector('.upsell-item[data-id="add-video"]').classList.contains('selected');
-            const addGadget = modalContent.querySelector('.upsell-item[data-id="add-gadget"]').classList.contains('selected');
-            
-            finalBtn.textContent = 'Reindirizzo...';
-            finalBtn.disabled = true;
-
-            redirectToDynamicCheckout({
-                songId: songData.id,
-                songTitle: songData.title,
-                songPrice: songData.price,
-                songTier: songData.tier,
-                addVideo: addVideo,
-                addGadget: addGadget,
-            });
-        });
-    }
-
-function redirectToDynamicCheckout(data) {
-    console.log("Dati ricevuti per il checkout:", data);
-
-    if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
-        alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
-        return;
-    }
-
-    const prezzoNumerico = parseFloat(data.songPrice);
-    if (isNaN(prezzoNumerico)) {
-        alert(`Errore: il prezzo del brano "${data.songTitle}" non è un numero valido.`);
-        const finalBtn = document.getElementById('final-purchase-btn');
-        if (finalBtn) { finalBtn.disabled = false; }
-        return;
-    }
-
-    // --- CORREZIONE FINALE APPLICATA QUI ---
-    const lineItemsPayload = [{
-        priceData: { // CORRETTO
-            currency: 'eur',
-            productData: { // CORRETTO
-                name: `Brano "${data.songTier}" - ${data.songTitle}`
-            },
-            unitAmount: Math.round(prezzoNumerico * 100) // CORRETTO
-        },
-        quantity: 1
-    }];
-
-    if (data.addVideo) {
-        lineItemsPayload.push({
-            priceData: { // CORRETTO
-                currency: 'eur',
-                productData: { // CORRETTO
-                    name: 'Add-on: Video per Social'
-                },
-                unitAmount: 49 * 100 // CORRETTO
-            },
-            quantity: 1
-        });
-    }
-
-    if (data.addGadget) {
-        lineItemsPayload.push({
-            priceData: { // CORRETTO
-                currency: 'eur',
-                productData: { // CORRETTO
-                    name: 'Add-on: T-Shirt Brandizzata'
-                },
-                unitAmount: 49 * 100 // CORRETTO
-            },
-            quantity: 1
-        });
-    }
-    
-    console.log("Dati inviati a Stripe (corretti):", lineItemsPayload);
-
-    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-    
-    stripe.redirectToCheckout({
-        lineItems: lineItemsPayload,
-        mode: 'payment',
-        successUrl: window.location.href.split('?')[0],
-        cancelUrl: window.location.href.split('?')[0],
-        clientReferenceId: data.songId
-    }).catch(error => {
-        console.error("ERRORE DA STRIPE:", error);
-        alert("Si è verificato un errore durante la comunicazione con Stripe. Controlla la console per i dettagli.");
-        const finalBtn = document.getElementById('final-purchase-btn');
-        if (finalBtn) {
-            finalBtn.textContent = 'Errore - Riprova Pagamento';
-            finalBtn.disabled = false;
+        const tierKey = data.tier.toLowerCase();
+        const baseUrl = paymentLinks[tierKey];
+        if (!baseUrl) {
+            alert(`Errore: Nessun Payment Link configurato per il tier "${data.tier}".`);
+            return;
         }
-    });
-}
+        const finalUrl = `${baseUrl}?client_reference_id=${data.id}`;
+        console.log("Reindirizzamento a:", finalUrl);
+        window.location.href = finalUrl;
+    }
 
+    // --- RENDER DEI BRANI ---
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
         if (songsToRender.length > 0) {
@@ -347,20 +193,16 @@ function redirectToDynamicCheckout(data) {
                 const count = getPlayCounts()[song.id] || 0;
                 const playsLeft = MAX_PLAYS - count;
                 const isLocked = playsLeft <= 0;
-
                 let purchaseHTML = '';
                 if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
-                    purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn" 
+                    purchaseHTML = `<button class="acquista-btn" 
                         data-song-id="${song.id}"
-                        data-song-title="${song.titolo}"
-                        data-song-price="${song.prezzo}"
                         data-song-tier="${song.tier}">
                         Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
                         </button>`;
                 } else if (song.stato?.toLowerCase() === 'venduto') {
                     purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
                 }
-
                 let tierBadge = '';
                 if (song.tier) {
                     let tierColor = '#c0c0c0';
@@ -376,7 +218,6 @@ function redirectToDynamicCheckout(data) {
                 const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
                 const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
                 const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
-
                 const songItemHTML = `
                     <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
                         <div class="song-item-top">
@@ -401,22 +242,21 @@ function redirectToDynamicCheckout(data) {
         }
     }
     
+    // --- SETUP DEGLI EVENT LISTENER ---
     function setupEventListeners() {
         loginForm.addEventListener('submit', handleLogin);
         contactForm.addEventListener('submit', handleContactForm);
-        
         songListContainer.addEventListener('click', function(e) {
-            const target = e.target.closest('.btn, .open-purchase-modal-btn, .title');
+            const target = e.target.closest('.btn, .acquista-btn, .title');
             if (!target) return;
             const songItem = target.closest('.song-item');
             if (!songItem || songItem.classList.contains('disabled')) return;
-
-            if (target.matches('.open-purchase-modal-btn')) {
-                openPurchaseModal({
+            if (target.matches('.acquista-btn')) {
+                target.textContent = 'Reindirizzo...';
+                target.disabled = true;
+                redirectToPaymentLink({
                     id: target.dataset.songId,
-                    title: target.dataset.songTitle,
-                    price: target.dataset.songPrice,
-                    tier: target.dataset.songTier,
+                    tier: target.dataset.songTier
                 });
             } else if (target.matches('.action-btn.audio') || target.matches('.title')) {
                 handlePlay(songItem, 'audio');
@@ -428,7 +268,6 @@ function redirectToDynamicCheckout(data) {
                 modals.purchaseInfo.style.display = 'flex';
             }
         });
-
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => modals.contact.style.display = 'flex');
         document.getElementById('show-gadget-modal-btn').addEventListener('click', () => modals.gadget.style.display = 'flex');
         document.getElementById('contact-for-gadgets-btn')?.addEventListener('click', () => { closeAllModals(); modals.contact.style.display = 'flex'; });
@@ -446,6 +285,7 @@ function redirectToDynamicCheckout(data) {
         });
     }
 
+    // --- FUNZIONI CORE (Login, API, Filtri, Player) ---
     async function handleLogin(e) {
         e.preventDefault();
         const emailInput = document.getElementById('email-input');
@@ -471,7 +311,7 @@ function redirectToDynamicCheckout(data) {
             }
         } catch (error) {
             console.error('Errore durante il login:', error);
-            alert('Errore di comunicazione con il server. Assicurati che l\'URL sia corretto.');
+            alert('Errore di comunicazione con il server.');
         } finally {
             loginButton.textContent = 'Accedi';
             loginButton.disabled = false;
@@ -561,8 +401,6 @@ function redirectToDynamicCheckout(data) {
                 return; 
             }
         }
-        
-        // La logica di play/pausa
         if (type === 'audio') {
             if (audioPlayer.paused || audioPlayer.src !== item.dataset.src) {
                 resetPlayingState();
@@ -584,103 +422,18 @@ function redirectToDynamicCheckout(data) {
              videoPlayer.play();
         }
     }
-
-    function getPlayCounts() {
-        if (!currentUserEmail) return {};
-        return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {};
-    }
-
-    function savePlayCounts(counts) {
-        if (!currentUserEmail) return;
-        localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts));
-    }
-
-    async function trackPlay(songId) {
-        try {
-            await fetch(sheetApiUrl, {
-                method: 'POST', mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: songId })
-            });
-        } catch (error) {
-            console.error("Impossibile tracciare l'ascolto:", error);
-        }
-    }
-
-    function showLyrics(item) {
-        if (modals.lyrics) {
-            modals.lyrics.querySelector('#lyrics-title').innerText = item.dataset.title;
-            modals.lyrics.querySelector('#lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile.";
-            modals.lyrics.style.display = 'flex';
-        }
-    }
-
-    function closeAllModals() {
-        for (const key in modals) {
-            if (modals[key]) modals[key].style.display = 'none';
-        }
-        videoPlayer.pause();
-        videoPlayer.src = '';
-        if (currentPlayingType === 'video') resetPlayingState();
-    }
-
-    function resetPlayingState() {
-        if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video');
-        currentPlayingItem = null;
-        currentPlayingType = null;
-        footerPlayer.classList.remove('visible');
-        audioPlayer.pause();
-    }
-
-    function updatePlayingUI() {
-        if (currentPlayingItem) {
-            document.querySelectorAll('.song-item').forEach(item => item.classList.remove('playing-audio', 'playing-video'));
-            if (currentPlayingType === 'audio') currentPlayingItem.classList.add('playing-audio');
-            else currentPlayingItem.classList.add('playing-video');
-        }
-    }
-
-    function updatePausedUI() {
-        document.querySelectorAll('.song-item').forEach(item => item.classList.remove('playing-audio', 'playing-video'));
-    }
-
-    async function handleContactForm(e) {
-        e.preventDefault();
-        const formData = new FormData(contactForm);
-        formResult.innerHTML = "Invio in corso...";
-        const submitButton = contactForm.querySelector('button');
-        submitButton.disabled = true;
-        try {
-            const response = await fetch('https://api.web3forms.com/submit', {
-                method: 'POST', body: formData
-            });
-            const result = await response.json();
-            if (result.success) {
-                formResult.innerHTML = "<span style='color: #4CAF50;'>Messaggio inviato!</span>";
-                contactForm.reset();
-                setTimeout(() => { formResult.innerHTML = ''; closeAllModals(); }, 4000);
-            } else {
-                formResult.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`;
-            }
-        } catch (error) {
-            console.error('Errore invio form:', error);
-            formResult.innerHTML = "<span style='color: #e53935;'>Errore nell'invio.</span>";
-        } finally {
-            submitButton.disabled = false;
-        }
-    }
     
-    function handleResetFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) {
-            const email = urlParams.get('email');
-            if(email) {
-                localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                alert(`Conteggio per ${email} resettato.`);
-            }
-        }
-    }
+    // --- FUNZIONI HELPER (Conteggio, Modali, UI, Contatti, etc.) ---
+    function getPlayCounts() { if (!currentUserEmail) return {}; return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
+    function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
+    async function trackPlay(songId) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
+    function showLyrics(item) { if (modals.lyrics) { modals.lyrics.querySelector('#lyrics-title').innerText = item.dataset.title; modals.lyrics.querySelector('#lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; } }
+    function closeAllModals() { for (const key in modals) { if (modals[key]) modals[key].style.display = 'none'; } videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
+    function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
+    function updatePlayingUI() { if (currentPlayingItem) { document.querySelectorAll('.song-item').forEach(item => item.classList.remove('playing-audio', 'playing-video')); if (currentPlayingType === 'audio') currentPlayingItem.classList.add('playing-audio'); else currentPlayingItem.classList.add('playing-video'); } }
+    function updatePausedUI() { document.querySelectorAll('.song-item').forEach(item => item.classList.remove('playing-audio', 'playing-video')); }
+    async function handleContactForm(e) { e.preventDefault(); const formData = new FormData(contactForm); formResult.innerHTML = "Invio..."; const submitButton = contactForm.querySelector('button'); submitButton.disabled = true; try { const response = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await response.json(); if (result.success) { formResult.innerHTML = "<span style='color: #4CAF50;'>Inviato!</span>"; contactForm.reset(); setTimeout(() => { formResult.innerHTML = ''; closeAllModals(); }, 4000); } else { formResult.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`; } } catch (error) { console.error('Errore form:', error); formResult.innerHTML = "<span style='color: #e53935;'>Errore.</span>"; } finally { submitButton.disabled = false; } }
+    function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
 });
 </script>
 
