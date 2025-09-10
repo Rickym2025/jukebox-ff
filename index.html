@@ -6,6 +6,7 @@
   <title>Jukebox FF</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,7 +35,7 @@
     .song-item { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; background-color: rgba(0,0,0,0.2); transition: opacity 0.3s ease; }
     .song-item-top { display: flex; width: 100%; align-items: center; gap: 15px; }
     .song-info { flex-grow: 1; text-align: left; min-width: 0; }
-    .song-info .title { font-size: 1.2em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .song-info .title { font-size: 1.2em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
     .song-details { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.85em; color: #bbb; margin-top: 5px; align-items: center; }
     .plays-left { font-size: 0.8em; color: #aaa; margin-top: 5px; opacity: 0; transition: opacity 0.3s ease; }
     .song-item:hover .plays-left { opacity: 1; }
@@ -80,6 +81,18 @@
     .package-list li i { color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em; }
     .package-list li div { text-align: left; }
     .package-list li span { font-size: 0.9em; color: #bbb; }
+    #purchase-modal-content h3 { font-size: 1.5em; margin-bottom: 10px; }
+    #purchase-modal-content .song-title-highlight { color: var(--primary-color); display: block; font-size: 1.2em; margin-bottom: 25px; font-weight: 600; }
+    .upsell-options { text-align: left; margin: 0 auto 25px auto; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
+    .upsell-item { display: flex; align-items: center; gap: 15px; background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 2px solid #444; cursor: pointer; transition: all 0.2s ease-in-out; }
+    .upsell-item .check-icon { font-size: 1.2em; color: #555; transition: color 0.2s ease-in-out; }
+    .upsell-item.selected { border-color: var(--success-color); background-color: rgba(76, 175, 80, 0.1); }
+    .upsell-item.selected .check-icon { color: var(--success-color); }
+    .upsell-item-details { text-align: left; }
+    .upsell-item-details strong { color: #f0f0f0; font-size: 1.1em; }
+    .upsell-item-details span { font-size: 0.9em; color: #bbb; display: block; }
+    #purchase-summary { margin-top: 20px; padding-top: 20px; border-top: 1px solid #444; }
+    #final-purchase-btn { width: 100%; max-width: 400px; margin: 0 auto; font-size: 1.2em; padding: 15px; }
     @media (max-width: 600px) {
         #footer-player { flex-direction: column; gap: 8px; padding: 10px 15px; }
         #footer-player-title { text-align: center; width: 100%; }
@@ -135,16 +148,29 @@
     <audio controls controlsList="nodownload" id="jukebox-audio-player"></audio>
   </div>
 
+  <div id="purchase-modal" class="modal-overlay">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <div id="purchase-modal-content"></div>
+    </div>
+  </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
+    
+    // !!! IMPORTANTE: INSERISCI LA TUA CHIAVE PUBBLICABILE DI STRIPE QUI !!!
+    const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
+    
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
+
     let allSongs = [];
     let currentPlayingItem = null;
     let currentPlayingType = null;
     let currentUserEmail = '';
+
     const loginScreen = document.getElementById('login-screen');
     const jukeboxContainer = document.getElementById('jukebox-container');
     const loginForm = document.getElementById('login-form');
@@ -161,29 +187,128 @@ document.addEventListener('DOMContentLoaded', function() {
         contact: document.getElementById('contact-modal'), 
         gadget: document.getElementById('gadget-modal'), 
         purchaseInfo: document.getElementById('purchase-info-modal'), 
-        video: document.getElementById('video-modal')
+        video: document.getElementById('video-modal'),
+        purchase: document.getElementById('purchase-modal')
     };
+
     setupEventListeners();
     handleResetFromUrl();
 
-    // --- LOGICA DI ACQUISTO CON PAYMENT LINKS ---
-    function redirectToPaymentLink(data) {
-        console.log("Dati per il Payment Link:", data);
-        const paymentLinks = {
-            argento: "https://buy.stripe.com/test_dRmfZibhb5qG64T6507g403",
-            oro: "https://buy.stripe.com/test_aFabJ2dpjcT83WL8d87g402",
-            platino: "https://buy.stripe.com/test_dRmbJ270V1aqeBp0KG7g401"
+    // --- LOGICA DI ACQUISTO CON MODALE INTERATTIVA ---
+    function openPurchaseModal(songData) {
+        const modalContent = modals.purchase.querySelector('#purchase-modal-content');
+        const basePrice = parseFloat(songData.price);
+        
+        modalContent.innerHTML = `
+            <h3>Finalizza il Tuo Acquisto</h3>
+            <p>Stai per acquistare il brano:</p>
+            <span class="song-title-highlight">${songData.title}</span>
+            <div class="upsell-options">
+                <div class="upsell-item" data-price="49" data-id="add-video">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    <div class="upsell-item-details">
+                        <strong>Aggiungi Video per Social</strong>
+                        <span>Ottimizzato per i tuoi canali (+49.00€)</span>
+                    </div>
+                </div>
+                <div class="upsell-item" data-price="49" data-id="add-gadget">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    <div class="upsell-item-details">
+                        <strong>Aggiungi T-Shirt Brandizzata</strong>
+                        <span>Con il tuo logo, design incluso (+49.00€)</span>
+                    </div>
+                </div>
+            </div>
+            <div id="purchase-summary">
+                <button id="final-purchase-btn" class="acquista-btn">
+                    Vai al Pagamento - ${basePrice.toFixed(2)}€
+                </button>
+            </div>
+        `;
+        
+        modals.purchase.style.display = 'flex';
+        
+        const finalBtn = modalContent.querySelector('#final-purchase-btn');
+        const upsellItems = modalContent.querySelectorAll('.upsell-item');
+
+        const updateTotal = () => {
+            let currentTotal = basePrice;
+            upsellItems.forEach(item => {
+                if (item.classList.contains('selected')) {
+                    currentTotal += parseFloat(item.dataset.price);
+                }
+            });
+            finalBtn.textContent = `Vai al Pagamento - ${currentTotal.toFixed(2)}€`;
         };
-        const tierKey = data.tier.toLowerCase();
-        const baseUrl = paymentLinks[tierKey];
-        if (!baseUrl) {
-            alert(`Errore: Nessun Payment Link configurato per il tier "${data.tier}".`);
+
+        upsellItems.forEach(item => {
+            item.addEventListener('click', () => {
+                item.classList.toggle('selected');
+                updateTotal();
+            });
+        });
+
+        finalBtn.addEventListener('click', () => {
+            const addVideo = modalContent.querySelector('.upsell-item[data-id="add-video"]').classList.contains('selected');
+            const addGadget = modalContent.querySelector('.upsell-item[data-id="add-gadget"]').classList.contains('selected');
+            
+            finalBtn.textContent = 'Reindirizzo...';
+            finalBtn.disabled = true;
+
+            redirectToDynamicCheckout({
+                songId: songData.id,
+                songTitle: songData.title,
+                songPrice: songData.price,
+                songTier: songData.tier,
+                addVideo: addVideo,
+                addGadget: addGadget,
+            });
+        });
+    }
+
+    function redirectToDynamicCheckout(data) {
+        if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
+            alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
+            const finalBtn = document.getElementById('final-purchase-btn');
+            if (finalBtn) { finalBtn.disabled = false; }
             return;
         }
-        const finalUrl = `${baseUrl}?client_reference_id=${data.id}`;
-        console.log("Reindirizzamento a:", finalUrl);
-        window.location.href = finalUrl;
+        const prezzoNumerico = parseFloat(data.songPrice);
+        if (isNaN(prezzoNumerico)) {
+            alert(`Errore: il prezzo del brano "${data.songTitle}" non è un numero valido.`);
+            const finalBtn = document.getElementById('final-purchase-btn');
+            if (finalBtn) { finalBtn.disabled = false; }
+            return;
+        }
+        const lineItemsPayload = [{
+            price_data: { currency: 'eur', product_data: { name: `Brano "${data.songTier}" - ${data.songTitle}` }, unit_amount: Math.round(prezzoNumerico * 100)},
+            quantity: 1
+        }];
+        if (data.addVideo) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: Video per Social' }, unit_amount: 49 * 100 }, quantity: 1 }); }
+        if (data.addGadget) { lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: 'Add-on: T-Shirt Brandizzata' }, unit_amount: 49 * 100 }, quantity: 1 }); }
+        
+        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        
+        stripe.redirectToCheckout({
+            lineItems: lineItemsPayload.map(item => ({ // Correzione: `price_data` -> `price`, `product_data` -> `price`
+                price: item.price_data, // Manteniamo la struttura precedente per coerenza
+                quantity: item.quantity
+            })),
+            mode: 'payment',
+            successUrl: window.location.href.split('?')[0] + '?payment=success',
+            cancelUrl: window.location.href.split('?')[0] + '?payment=cancel',
+            clientReferenceId: data.songId
+        }).catch(error => {
+            console.error("ERRORE DA STRIPE:", error);
+            alert("Si è verificato un errore durante la comunicazione con Stripe. Controlla la console per i dettagli.");
+            const finalBtn = document.getElementById('final-purchase-btn');
+            if (finalBtn) {
+                finalBtn.textContent = 'Errore - Riprova Pagamento';
+                finalBtn.disabled = false;
+            }
+        });
     }
+
 
     // --- RENDER DEI BRANI ---
     function renderSongs(songsToRender) {
@@ -193,10 +318,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const count = getPlayCounts()[song.id] || 0;
                 const playsLeft = MAX_PLAYS - count;
                 const isLocked = playsLeft <= 0;
+
                 let purchaseHTML = '';
                 if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
-                    purchaseHTML = `<button class="acquista-btn" 
+                    purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn" 
                         data-song-id="${song.id}"
+                        data-song-title="${song.titolo}"
+                        data-song-price="${song.prezzo}"
                         data-song-tier="${song.tier}">
                         Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
                         </button>`;
@@ -218,6 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
                 const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
                 const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
+
                 const songItemHTML = `
                     <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
                         <div class="song-item-top">
@@ -247,16 +376,16 @@ document.addEventListener('DOMContentLoaded', function() {
         loginForm.addEventListener('submit', handleLogin);
         contactForm.addEventListener('submit', handleContactForm);
         songListContainer.addEventListener('click', function(e) {
-            const target = e.target.closest('.btn, .acquista-btn, .title');
+            const target = e.target.closest('.btn, .open-purchase-modal-btn, .title');
             if (!target) return;
             const songItem = target.closest('.song-item');
             if (!songItem || songItem.classList.contains('disabled')) return;
-            if (target.matches('.acquista-btn')) {
-                target.textContent = 'Reindirizzo...';
-                target.disabled = true;
-                redirectToPaymentLink({
+            if (target.matches('.open-purchase-modal-btn')) {
+                openPurchaseModal({
                     id: target.dataset.songId,
-                    tier: target.dataset.songTier
+                    title: target.dataset.songTitle,
+                    price: target.dataset.songPrice,
+                    tier: target.dataset.songTier,
                 });
             } else if (target.matches('.action-btn.audio') || target.matches('.title')) {
                 handlePlay(songItem, 'audio');
@@ -285,145 +414,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- FUNZIONI CORE (Login, API, Filtri, Player) ---
-    async function handleLogin(e) {
-        e.preventDefault();
-        const emailInput = document.getElementById('email-input');
-        const email = emailInput.value.trim().toLowerCase();
-        if (!email) { alert('Per favore, inserisci un\'email.'); return; }
-        currentUserEmail = email;
-        const loginButton = e.target.querySelector('button');
-        loginButton.textContent = 'Verifico...';
-        loginButton.disabled = true;
-        try {
-            const url = new URL(sheetApiUrl);
-            url.searchParams.append('emailCheck', email);
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Errore di rete o del server.');
-            const result = await response.json();
-            if (result.status === "ok" && result.name) {
-                loginScreen.style.display = 'none';
-                jukeboxContainer.style.display = 'block';
-                clientNameEl.textContent = result.name;
-                await loadMusicFromApi(email);
-            } else {
-                alert(result.message || 'Accesso non autorizzato.');
-            }
-        } catch (error) {
-            console.error('Errore durante il login:', error);
-            alert('Errore di comunicazione con il server.');
-        } finally {
-            loginButton.textContent = 'Accedi';
-            loginButton.disabled = false;
-        }
-    }
-
-    async function loadMusicFromApi(userEmail) {
-        songListContainer.innerHTML = `<p>Caricamento brani...</p>`;
-        try {
-            const url = new URL(sheetApiUrl);
-            url.searchParams.append('userEmail', userEmail);
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Errore di rete o del server.');
-            const songs = await response.json();
-            if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API');
-            allSongs = songs;
-            populateFilters(allSongs);
-            applyFilters();
-        } catch (error) {
-            console.error('Errore caricamento brani:', error);
-            songListContainer.innerHTML = `<p style="color: #f44336;">Errore: ${error.message}.</p>`;
-        }
-    }
-
-    function populateFilters(songs) {
-        const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
-        songs.forEach(song => {
-            if (song.categoria) filters.categoria.add(song.categoria);
-            if (song.argomento) filters.argomento.add(song.argomento);
-            if (song.bpm) filters.bpm.add(song.bpm);
-        });
-        const createFilterButtons = (filterType, items, allLabel) => {
-            const container = document.getElementById(`filter-${filterType}`);
-            if (!container) return;
-            container.innerHTML = '';
-            const allButton = document.createElement('button');
-            allButton.textContent = allLabel;
-            allButton.value = '';
-            allButton.className = 'active';
-            container.appendChild(allButton);
-            [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => {
-                const button = document.createElement('button');
-                button.textContent = item;
-                button.value = item;
-                container.appendChild(button);
-            });
-            container.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON') {
-                    container.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
-                    applyFilters();
-                }
-            });
-        };
-        createFilterButtons('categoria', filters.categoria, 'Tutte le Categorie');
-        createFilterButtons('argomento', filters.argomento, 'Tutti gli Argomenti');
-        createFilterButtons('bpm', filters.bpm, 'Tutti i BPM');
-    }
-
-    function applyFilters() {
-        const getActiveFilter = (id) => document.querySelector(`#filter-${id} button.active`)?.value ?? '';
-        const categoria = getActiveFilter('categoria');
-        const argomento = getActiveFilter('argomento');
-        const bpm = getActiveFilter('bpm');
-        const filteredSongs = allSongs.filter(song =>
-            (!categoria || song.categoria === categoria) &&
-            (!argomento || song.argomento === argomento) &&
-            (!bpm || String(song.bpm) === bpm)
-        );
-        renderSongs(filteredSongs);
-    }
+    // --- FUNZIONI CORE (Login, API, Filtri) ---
+    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = new URL(sheetApiUrl); url.searchParams.append('emailCheck', email); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { loginScreen.style.display = 'none'; jukeboxContainer.style.display = 'block'; clientNameEl.textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error('Errore login:', err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
+    async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = new URL(sheetApiUrl); url.searchParams.append('userEmail', userEmail); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const songs = await res.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API.'); allSongs = songs; populateFilters(allSongs); applyFilters(); } catch (err) { console.error('Errore caricamento:', err); songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; } }
+    function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria) filters.categoria.add(s.categoria); if (s.argomento) filters.argomento.add(s.argomento); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
+    function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const cat = getActive('categoria'); const arg = getActive('argomento'); const bpm = getActive('bpm'); const filtered = allSongs.filter(s => (!cat || s.categoria === cat) && (!arg || s.argomento === arg) && (!bpm || String(s.bpm) === bpm)); renderSongs(filtered); }
     
+    // --- FUNZIONI PLAYER (CON BUG CORRETTO) ---
     function handlePlay(item, type, sourceUrl = null) {
-        const isPlayingThisItem = item === currentPlayingItem;
-        if (!isPlayingThisItem) {
-            const counts = getPlayCounts();
-            const songId = item.dataset.id;
-            let count = counts[songId] || 0;
-            if (count < MAX_PLAYS) {
-                count++;
-                counts[songId] = count;
-                savePlayCounts(counts);
-                trackPlay(songId);
-                applyFilters(); 
-                return; 
-            } else { 
-                return; 
-            }
+        const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType;
+        if (isPlayingThisItem) {
+            if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
+            else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
+            return;
         }
+
+        const counts = getPlayCounts();
+        const songId = item.dataset.id;
+        let count = counts[songId] || 0;
+        if (count >= MAX_PLAYS) {
+            alert("Hai raggiunto il limite di ascolti per questo brano.");
+            return;
+        }
+
+        // Prima avvia la musica, poi aggiorna i conteggi
+        resetPlayingState();
+        currentPlayingItem = item;
+        currentPlayingType = type;
+
         if (type === 'audio') {
-            if (audioPlayer.paused || audioPlayer.src !== item.dataset.src) {
-                resetPlayingState();
-                currentPlayingItem = item;
-                currentPlayingType = 'audio';
-                footerPlayer.classList.add('visible');
-                footerPlayerTitle.textContent = item.dataset.title;
-                audioPlayer.src = item.dataset.src;
-                audioPlayer.play();
-            } else {
-                audioPlayer.pause();
-            }
+            footerPlayer.classList.add('visible');
+            footerPlayerTitle.textContent = item.dataset.title;
+            audioPlayer.src = item.dataset.src;
+            audioPlayer.play();
         } else if (type === 'video') {
-             resetPlayingState();
-             currentPlayingItem = item;
-             currentPlayingType = 'video';
-             videoPlayer.src = sourceUrl;
-             modals.video.style.display = 'flex';
-             videoPlayer.play();
+            videoPlayer.src = sourceUrl;
+            modals.video.style.display = 'flex';
+            videoPlayer.play();
+        }
+
+        // Ora che la musica è partita, aggiorna i conteggi e la UI
+        count++;
+        counts[songId] = count;
+        savePlayCounts(counts);
+        trackPlay(songId);
+        
+        // Aggiorna solo il testo del brano corrente invece di ricaricare tutto
+        const playsLeftEl = item.querySelector('.plays-left');
+        if (playsLeftEl) {
+            const playsLeft = MAX_PLAYS - count;
+            if (playsLeft > 0) {
+                playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`;
+            } else {
+                item.classList.add('disabled');
+                playsLeftEl.textContent = 'Limite ascolti raggiunto';
+            }
         }
     }
     
-    // --- FUNZIONI HELPER (Conteggio, Modali, UI, Contatti, etc.) ---
+    // --- FUNZIONI HELPER ---
     function getPlayCounts() { if (!currentUserEmail) return {}; return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
     async function trackPlay(songId) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
