@@ -273,10 +273,11 @@ function redirectToDynamicCheckout(data) {
         return;
     }
 
-    // Correzione: il prezzo deve essere un numero prima di fare i calcoli
     const prezzoNumerico = parseFloat(data.songPrice);
     if (isNaN(prezzoNumerico)) {
         alert(`Errore: il prezzo del brano "${data.songTitle}" non è un numero valido.`);
+        const finalBtn = document.getElementById('final-purchase-btn');
+        if (finalBtn) { finalBtn.disabled = false; }
         return;
     }
 
@@ -291,13 +292,13 @@ function redirectToDynamicCheckout(data) {
 
     const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
     
-    // --- ECCO LA CORREZIONE CHIAVE ---
+    // --- CORREZIONE FINALE ---
     stripe.redirectToCheckout({
-        lineItems: lineItemsPayload,      // CORRETTO
+        lineItems: lineItemsPayload,
         mode: 'payment',
-        successUrl: window.location.href.split('?')[0], // CORRETTO: da success_url a successUrl
-        cancelUrl: window.location.href.split('?')[0],  // CORRETTO: da cancel_url a cancelUrl
-        client_reference_id: data.songId
+        successUrl: window.location.href.split('?')[0],
+        cancelUrl: window.location.href.split('?')[0],
+        clientReferenceId: data.songId // CORRETTO: da client_reference_id a clientReferenceId
     }).catch(error => {
         console.error("ERRORE DA STRIPE:", error);
         alert("Si è verificato un errore durante la comunicazione con Stripe. Controlla la console per i dettagli.");
