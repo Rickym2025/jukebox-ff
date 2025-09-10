@@ -293,10 +293,10 @@ function redirectToDynamicCheckout(data) {
     
     // --- ECCO LA CORREZIONE CHIAVE ---
     stripe.redirectToCheckout({
-        lineItems: lineItemsPayload, // CORRETTO: da line_items a lineItems
+        lineItems: lineItemsPayload,      // CORRETTO
         mode: 'payment',
-        success_url: window.location.href.split('?')[0],
-        cancel_url: window.location.href.split('?')[0],
+        successUrl: window.location.href.split('?')[0], // CORRETTO: da success_url a successUrl
+        cancelUrl: window.location.href.split('?')[0],  // CORRETTO: da cancel_url a cancelUrl
         client_reference_id: data.songId
     }).catch(error => {
         console.error("ERRORE DA STRIPE:", error);
