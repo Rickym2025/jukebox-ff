@@ -386,31 +386,32 @@ function redirectToDynamicCheckout(data) {
             const count = getPlayCounts()[song.id] || 0;
             const playsLeft = MAX_PLAYS - count;
             const isLocked = playsLeft <= 0;
-            
-            // --- LOGICA CHIAVE QUI ---
-            // Lo script di Google invia il valore della casella di spunta come TRUE o FALSE
-            const isWeddingSong = song.matrimonio === true; 
+            const isWeddingSong = song.matrimonio === true;
             let purchaseHTML = '';
 
+            // --- NUOVA LOGICA DI PREZZO POTENZIATA ---
             if (isWeddingSong && !isLocked) {
-                // Se la casella "Matrimonio" è spuntata, mostra il pulsante per il form personalizzato
-                purchaseHTML = `<button class="acquista-btn wedding-request-btn" 
-                    data-song-title="${song.titolo}">
+                // CASO 1: Canzone per Matrimonio
+                purchaseHTML = `<button class="acquista-btn wedding-request-btn" data-song-title="${song.titolo}">
                     <i class="fas fa-ring"></i> Crea la Tua Canzone Nuziale
                     </button>`;
+            } else if (song.stripe_link && song.stripe_link.startsWith('http') && !isLocked) {
+                // CASO 2: È presente un link di pagamento diretto
+                purchaseHTML = `<a href="${song.stripe_link}" target="_blank" class="acquista-btn">
+                    <i class="fas fa-shopping-cart"></i> Acquista Ora (Prezzo Fisso)
+                    </a>`;
             } else if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
-                // Altrimenti, mostra il normale pulsante di acquisto
+                // CASO 3: Sistema a Tier (Argento, Oro, etc.)
                 purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn" 
-                    data-song-id="${song.id}"
-                    data-song-title="${song.titolo}"
-                    data-song-price="${song.prezzo}"
-                    data-song-tier="${song.tier}">
+                    data-song-id="${song.id}" data-song-title="${song.titolo}"
+                    data-song-price="${song.prezzo}" data-song-tier="${song.tier}">
                     Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
                     </button>`;
             } else if (song.stato?.toLowerCase() === 'venduto') {
+                // CASO 4: Brano venduto
                 purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
             }
-            // (Il resto della funzione rimane identico a prima)
+            // (Il resto della funzione rimane identico, non devi toccare altro)
 
             let tierBadge = '';
             if (song.tier) {
@@ -430,14 +431,7 @@ function redirectToDynamicCheckout(data) {
 
             const songItemHTML = `
                 <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
-                    <div class="song-item-top">
-                        <div class="song-info">
-                            <span class="title">${song.titolo}${tierBadge}</span>
-                            <div class="plays-left">${playsLeftText}</div>
-                            ${detailsHTML}
-                        </div>
-                        ${infoBtnHTML}
-                    </div>
+                    <div class="song-item-top">...</div>
                     <div class="song-actions">
                         ${actionAudioBtn}
                         ${actionVideoBtn}
@@ -445,7 +439,16 @@ function redirectToDynamicCheckout(data) {
                         ${purchaseHTML} 
                     </div>
                 </div>`;
-            songListContainer.innerHTML += songItemHTML;
+            // Ricostruisci la parte interna dell'HTML come nel tuo file originale
+            songListContainer.innerHTML += songItemHTML.replace('<div class="song-item-top">...</div>', `
+                <div class="song-item-top">
+                    <div class="song-info">
+                        <span class="title">${song.titolo}${tierBadge}</span>
+                        <div class="plays-left">${playsLeftText}</div>
+                        ${detailsHTML}
+                    </div>
+                    ${infoBtnHTML}
+                </div>`);
         });
     } else {
         songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
