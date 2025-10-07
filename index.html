@@ -485,7 +485,7 @@ function redirectToDynamicCheckout(data) {
         count++;
         counts[songId] = count;
         savePlayCounts(counts);
-        trackPlay(songId);
+        trackPlay(songId, currentUserEmail);
         
         // Aggiorna solo il testo del brano corrente invece di ricaricare tutto
         const playsLeftEl = item.querySelector('.plays-left');
@@ -503,7 +503,7 @@ function redirectToDynamicCheckout(data) {
     // --- FUNZIONI HELPER ---
     function getPlayCounts() { if (!currentUserEmail) return {}; return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
-    async function trackPlay(songId) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
+    async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { if (modals.lyrics) { modals.lyrics.querySelector('#lyrics-title').innerText = item.dataset.title; modals.lyrics.querySelector('#lyrics-text').innerText = item.dataset.lyrics || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; } }
     function closeAllModals() { for (const key in modals) { if (modals[key]) modals[key].style.display = 'none'; } videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
     function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
