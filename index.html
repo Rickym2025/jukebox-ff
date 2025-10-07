@@ -140,6 +140,45 @@
   
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
+  <!-- ============================================================= -->
+<!-- NUOVO MODAL PER RICHIESTE MATRIMONIO -->
+<!-- ============================================================= -->
+<div id="wedding-request-modal" class="modal-overlay">
+  <div class="modal-content">
+    <span class="modal-close">&times;</span>
+    <div id="contact-form-header">
+      <i class="fas fa-ring"></i>
+      <h3>Canzone Nuziale Personalizzata</h3>
+    </div>
+    <p style="text-align: left; font-size: 0.9em; color: #ccc; margin-bottom: 20px;">
+      Compila questo modulo per fornirmi tutti i dettagli. Dopo l'invio, verrai reindirizzato alla pagina di pagamento per finalizzare la richiesta.
+    </p>
+    
+    <!-- SOSTITUISCI CON LA TUA CHIAVE WEB3FORMS E IL TUO LINK STRIPE -->
+    <form id="wedding-request-form" action="https://api.web3forms.com/submit" method="POST">
+      <!-- Chiave Web3Forms (la stessa di prima) -->
+      <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d">
+      
+      <!-- ** LINK DI REINDIRIZZAMENTO A STRIPE ** -->
+      <input type="hidden" name="redirect" value="IL_TUO_LINK_DI_PAGAMENTO_STRIPE_QUI">
+
+      <!-- Informazioni nascoste per te -->
+      <input type="hidden" name="subject" value="Nuova Richiesta Canzone Nuziale Personalizzata">
+      <input type="hidden" id="base-song-input" name="brano_di_ispirazione" value="">
+      
+      <!-- Campi Visibili -->
+      <input type="text" name="nome_richiedente" placeholder="Il tuo Nome e Cognome" required />
+      <input type="email" name="email_richiedente" placeholder="La tua Email di Contatto" required />
+      <input type="text" name="nome_sposa" placeholder="Nome della Sposa" required />
+      <input type="text" name="nome_sposo" placeholder="Nome dello Sposo" required />
+      <textarea name="storia_e_dettagli" placeholder="La loro storia, hobby, momenti importanti, modi di dire..." required></textarea>
+      <textarea name="riferimenti_musicali" placeholder="Genere musicale preferito, band o canzoni di riferimento..." required></textarea>
+      
+      <button type="submit" class="button">Invia e vai al Pagamento</button>
+      <div id="wedding-form-result"></div>
+    </form>
+  </div>
+</div>
   <div id="gadget-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3><i class="fas fa-gem"></i>Crea i Tuoi Gadget</h3><p>Crea una linea di merchandising con il <strong>TUO logo</strong>, gestita da noi, <strong>senza costi iniziali</strong>.<br><br></p><a href="https://ff-music-store.printify.me/" target="_blank" class="button" style="background-color: transparent; margin-bottom: 10px;"><i class="fas fa-eye"></i> Guarda un Esempio</a><button id="contact-for-gadgets-btn" class="button" style="background-color: var(--primary-color); border-color: var(--primary-color);"><i class="fas fa-paper-plane"></i> Richiedi un Preventivo</button></div></div>
   <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><p style="text-align: left; font-size: 0.9em; color: #ccc;">Finalizzando la transazione, acquisisci la piena proprietà dell'opera. Riceverai immediatamente via email un link per scaricare il pacchetto completo del brano, che include:<br><br></p><ul class="package-list"><li><i class="fas fa-file-contract"></i> <div><strong>Cessione Totale dei Diritti</strong><br><span>Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div></li><li><i class="fas fa-share-alt"></i> <div><strong>Video Promozionale</strong><br><span>Ottimizzato per i tuoi canali social.</span></div></li><li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav)</strong><br><span>Qualità audio professionale non compressa.</span></div></li><li><i class="fas fa-sliders-h"></i> <div><strong>Tracce Separate (.wav)</strong><br><span>Tutti gli strumenti isolati per remix e modifiche.</span></div></li><li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li><li><i class="fas fa-guitar"></i> <div><strong>Spartiti Completi (.pdf)</strong><br><span>Linee melodiche e armonie per Pianoforte e Basso.</span></div></li></ul></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
@@ -188,7 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
         gadget: document.getElementById('gadget-modal'), 
         purchaseInfo: document.getElementById('purchase-info-modal'), 
         video: document.getElementById('video-modal'),
-        purchase: document.getElementById('purchase-modal')
+        purchase: document.getElementById('purchase-modal'),
+        weddingRequest: document.getElementById('wedding-request-modal') 
     };
 
     setupEventListeners();
@@ -340,91 +380,114 @@ function redirectToDynamicCheckout(data) {
 
     // --- RENDER DEI BRANI ---
     function renderSongs(songsToRender) {
-        songListContainer.innerHTML = '';
-        if (songsToRender.length > 0) {
-            songsToRender.forEach(song => {
-                const count = getPlayCounts()[song.id] || 0;
-                const playsLeft = MAX_PLAYS - count;
-                const isLocked = playsLeft <= 0;
+    songListContainer.innerHTML = '';
+    if (songsToRender.length > 0) {
+        songsToRender.forEach(song => {
+            const count = getPlayCounts()[song.id] || 0;
+            const playsLeft = MAX_PLAYS - count;
+            const isLocked = playsLeft <= 0;
+            
+            // --- LOGICA CHIAVE QUI ---
+            // Lo script di Google invia il valore della casella di spunta come TRUE o FALSE
+            const isWeddingSong = song.matrimonio === true; 
+            let purchaseHTML = '';
 
-                let purchaseHTML = '';
-                if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
-                    purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn" 
-                        data-song-id="${song.id}"
-                        data-song-title="${song.titolo}"
-                        data-song-price="${song.prezzo}"
-                        data-song-tier="${song.tier}">
-                        Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
-                        </button>`;
-                } else if (song.stato?.toLowerCase() === 'venduto') {
-                    purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
-                }
-                let tierBadge = '';
-                if (song.tier) {
-                    let tierColor = '#c0c0c0';
-                    if (song.tier.toLowerCase().includes('oro')) tierColor = '#ffd700';
-                    if (song.tier.toLowerCase().includes('platino')) tierColor = '#e5e4e2';
-                    tierBadge = `<span style="background-color: ${tierColor}; color: #121212; padding: 3px 8px; font-size: 0.7em; font-weight: 600; border-radius: 10px; margin-left: 10px;">${song.tier}</span>`;
-                }
-                const hasLyrics = song.liriche && song.liriche.trim() !== "";
-                const hasVideo = song.link_video && song.link_video.trim() !== "";
-                const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
-                const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
-                const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
-                const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
-                const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
-                const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
+            if (isWeddingSong && !isLocked) {
+                // Se la casella "Matrimonio" è spuntata, mostra il pulsante per il form personalizzato
+                purchaseHTML = `<button class="acquista-btn wedding-request-btn" 
+                    data-song-title="${song.titolo}">
+                    <i class="fas fa-ring"></i> Crea la Tua Canzone Nuziale
+                    </button>`;
+            } else if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
+                // Altrimenti, mostra il normale pulsante di acquisto
+                purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn" 
+                    data-song-id="${song.id}"
+                    data-song-title="${song.titolo}"
+                    data-song-price="${song.prezzo}"
+                    data-song-tier="${song.tier}">
+                    Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
+                    </button>`;
+            } else if (song.stato?.toLowerCase() === 'venduto') {
+                purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
+            }
+            // (Il resto della funzione rimane identico a prima)
 
-                const songItemHTML = `
-                    <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
-                        <div class="song-item-top">
-                            <div class="song-info">
-                                <span class="title">${song.titolo}${tierBadge}</span>
-                                <div class="plays-left">${playsLeftText}</div>
-                                ${detailsHTML}
-                            </div>
-                            ${infoBtnHTML}
+            let tierBadge = '';
+            if (song.tier) {
+                let tierColor = '#c0c0c0';
+                if (song.tier.toLowerCase().includes('oro')) tierColor = '#ffd700';
+                if (song.tier.toLowerCase().includes('platino')) tierColor = '#e5e4e2';
+                tierBadge = `<span style="background-color: ${tierColor}; color: #121212; padding: 3px 8px; font-size: 0.7em; font-weight: 600; border-radius: 10px; margin-left: 10px;">${song.tier}</span>`;
+            }
+            const hasLyrics = song.liriche && song.liriche.trim() !== "";
+            const hasVideo = song.link_video && song.link_video.trim() !== "";
+            const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
+            const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
+            const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
+            const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
+            const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
+            const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
+
+            const songItemHTML = `
+                <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
+                    <div class="song-item-top">
+                        <div class="song-info">
+                            <span class="title">${song.titolo}${tierBadge}</span>
+                            <div class="plays-left">${playsLeftText}</div>
+                            ${detailsHTML}
                         </div>
-                        <div class="song-actions">
-                            ${actionAudioBtn}
-                            ${actionVideoBtn}
-                            ${actionLyricsBtn}
-                            ${purchaseHTML} 
-                        </div>
-                    </div>`;
-                songListContainer.innerHTML += songItemHTML;
-            });
-        } else {
-            songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
-        }
+                        ${infoBtnHTML}
+                    </div>
+                    <div class="song-actions">
+                        ${actionAudioBtn}
+                        ${actionVideoBtn}
+                        ${actionLyricsBtn}
+                        ${purchaseHTML} 
+                    </div>
+                </div>`;
+            songListContainer.innerHTML += songItemHTML;
+        });
+    } else {
+        songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
     }
+}
     
     // --- SETUP DEGLI EVENT LISTENER ---
     function setupEventListeners() {
         loginForm.addEventListener('submit', handleLogin);
         contactForm.addEventListener('submit', handleContactForm);
         songListContainer.addEventListener('click', function(e) {
-            const target = e.target.closest('.btn, .open-purchase-modal-btn, .title');
-            if (!target) return;
-            const songItem = target.closest('.song-item');
-            if (!songItem || songItem.classList.contains('disabled')) return;
-            if (target.matches('.open-purchase-modal-btn')) {
-                openPurchaseModal({
-                    id: target.dataset.songId,
-                    title: target.dataset.songTitle,
-                    price: target.dataset.songPrice,
-                    tier: target.dataset.songTier,
-                });
-            } else if (target.matches('.action-btn.audio') || target.matches('.title')) {
-                handlePlay(songItem, 'audio');
-            } else if (target.matches('.action-btn.video')) {
-                handlePlay(songItem, 'video', target.dataset.videoSrc);
-            } else if (target.matches('.action-btn.lyrics')) {
-                showLyrics(songItem);
-            } else if (target.matches('.info-btn')) {
-                modals.purchaseInfo.style.display = 'flex';
-            }
+    // Aggiungiamo .wedding-request-btn alla lista dei selettori
+    const target = e.target.closest('.btn, .open-purchase-modal-btn, .wedding-request-btn, .title');
+    if (!target) return;
+    
+    const songItem = target.closest('.song-item');
+    if (!songItem || songItem.classList.contains('disabled')) return;
+
+    if (target.matches('.open-purchase-modal-btn')) {
+        openPurchaseModal({
+            id: target.dataset.songId,
+            title: target.dataset.songTitle,
+            price: target.dataset.songPrice,
+            tier: target.dataset.songTier,
         });
+    } else if (target.matches('.wedding-request-btn')) {
+        // --- GESTIONE NUOVO PULSANTE ---
+        const songTitle = target.dataset.songTitle;
+        // Inseriamo il titolo del brano nel campo nascosto del form
+        modals.weddingRequest.querySelector('#base-song-input').value = songTitle;
+        // Apriamo il nuovo modal
+        modals.weddingRequest.style.display = 'flex';
+    } else if (target.matches('.action-btn.audio') || target.matches('.title')) {
+        handlePlay(songItem, 'audio');
+    } else if (target.matches('.action-btn.video')) {
+        handlePlay(songItem, 'video', target.dataset.videoSrc);
+    } else if (target.matches('.action-btn.lyrics')) {
+        showLyrics(songItem);
+    } else if (target.matches('.info-btn')) {
+        modals.purchaseInfo.style.display = 'flex';
+    }
+});
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => modals.contact.style.display = 'flex');
         document.getElementById('show-gadget-modal-btn').addEventListener('click', () => modals.gadget.style.display = 'flex');
         document.getElementById('contact-for-gadgets-btn')?.addEventListener('click', () => { closeAllModals(); modals.contact.style.display = 'flex'; });
