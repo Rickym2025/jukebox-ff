@@ -511,8 +511,73 @@ function redirectToDynamicCheckout(data) {
     // --- FUNZIONI CORE (Login, API, Filtri) ---
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = new URL(sheetApiUrl); url.searchParams.append('emailCheck', email); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { loginScreen.style.display = 'none'; jukeboxContainer.style.display = 'block'; clientNameEl.textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error('Errore login:', err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = new URL(sheetApiUrl); url.searchParams.append('userEmail', userEmail); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const songs = await res.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API.'); allSongs = songs.songs; populateFilters(allSongs); applyFilters(); } catch (err) { console.error('Errore caricamento:', err); songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; } }
-    function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria) filters.categoria.add(s.categoria); if (s.argomento) filters.argomento.add(s.argomento); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
-    function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const cat = getActive('categoria'); const arg = getActive('argomento'); const bpm = getActive('bpm'); const filtered = allSongs.filter(s => (!cat || s.categoria === cat) && (!arg || s.argomento === arg) && (!bpm || String(s.bpm) === bpm)); renderSongs(filtered); }
+    function populateFilters(songs) {
+    // Inizializza i contenitori per i filtri unici (Set evita i duplicati)
+    const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
+
+    // --- INIZIO DELLA PARTE MODIFICATA ---
+    // Scorre ogni canzone per estrarre i filtri
+    songs.forEach(s => {
+        // Gestisce la Categoria, dividendo la stringa
+        if (s.categoria && typeof s.categoria === 'string') {
+            const categorie = s.categoria.split(/[;,]/); // Divide sia per punto e virgola (;) che per virgola (,)
+            categorie.forEach(cat => {
+                const trimmedCat = cat.trim(); // Rimuove spazi vuoti inutili all'inizio o alla fine
+                if (trimmedCat) { // Aggiunge il filtro solo se non è una stringa vuota
+                    filters.categoria.add(trimmedCat);
+                }
+            });
+        }
+
+        // Gestisce l'Argomento, dividendo la stringa
+        if (s.argomento && typeof s.argomento === 'string') {
+            const argomenti = s.argomento.split(/[;,]/); // Divide sia per punto e virgola (;) che per virgola (,)
+            argomenti.forEach(arg => {
+                const trimmedArg = arg.trim(); // Rimuove spazi vuoti
+                if (trimmedArg) { // Aggiunge il filtro solo se non è una stringa vuota
+                    filters.argomento.add(trimmedArg);
+                }
+            });
+        }
+        
+        // La gestione dei BPM non cambia, essendo un valore singolo
+        if (s.bpm) {
+            filters.bpm.add(s.bpm);
+        }
+    });
+    // --- FINE DELLA PARTE MODIFICATA ---
+
+    // Funzione interna per creare i pulsanti (questa parte non è cambiata)
+    const createBtns = (type, items, label) => {
+        const cont = document.getElementById(`filter-${type}`);
+        if (!cont) return;
+        cont.innerHTML = '';
+        const allBtn = document.createElement('button');
+        allBtn.textContent = label;
+        allBtn.value = '';
+        allBtn.className = 'active';
+        cont.appendChild(allBtn);
+        [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => {
+            const btn = document.createElement('button');
+            btn.textContent = item;
+            btn.value = item;
+            cont.appendChild(btn);
+        });
+        cont.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                cont.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                applyFilters();
+            }
+        });
+    };
+
+    // Crea i gruppi di pulsanti usando i filtri che abbiamo raccolto
+    createBtns('categoria', filters.categoria, 'Tutte');
+    createBtns('argomento', filters.argomento, 'Tutti');
+    createBtns('bpm', filters.bpm, 'Tutti');
+}
+  function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const cat = getActive('categoria'); const arg = getActive('argomento'); const bpm = getActive('bpm'); const filtered = allSongs.filter(s => (!cat || s.categoria === cat) && (!arg || s.argomento === arg) && (!bpm || String(s.bpm) === bpm)); renderSongs(filtered); }
     
     // --- FUNZIONI PLAYER (CON BUG CORRETTO) ---
     function handlePlay(item, type, sourceUrl = null) {
