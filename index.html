@@ -577,7 +577,27 @@ function redirectToDynamicCheckout(data) {
     createBtns('argomento', filters.argomento, 'Tutti');
     createBtns('bpm', filters.bpm, 'Tutti');
 }
-  function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const cat = getActive('categoria'); const arg = getActive('argomento'); const bpm = getActive('bpm'); const filtered = allSongs.filter(s => (!cat || s.categoria === cat) && (!arg || s.argomento === arg) && (!bpm || String(s.bpm) === bpm)); renderSongs(filtered); }
+  function applyFilters() {
+    const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? '';
+    const selectedCategory = getActive('categoria');
+    const selectedArgument = getActive('argomento');
+    const selectedBpm = getActive('bpm');
+
+    const filtered = allSongs.filter(song => {
+        // Verifica se la categoria della canzone (anche se multipla) include quella selezionata
+        const categoryMatch = !selectedCategory || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(selectedCategory));
+        
+        // Verifica se l'argomento della canzone (anche se multiplo) include quello selezionato
+        const argumentMatch = !selectedArgument || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(selectedArgument));
+        
+        // La verifica dei BPM rimane invariata
+        const bpmMatch = !selectedBpm || (song.bpm && String(song.bpm) === selectedBpm);
+
+        return categoryMatch && argumentMatch && bpmMatch;
+    });
+
+    renderSongs(filtered);
+}
     
     // --- FUNZIONI PLAYER (CON BUG CORRETTO) ---
     function handlePlay(item, type, sourceUrl = null) {
