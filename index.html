@@ -153,9 +153,9 @@
   
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="wedding-request-modal" class="modal-overlay">...</div>
+  <div id="wedding-request-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span></div></div>
   <div id="gadget-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3><i class="fas fa-gem"></i>Crea i Tuoi Gadget</h3><p>Per richiedere un gadget personalizzato, inviami un messaggio tramite il modulo di contatto.</p></div></div>
-  <div id="purchase-info-modal" class="modal-overlay">...</div>
+  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player">
     <span id="footer-player-title">Nessun brano in riproduzione</span>
@@ -336,7 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }).catch(error => {
             console.error("ERRORE DA STRIPE:", error);
             alert("Si è verificato un errore con Stripe. Controlla la console.");
-            // Riabilita il pulsante in caso di errore
             const finalBtn = document.getElementById('final-purchase-btn');
             if (finalBtn) {
                 finalBtn.textContent = 'Riprova Pagamento';
@@ -492,6 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('multi-select-toggle').addEventListener('click', toggleMultiSelectMode);
         document.getElementById('cart-checkout-btn').addEventListener('click', () => {
             if (shoppingCart.length === 0) return;
+            // Nel checkout del carrello, non ci sono add-on per semplicità.
             const checkoutData = { items: shoppingCart };
             redirectToCheckout(checkoutData);
         });
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (target.closest('.action-btn.lyrics')) {
                 showLyrics(songItem);
             } else if (target.closest('.info-btn')) {
-                openPurchaseInfoModal(); // Funzione da creare se non esiste
+                openPurchaseInfoModal();
             } else if (isMultiSelectMode && target.closest('.song-item')) {
                 const selectBtn = songItem.querySelector('.select-btn');
                 if(selectBtn) handleMultiSelectClick(songItem, selectBtn);
