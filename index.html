@@ -148,7 +148,7 @@
   
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><p style="text-align: left; font-size: 0.9em; color: #ccc;">Finalizzando la transazione, acquisisci la piena proprietà dell'opera. Riceverai immediatamente via email un link per scaricare il pacchetto completo del brano, che include:<br><br></p>...</div></div>
+  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><p>...</p></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player">
     <span id="footer-player-title">Nessun brano in riproduzione</span>
@@ -290,12 +290,17 @@ document.addEventListener('DOMContentLoaded', function() {
         let clientReferenceIds = [];
 
         data.items.forEach(item => {
-            // Arrotonda il prezzo ai centesimi per evitare errori in Stripe
             const unitAmount = Math.round(parseFloat(item.price) * 100);
-            if (isNaN(unitAmount)) {
+            if (isNaN(unitAmount) || unitAmount <= 0) {
                 console.error("Prezzo non valido per il brano:", item);
                 alert(`Errore: il prezzo per il brano "${item.title}" non è valido.`);
-                return;
+                // Riabilita il pulsante in caso di errore
+                const finalBtn = document.getElementById('final-purchase-btn');
+                if (finalBtn) {
+                    finalBtn.textContent = 'Riprova Pagamento';
+                    finalBtn.disabled = false;
+                }
+                return; // Esce dalla funzione se un prezzo non è valido
             }
 
             lineItemsPayload.push({
@@ -427,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isLocked = playsLeft <= 0;
                 let purchaseHTML = '';
 
-                if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
+                if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
                     purchaseHTML = `<button class="acquista-btn">Acquista da ${parseFloat(song.prezzo).toFixed(2)}€</button>`;
                 } else if (song.stato?.toLowerCase() === 'venduto') {
                     purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
@@ -475,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================================
-    // --- 5. GESTIONE EVENTI ---
+    // --- 5. GESTIONE EVENTI (CORRETTA) ---
     // =============================================================
     function setupEventListeners() {
         const loginForm = document.getElementById('login-form');
@@ -578,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getPlayCounts() { if (!currentUserEmail) return {}; return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
     async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
-    function showLyrics(item) { if (document.getElementById('lyrics-modal')) { document.getElementById('lyrics-title').innerText = item.dataset.titolo; document.getElementById('lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; document.getElementById('lyrics-modal').style.display = 'flex'; } }
+    function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
     function closeAllModals() { allModalOverlays.forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
     function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
