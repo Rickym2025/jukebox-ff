@@ -78,11 +78,6 @@
     #footer-player.visible { transform: translateY(0); }
     #footer-player-title { text-align: left; font-weight: 500; color: #ccc; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
     #jukebox-audio-player { width: 100%; max-width: 500px; height: 40px; }
-    .package-list { list-style: none; padding-left: 0; text-align: left; }
-    .package-list li { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em; }
-    .package-list li i { color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em; }
-    .package-list li div { text-align: left; }
-    .package-list li span { font-size: 0.9em; color: #bbb; }
     #purchase-modal-content h3 { font-size: 1.5em; margin-bottom: 10px; }
     #purchase-modal-content .song-title-highlight { color: var(--primary-color); display: block; font-size: 1.2em; margin-bottom: 25px; font-weight: 600; }
     .upsell-options { text-align: left; margin: 0 auto 25px auto; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
@@ -153,8 +148,6 @@
   
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="wedding-request-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span></div></div>
-  <div id="gadget-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3><i class="fas fa-gem"></i>Crea i Tuoi Gadget</h3><p>Per richiedere un gadget personalizzato, inviami un messaggio tramite il modulo di contatto.</p></div></div>
   <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player">
@@ -196,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isMultiSelectMode = false;
     let shoppingCart = [];
 
+    // Riferimenti agli elementi DOM
     const loginScreen = document.getElementById('login-screen');
     const jukeboxContainer = document.getElementById('jukebox-container');
     const songListContainer = document.getElementById('song-list-container');
@@ -204,24 +198,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const footerPlayer = document.getElementById('footer-player');
     const footerPlayerTitle = document.getElementById('footer-player-title');
     const clientNameEl = document.getElementById('client-name');
-    const modals = { 
-        lyrics: document.getElementById('lyrics-modal'), 
-        contact: document.getElementById('contact-modal'), 
-        gadget: document.getElementById('gadget-modal'), 
-        purchaseInfo: document.getElementById('purchase-info-modal'), 
-        video: document.getElementById('video-modal'),
-        purchase: document.getElementById('purchase-modal'),
-        weddingRequest: document.getElementById('wedding-request-modal') 
-    };
-
-    setupEventListeners();
-    handleResetFromUrl();
+    const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
     // =============================================================
     // --- 2. LOGICA DI ACQUISTO FLESSIBILE ---
     // =============================================================
     function openPurchaseModal(songData) {
-        const modalContent = modals.purchase.querySelector('#purchase-modal-content');
+        const purchaseModal = document.getElementById('purchase-modal');
+        const modalContent = purchaseModal.querySelector('#purchase-modal-content');
         const basePrice = parseFloat(songData.prezzo);
 
         let optionsHTML = `
@@ -257,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        modals.purchase.style.display = 'flex';
+        purchaseModal.style.display = 'flex';
         
         const finalBtn = modalContent.querySelector('#final-purchase-btn');
         const upsellItems = modalContent.querySelectorAll('.upsell-item');
@@ -373,11 +357,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const selectBtn = item.querySelector('.select-btn');
                 if (selectBtn) {
                     selectBtn.innerHTML = `Acquista da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`;
-                    selectBtn.classList.remove('select-btn');
+                    selectBtn.classList.remove('select-btn', 'selected');
                     selectBtn.classList.add('acquista-btn');
                 }
                 item.classList.remove('multi-select-mode', 'selected-for-cart');
-                if (selectBtn) selectBtn.classList.remove('selected');
             });
             shoppingCart = [];
             updateCartBar();
@@ -424,7 +407,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
-        const toCamelCase = (str) => str.toLowerCase().replace(/[^a-zA-Z0-9]+(.)?/g, (match, chr) => chr ? chr.toUpperCase() : '').replace(/^./, (match) => match.toLowerCase());
+        const toCamelCase = (str) => {
+            if (!str) return '';
+            return str.toLowerCase().replace(/[^a-zA-Z0-9]+(.)?/g, (match, chr) => chr ? chr.toUpperCase() : '').replace(/^./, (match) => match.toLowerCase());
+        };
 
         if (songsToRender.length > 0) {
             songsToRender.forEach(song => {
@@ -446,7 +432,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 Object.keys(song).forEach(key => {
                     const camelCaseKey = toCamelCase(key);
-                    songItem.dataset[camelCaseKey] = song[key];
+                    if (camelCaseKey) {
+                        songItem.dataset[camelCaseKey] = song[key];
+                    }
                 });
                 
                 const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
@@ -491,7 +479,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('multi-select-toggle').addEventListener('click', toggleMultiSelectMode);
         document.getElementById('cart-checkout-btn').addEventListener('click', () => {
             if (shoppingCart.length === 0) return;
-            // Nel checkout del carrello, non ci sono add-on per semplicità.
             const checkoutData = { items: shoppingCart };
             redirectToCheckout(checkoutData);
         });
@@ -517,18 +504,15 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (target.closest('.action-btn.lyrics')) {
                 showLyrics(songItem);
             } else if (target.closest('.info-btn')) {
-                openPurchaseInfoModal();
+                // Implementare la funzione per mostrare le info se necessario
             } else if (isMultiSelectMode && target.closest('.song-item')) {
                 const selectBtn = songItem.querySelector('.select-btn');
                 if(selectBtn) handleMultiSelectClick(songItem, selectBtn);
             }
         });
 
-        document.getElementById('show-contact-modal-btn').addEventListener('click', () => modals.contact.style.display = 'flex');
-        document.getElementById('show-gadget-modal-btn').addEventListener('click', () => {
-             closeAllModals();
-             modals.contact.style.display = 'flex';
-        });
+        document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
+        document.getElementById('show-gadget-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
 
         audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
         videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
@@ -539,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
         audioPlayer.addEventListener('ended', resetPlayingState);
         videoPlayer.addEventListener('ended', closeAllModals);
 
-        Object.values(modals).forEach(modal => {
+        allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
             const closeBtn = modal.querySelector('.modal-close');
             if (closeBtn) closeBtn.addEventListener('click', () => closeAllModals());
@@ -587,8 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
     async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { if (modals.lyrics) { modals.lyrics.querySelector('#lyrics-title').innerText = item.dataset.titolo; modals.lyrics.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; } }
-    function openPurchaseInfoModal() { if (modals.purchaseInfo) modals.purchaseInfo.style.display = 'flex'; }
-    function closeAllModals() { Object.values(modals).forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
+    function closeAllModals() { allModalOverlays.forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
     function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
 });
