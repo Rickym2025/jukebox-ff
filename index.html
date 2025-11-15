@@ -1,21 +1,3 @@
-// Nel vecchio codice c'era questa riga, che causava l'errore:
-} else if (target.closest('.info-btn')) {
-    openPurchaseInfoModal(); // ERRORE: Questa funzione non esiste!
-}```
-
-Un errore di questo tipo (`ReferenceError: function is not defined`) è un "showstopper": blocca l'esecuzione di tutto il JavaScript sulla pagina, motivo per cui il pulsante di login sembrava morto. Non poteva funzionare perché lo script si era già bloccato.
-
----
-
-### La Soluzione Definitiva: Il Modello Funzionante
-
-Ho corretto questo errore e ho revisionato meticolosamente ogni altra funzione per assicurarmi che non ci fossero altre "bombe a orologeria". Ho verificato la logica del carrello, del reindirizzamento e della chiusura dei modali.
-
-Questo è il codice completo e funzionante. Non è un passo indietro. È il modello che avrei dovuto darti subito, con tutte le nuove funzionalità ingegnerizzate per funzionare insieme.
-
-Sostituisci **l'intero contenuto del tuo file HTML** con questo. Funzionerà.
-
-```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
