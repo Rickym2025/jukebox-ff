@@ -363,78 +363,79 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- 3. RENDER DEI BRANI E GESTIONE PULSANTI (Leggermente Modificato) ---
     // =============================================================
     function renderSongs(songsToRender) {
-        songListContainer.innerHTML = '';
-        if (songsToRender.length > 0) {
-            songsToRender.forEach(song => {
-                const count = getPlayCounts()[song.id] || 0;
-                const playsLeft = MAX_PLAYS - count;
-                const isLocked = playsLeft <= 0;
-                const isWeddingSong = song.matrimonio === true;
-                let purchaseHTML = '';
+    songListContainer.innerHTML = '';
 
-                // --- LOGICA PULSANTE ACQUISTO SEMPLIFICATA ---
-                if (isWeddingSong && !isLocked) {
-                    // Manteniamo la logica per le canzoni nuziali
-                    purchaseHTML = `<button class="acquista-btn wedding-request-btn" data-song-title="${song.titolo}">
-                        <i class="fas fa-ring"></i> Crea la Tua Canzone Nuziale
-                        </button>`;
-                } else if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
-                    // Questo è ora il pulsante di acquisto principale per tutti gli altri brani
-                    purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn">
-                        Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
-                        </button>`;
-                } else if (song.stato?.toLowerCase() === 'venduto') {
-                    // Manteniamo il messaggio per i brani venduti
-                    purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
-                }
-                
-                const hasLyrics = song.liriche && song.liriche.trim() !== "";
-                const hasVideo = song.link_video && song.link_video.trim() !== "";
-                
-                // Creiamo l'elemento songItem e aggiungiamo i dati necessari
-                const songItem = document.createElement('div');
-                songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
-                songItem.dataset.id = song.id;
-                songItem.dataset.src = song.link_ascolto;
-                songItem.dataset.title = song.titolo;
-                if (hasLyrics) songItem.dataset.lyrics = song.liriche.replace(/"/g, '&quot;');
-                
-                // --- Aggiungiamo TUTTI i dati del brano all'elemento DOM ---
-                // Questo ci permette di accedere a qualsiasi informazione (es. prezzo, link video)
-                // quando clicchiamo sul pulsante di acquisto.
-                Object.keys(song).forEach(key => {
-                    songItem.dataset[key] = song[key];
-                });
+    // Funzione helper per convertire i nomi delle colonne in camelCase
+    const toCamelCase = (str) => {
+        return str.toLowerCase().replace(/[^a-zA-Z0-9]+(.)?/g, (match, chr) => chr ? chr.toUpperCase() : '').replace(/^./, (match) => match.toLowerCase());
+    };
 
-                const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
-                const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
-                const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
-                const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
-                const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
-                const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
-                
-                songItem.innerHTML = `
-                    <div class="song-item-top">
-                        <div class="song-info">
-                            <span class="title">${song.titolo}</span>
-                            <div class="plays-left">${playsLeftText}</div>
-                            ${detailsHTML}
-                        </div>
-                        ${infoBtnHTML}
-                    </div>
-                    <div class="song-actions">
-                        ${actionAudioBtn}
-                        ${actionVideoBtn}
-                        ${actionLyricsBtn}
-                        ${purchaseHTML} 
-                    </div>`;
+    if (songsToRender.length > 0) {
+        songsToRender.forEach(song => {
+            const count = getPlayCounts()[song.id] || 0;
+            const playsLeft = MAX_PLAYS - count;
+            const isLocked = playsLeft <= 0;
+            const isWeddingSong = song.matrimonio === true;
+            let purchaseHTML = '';
 
-                songListContainer.appendChild(songItem);
+            if (isWeddingSong && !isLocked) {
+                purchaseHTML = `<button class="acquista-btn wedding-request-btn" data-song-title="${song.titolo}"><i class="fas fa-ring"></i> Crea la Tua Canzone Nuziale</button>`;
+            } else if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
+                purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn">Acquista da ${parseFloat(song.prezzo).toFixed(2)}€</button>`;
+            } else if (song.stato?.toLowerCase() === 'venduto') {
+                purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
+            }
+            
+            const hasLyrics = song.liriche && song.liriche.trim() !== "";
+            const hasVideo = song.link_video && song.link_video.trim() !== "";
+            
+            const songItem = document.createElement('div');
+            songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
+            
+            // --- PARTE CORRETTA ---
+            // Ora, per ogni colonna del Google Sheet, convertiamo il suo nome in camelCase
+            // prima di assegnarlo come attributo data-*.
+            Object.keys(song).forEach(key => {
+                const camelCaseKey = toCamelCase(key);
+                songItem.dataset[camelCaseKey] = song[key];
             });
-        } else {
-            songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
-        }
+            // --- FINE DELLA CORREZIONE ---
+
+            // Assegnamo manualmente gli attributi principali per coerenza con il resto del codice
+            songItem.dataset.id = song.id;
+            songItem.dataset.src = song.link_ascolto;
+            songItem.dataset.title = song.titolo;
+            if (hasLyrics) songItem.dataset.lyrics = song.liriche.replace(/"/g, '&quot;');
+            
+            const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
+            const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
+            const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
+            const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
+            const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
+            const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
+            
+            songItem.innerHTML = `
+                <div class="song-item-top">
+                    <div class="song-info">
+                        <span class="title">${song.titolo}</span>
+                        <div class="plays-left">${playsLeftText}</div>
+                        ${detailsHTML}
+                    </div>
+                    ${infoBtnHTML}
+                </div>
+                <div class="song-actions">
+                    ${actionAudioBtn}
+                    ${actionVideoBtn}
+                    ${actionLyricsBtn}
+                    ${purchaseHTML} 
+                </div>`;
+
+            songListContainer.appendChild(songItem);
+        });
+    } else {
+        songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
     }
+}
     
     // =============================================================
     // --- 4. GESTIONE EVENTI (Leggermente Modificato) ---
