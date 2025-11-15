@@ -5,10 +5,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
     
-    // ID dei prezzi dei tuoi prodotti ADD-ON su Stripe
     const ADDON_PRICE_IDS = {
-        siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", // SOSTITUISCI CON IL TUO VERO ID PREZZO SIAE
-        video: "price_1S5QcrLyZ8FXl87PipiY314W", // SOSTITUISCI CON IL TUO VERO ID PREZZO VIDEO
+        siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", // SOSTITUISCI CON IL TUO ID PREZZO REALE PER LA SIAE
+        video: "price_1S5QcrLyZ8FXl87PipiY314W",  // SOSTITUISCI CON IL TUO ID PREZZO REALE PER IL VIDEO
     };
 
     const MAX_PLAYS = 3;
@@ -21,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let isMultiSelectMode = false;
     let shoppingCart = [];
 
-    // Riferimenti agli elementi DOM
     const loginScreen = document.getElementById('login-screen');
     const jukeboxContainer = document.getElementById('jukebox-container');
     const songListContainer = document.getElementById('song-list-container');
@@ -40,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalContent = purchaseModal.querySelector('#purchase-modal-content');
         const basePrice = parseFloat(songData.prezzo);
 
-        // Costruisci le opzioni dinamicamente
         let optionsHTML = `
             <div class="upsell-item" data-price="100" data-id="add-siae">
                 <i class="fas fa-check-circle check-icon"></i>
@@ -50,8 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>`;
 
-        // Aggiungi l'opzione video SOLO se il link esiste nel foglio Google
-        if (songData.linkVideo && songData.linkVideo.trim() !== "") {
+        // === BUG CORRETTO QUI ===
+        // Aggiungi l'opzione video SOLO se il link esiste, non è vuoto e non è la stringa "FALSE"
+        if (songData.linkVideo && songData.linkVideo.trim() !== '' && songData.linkVideo.toUpperCase() !== 'FALSE') {
             optionsHTML += `
                 <div class="upsell-item" data-price="49" data-id="add-video">
                     <i class="fas fa-check-circle check-icon"></i>
@@ -62,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>`;
         }
 
-        // Costruisci il contenuto completo del modal
         modalContent.innerHTML = `
             <h3>Finalizza il Tuo Acquisto</h3>
             <p>Stai per acquistare il brano:</p>
@@ -81,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const finalBtn = modalContent.querySelector('#final-purchase-btn');
         const upsellItems = modalContent.querySelectorAll('.upsell-item');
 
-        // Funzione per aggiornare il totale dinamicamente
         const updateTotal = () => {
             let currentTotal = basePrice;
             upsellItems.forEach(item => {
@@ -99,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Gestione del click sul pulsante di acquisto finale
         finalBtn.addEventListener('click', () => {
             finalBtn.textContent = 'Reindirizzo...';
             finalBtn.disabled = true;
@@ -127,7 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let clientReferenceIds = [];
         
         for (const item of data.items) {
-            // Voce per il brano principale (creato al volo)
             lineItemsPayload.push({
                 price_data: {
                     currency: 'eur',
@@ -138,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             clientReferenceIds.push(item.id);
 
-            // Aggiungi gli add-on usando i loro Price ID
             if (item.addSIAE) {
                 lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
             }
@@ -205,17 +198,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const songId = songItem.dataset.id;
         const index = shoppingCart.findIndex(item => item.id === songId);
 
-        if (index > -1) { // Se è già nel carrello, lo rimuove
+        if (index > -1) {
             shoppingCart.splice(index, 1);
             songItem.classList.remove('selected-for-cart');
             button.classList.remove('selected');
             button.innerHTML = '<i class="fas fa-cart-plus"></i> Aggiungi al Carrello';
-        } else { // Altrimenti lo aggiunge
+        } else {
             shoppingCart.push({
                 id: songId,
                 title: songItem.dataset.titolo,
                 price: parseFloat(songItem.dataset.prezzo),
-                // Per il carrello, gli add-on sono gestiti al checkout finale
                 addSIAE: false, 
                 addVideo: false
             });
@@ -244,10 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
-        const toCamelCase = (str) => {
-            if (!str) return '';
-            return str.toLowerCase().replace(/[^a-zA-Z0-9]+(.)?/g, (match, chr) => chr ? chr.toUpperCase() : '').replace(/^./, (match) => match.toLowerCase());
-        };
+        const toCamelCase = (str) => str.toLowerCase().replace(/[^a-zA-Z0-9]+(.)?/g, (match, chr) => chr ? chr.toUpperCase() : '').replace(/^./, (match) => match.toLowerCase());
 
         if (songsToRender.length > 0) {
             songsToRender.forEach(song => {
@@ -263,16 +252,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const hasLyrics = song.liriche && song.liriche.trim() !== "";
-                const hasVideo = song.link_video && song.link_video.trim() !== "";
+                const hasVideo = song.link_video && song.link_video.trim() !== '' && song.link_video.toUpperCase() !== 'FALSE';
                 const songItem = document.createElement('div');
                 songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
                 
-                // Popola i dataset per un accesso facile ai dati
                 Object.keys(song).forEach(key => {
                     const camelCaseKey = toCamelCase(key);
-                    if (camelCaseKey) {
-                        songItem.dataset[camelCaseKey] = song[key];
-                    }
+                    songItem.dataset[camelCaseKey] = song[key];
                 });
                 
                 const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
@@ -307,37 +293,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('contact-form').addEventListener('submit', handleContactForm);
-        
-        // Listener per il pulsante multi-selezione
         document.getElementById('multi-select-toggle').addEventListener('click', toggleMultiSelectMode);
         
-        // Listener per il checkout del carrello
         document.getElementById('cart-checkout-btn').addEventListener('click', () => {
             if (shoppingCart.length === 0) return;
-            // Al checkout del carrello, non offriamo opzioni extra per semplicità.
-            // Si acquistano solo i brani base.
             redirectToCheckout({ items: shoppingCart });
         });
 
-        // Listener principale sulla lista delle canzoni
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
             if (!songItem || songItem.classList.contains('disabled')) return;
 
             const target = e.target;
-
             if (target.matches('.acquista-btn')) {
-                // Se si clicca "Acquista", apri il modal con le opzioni
                 openPurchaseModal(songItem.dataset);
             } else if (target.matches('.select-btn')) {
-                // Se si clicca "Aggiungi al carrello"
                 handleMultiSelectClick(songItem, target);
             } else if (target.closest('.action-btn.audio') || target.closest('.title')) {
-                if(isMultiSelectMode) { // Se siamo in multi-selezione, cliccare sul titolo aggiunge al carrello
+                if(isMultiSelectMode) {
                     const selectBtn = songItem.querySelector('.select-btn');
                     if(selectBtn) handleMultiSelectClick(songItem, selectBtn);
-                } else { // Altrimenti, riproduce l'audio
-                    handlePlay(songItem);
+                } else {
+                    handlePlay(songItem, 'audio');
                 }
             } else if (target.closest('.action-btn.video')) {
                 handlePlay(songItem, 'video');
@@ -345,14 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 showLyrics(songItem);
             } else if (target.closest('.info-btn')) {
                 openPurchaseInfoModal();
-            } else if (isMultiSelectMode && target.closest('.song-item')) { // Clic su qualsiasi parte del brano in modalità multi-select
+            } else if (isMultiSelectMode && target.closest('.song-item')) {
                 const selectBtn = songItem.querySelector('.select-btn');
                 if(selectBtn) handleMultiSelectClick(songItem, selectBtn);
             }
         });
 
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
-
         audioPlayer.addEventListener('contextmenu', e => e.preventDefault());
         videoPlayer.addEventListener('contextmenu', e => e.preventDefault());
         audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
@@ -372,8 +348,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
     // --- 5. FUNZIONI CORE E HELPER (invariate) ---
     // =============================================================
-    async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formResult = form.querySelector('#form-result'); const formData = new FormData(form); formResult.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { formResult.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { formResult.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`; } } catch (err) { formResult.innerHTML = "<span style='color: #e53935;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
+    async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formResult = document.getElementById('form-result'); const formData = new FormData(form); formResult.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { formResult.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { formResult.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`; } } catch (err) { formResult.innerHTML = "<span style='color: #e53935;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = `${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { loginScreen.style.display = 'none'; jukeboxContainer.style.display = 'block'; clientNameEl.textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error('Errore login:', err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = `${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const data = await res.json(); if (data.error || data.status === "error") throw new Error(data.message || 'Errore API.'); allSongs = data.songs; populateFilters(allSongs); applyFilters(); } catch (err) { console.error('Errore caricamento:', err); songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; } }
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') { s.categoria.split(/[;,]/).forEach(cat => { const trimmedCat = cat.trim(); if (trimmedCat) filters.categoria.add(trimmedCat); }); } if (s.argomento && typeof s.argomento === 'string') { s.argomento.split(/[;,]/).forEach(arg => { const trimmedArg = arg.trim(); if (trimmedArg) filters.argomento.add(trimmedArg); }); } if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
-    function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const selectedCategory = getActive('categoria'); const selectedArgument = getActive('argomento'); const selectedBpm = getActive('bpm'); const filtered = allSongs.filter(song => { const categoryMatch = !s
+    function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const selectedCategory = getActive('categoria'); const selectedArgument = getActive('argomento'); const selectedBpm = getActive('bpm'); const filtered = allSongs.filter(song => { const categoryMatch = !selectedCategory || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(selectedCategory)); const argumentMatch = !selectedArgument || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(selectedArgument)); const bpmMatch = !selectedBpm || (song.bpm && String(song.bpm) === selectedBpm); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); if(isMultiSelectMode) { isMultiSelectMode = false; toggleMultiSelectMode(); } }
+    function handlePlay(item, type = 'audio') { const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; if (count >= MAX_PLAYS) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.titolo; audioPlayer.src = item.dataset.linkAscolto; audioPlayer.play(); } else if (type === 'video') { videoPlayer.src = item.dataset.linkVideo; document.getElementById('video-modal').style.display = 'flex'; videoPlayer.play(); } count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, currentUserEmail); const playsLeftEl = item.querySelector('.plays-left'); if (playsLeftEl) { const playsLeft = MAX_PLAYS - count; if (playsLeft > 0) { playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`; } else { item.classList.add('disabled'); playsLeftEl.textContent = 'Limite ascolti raggiunto'; } } }
+    function getPlayCounts() { if (!currentUserEmail) return {}; return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
+    function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
+    async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
+    function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
+    function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
+    function closeAllModals() { allModalOverlays.forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
+    function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
+    function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
+    
+    setupEventListeners();
+    handleResetFromUrl();
+});
