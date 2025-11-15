@@ -589,6 +589,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeAllModals() { Object.values(modals).forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
     function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
+    function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
+  
 </script>
 
 </body>
