@@ -140,9 +140,7 @@
   
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <!-- ============================================================= -->
-<!-- NUOVO MODAL PER RICHIESTE MATRIMONIO -->
-<!-- ============================================================= -->
+  
 <div id="wedding-request-modal" class="modal-overlay">
   <div class="modal-content">
     <span class="modal-close">&times;</span>
@@ -153,27 +151,17 @@
     <p style="text-align: left; font-size: 0.9em; color: #ccc; margin-bottom: 20px;">
       Compila questo modulo per fornirmi tutti i dettagli. Dopo l'invio, verrai reindirizzato alla pagina di pagamento per finalizzare la richiesta.
     </p>
-    
-    <!-- SOSTITUISCI CON LA TUA CHIAVE WEB3FORMS E IL TUO LINK STRIPE -->
     <form id="wedding-request-form" action="https://api.web3forms.com/submit" method="POST">
-      <!-- Chiave Web3Forms (la stessa di prima) -->
       <input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d">
-      
-      <!-- ** LINK DI REINDIRIZZAMENTO A STRIPE ** -->
       <input type="hidden" name="redirect" value="IL_TUO_LINK_DI_PAGAMENTO_STRIPE_QUI">
-
-      <!-- Informazioni nascoste per te -->
       <input type="hidden" name="subject" value="Nuova Richiesta Canzone Nuziale Personalizzata">
       <input type="hidden" id="base-song-input" name="brano_di_ispirazione" value="">
-      
-      <!-- Campi Visibili -->
       <input type="text" name="nome_richiedente" placeholder="Il tuo Nome e Cognome" required />
       <input type="email" name="email_richiedente" placeholder="La tua Email di Contatto" required />
       <input type="text" name="nome_sposa" placeholder="Nome della Sposa" required />
       <input type="text" name="nome_sposo" placeholder="Nome dello Sposo" required />
       <textarea name="storia_e_dettagli" placeholder="La loro storia, hobby, momenti importanti, modi di dire..." required></textarea>
       <textarea name="riferimenti_musicali" placeholder="Genere musicale preferito, band o canzoni di riferimento..." required></textarea>
-      
       <button type="submit" class="button">Invia e vai al Pagamento</button>
       <div id="wedding-form-result"></div>
     </form>
@@ -196,12 +184,19 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
+    // =============================================================
+    // --- 1. CONFIGURAZIONE E VARIABILI GLOBALI ---
+    // =============================================================
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
-    
-    // !!! IMPORTANTE: INSERISCI LA TUA CHIAVE PUBBLICABILE DI STRIPE QUI !!!
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
     
+    // --- ID PREZZI PER GLI ADD-ON (DA CONFIGURARE UNA SOLA VOLTA) ---
+    // Questi ID corrispondono ai prodotti "add-on" che hai creato in Stripe (es. "Gestione SIAE", "Video Extra").
+    const ADDON_PRICE_IDS = {
+        siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm",    // SOSTITUISCI CON IL TUO ID PREZZO REALE PER LA SIAE
+        video: "price_1S5QcrLyZ8FXl87PipiY314W",   // SOSTITUISCI CON IL TUO ID PREZZO REALE PER IL VIDEO
+    };
+
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
 
@@ -210,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPlayingType = null;
     let currentUserEmail = '';
 
+    // Riferimenti agli elementi DOM (invariati)
     const loginScreen = document.getElementById('login-screen');
     const jukeboxContainer = document.getElementById('jukebox-container');
     const loginForm = document.getElementById('login-form');
@@ -234,30 +230,46 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     handleResetFromUrl();
 
-    // --- LOGICA DI ACQUISTO CON MODALE INTERATTIVA ---
+    // =============================================================
+    // --- 2. NUOVA LOGICA DI ACQUISTO FLESSIBILE ---
+    // =============================================================
     function openPurchaseModal(songData) {
         const modalContent = modals.purchase.querySelector('#purchase-modal-content');
-        const basePrice = parseFloat(songData.price);
         
-        modalContent.innerHTML = `
-            <h3>Finalizza il Tuo Acquisto</h3>
-            <p>Stai per acquistare il brano:</p>
-            <span class="song-title-highlight">${songData.title}</span>
-            <div class="upsell-options">
+        // Il prezzo base viene letto direttamente dalla colonna 'Prezzo' del tuo Google Sheet
+        const basePrice = parseFloat(songData.prezzo);
+
+        // Costruiamo dinamicamente le opzioni extra
+        let optionsHTML = '';
+        
+        // L'opzione SIAE è sempre disponibile
+        optionsHTML += `
+            <div class="upsell-item" data-price="100" data-id="add-siae">
+                <i class="fas fa-check-circle check-icon"></i>
+                <div class="upsell-item-details">
+                    <strong>Aggiungi Gestione Diritti SIAE</strong>
+                    <span>(+100.00€)</span>
+                </div>
+            </div>`;
+
+        // L'opzione Video viene mostrata SOLO se esiste un Video_Link per quel brano
+        if (songData.link_video && songData.link_video.trim() !== "") {
+            optionsHTML += `
                 <div class="upsell-item" data-price="49" data-id="add-video">
                     <i class="fas fa-check-circle check-icon"></i>
                     <div class="upsell-item-details">
-                        <strong>Aggiungi Video per Social</strong>
-                        <span>Ottimizzato per i tuoi canali (+49.00€)</span>
+                        <strong>Aggiungi Video Promozionale</strong>
+                        <span>(+49.00€)</span>
                     </div>
-                </div>
-                <div class="upsell-item" data-price="49" data-id="add-gadget">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Aggiungi T-Shirt Brandizzata</strong>
-                        <span>Con il tuo logo, design incluso (+49.00€)</span>
-                    </div>
-                </div>
+                </div>`;
+        }
+
+        modalContent.innerHTML = `
+            <h3>Finalizza il Tuo Acquisto</h3>
+            <p>Stai per acquistare il brano:</p>
+            <span class="song-title-highlight">${songData.titolo}</span>
+            <div class="upsell-options">
+                ${optionsHTML}
             </div>
             <div id="purchase-summary">
                 <button id="final-purchase-btn" class="acquista-btn">
@@ -289,208 +301,175 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         finalBtn.addEventListener('click', () => {
-            const addVideo = modalContent.querySelector('.upsell-item[data-id="add-video"]').classList.contains('selected');
-            const addGadget = modalContent.querySelector('.upsell-item[data-id="add-gadget"]').classList.contains('selected');
-            
             finalBtn.textContent = 'Reindirizzo...';
             finalBtn.disabled = true;
 
-            redirectToDynamicCheckout({
+            const checkoutData = {
                 songId: songData.id,
-                songTitle: songData.title,
-                songPrice: songData.price,
-                songTier: songData.tier,
-                addVideo: addVideo,
-                addGadget: addGadget,
-            });
+                songTitle: songData.titolo,
+                basePrice: basePrice,
+                addSIAE: modalContent.querySelector('.upsell-item[data-id="add-siae"]')?.classList.contains('selected') || false,
+                addVideo: modalContent.querySelector('.upsell-item[data-id="add-video"]')?.classList.contains('selected') || false,
+            };
+            redirectToDynamicCheckout(checkoutData);
         });
     }
 
-function redirectToDynamicCheckout(data) {
-    if (!STRIPE_PUBLISHABLE_KEY || !STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_")) {
-        alert("Errore: Chiave Pubblicabile di Stripe non configurata correttamente.");
-        const finalBtn = document.getElementById('final-purchase-btn');
-        if (finalBtn) { finalBtn.disabled = false; }
-        return;
-    }
-
-    // --- CONFIGURAZIONE DEGLI ID DEI PREZZI (con i tuoi ID reali) ---
-    const priceIds = {
-        argento: "price_1S5jNgLyZ8FXl87P615MFyDd", 
-        oro:     "price_1S5jNgLyZ8FXl87PqUvZChRT",     
-        platino: "price_1S5jNgLyZ8FXl87PtN7o5rQj", 
-        video:   "price_1S5QcrLyZ8FXl87PipiY314W",    
-        gadget:  "price_1S5NN8LyZ8FXl87PRrpQOXDm"  
-    };
-
-    const tierKey = data.songTier.toLowerCase();
-    const songPriceId = priceIds[tierKey];
-
-    if (!songPriceId || !songPriceId.startsWith("price_")) {
-        alert(`Errore: Tier "${data.songTier}" non valido o ID Prezzo non configurato correttamente.`);
-        const finalBtn = document.getElementById('final-purchase-btn');
-        if (finalBtn) { finalBtn.disabled = false; }
-        return;
-    }
-
-    // Costruiamo il carrello usando gli ID dei prezzi
-    const lineItemsPayload = [{
-        price: songPriceId,
-        quantity: 1
-    }];
-
-    if (data.addVideo) {
-        lineItemsPayload.push({
-            price: priceIds.video,
-            quantity: 1
-        });
-    }
-    if (data.addGadget) {
-        lineItemsPayload.push({
-            price: priceIds.gadget,
-            quantity: 1
-        });
-    }
-
-    console.log("Dati finali inviati a Stripe (con Price ID):", lineItemsPayload);
-
-    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-    
-    // --- CHIAMATA A STRIPE CON I PARAMETRI ESSENZIALI ---
-    // NOTA: La possibilità di aggiungere una 'description' qui è stata rimossa da Stripe
-    // per le integrazioni client-only che usano Price ID. Il nome del prodotto
-    // sarà quello che hai definito in Stripe per quel Price ID.
-    stripe.redirectToCheckout({
-        lineItems: lineItemsPayload,
-        mode: 'payment',
-        successUrl: window.location.href.split('?')[0] + '?payment=success',
-        cancelUrl: window.location.href.split('?')[0] + '?payment=cancel',
-        clientReferenceId: data.songId
-    }).catch(error => {
-        console.error("ERRORE DA STRIPE:", error);
-        alert("Si è verificato un errore con Stripe. Controlla la console.");
-        const finalBtn = document.getElementById('final-purchase-btn');
-        if (finalBtn) {
-            finalBtn.textContent = 'Errore - Riprova Pagamento';
-            finalBtn.disabled = false;
+    function redirectToDynamicCheckout(data) {
+        if (!STRIPE_PUBLISHABLE_KEY) {
+            alert("Errore: Chiave Pubblicabile di Stripe non configurata.");
+            return;
         }
-    });
-}
 
+        const lineItemsPayload = [];
 
-    // --- RENDER DEI BRANI ---
+        // --- Elemento chiave: Il Prodotto Base con Prezzo Variabile ---
+        // Creiamo l'item principale "al volo" usando il prezzo che hai definito nel tuo Google Sheet.
+        // Questo ti dà la massima flessibilità.
+        lineItemsPayload.push({
+            price_data: {
+                currency: 'eur',
+                product_data: {
+                    name: `Brano: ${data.songTitle}`,
+                },
+                unit_amount: data.basePrice * 100, // Stripe vuole il prezzo in centesimi (es. 299.00€ -> 29900)
+            },
+            quantity: 1
+        });
+
+        // Aggiungiamo gli add-on (SIAE, Video) se sono stati selezionati, usando i loro ID Prezzo fissi.
+        if (data.addSIAE) {
+            lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
+        }
+        if (data.addVideo) {
+            lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
+        }
+        
+        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        
+        stripe.redirectToCheckout({
+            lineItems: lineItemsPayload,
+            mode: 'payment',
+            successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
+            cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
+            clientReferenceId: data.songId // Passiamo l'ID del brano a n8n
+        }).catch(error => {
+            console.error("ERRORE DA STRIPE:", error);
+            alert("Si è verificato un errore con Stripe. Controlla la console per i dettagli.");
+        });
+    }
+
+    // =============================================================
+    // --- 3. RENDER DEI BRANI E GESTIONE PULSANTI (Leggermente Modificato) ---
+    // =============================================================
     function renderSongs(songsToRender) {
-    songListContainer.innerHTML = '';
-    if (songsToRender.length > 0) {
-        songsToRender.forEach(song => {
-            const count = getPlayCounts()[song.id] || 0;
-            const playsLeft = MAX_PLAYS - count;
-            const isLocked = playsLeft <= 0;
-            const isWeddingSong = song.matrimonio === true;
-            let purchaseHTML = '';
+        songListContainer.innerHTML = '';
+        if (songsToRender.length > 0) {
+            songsToRender.forEach(song => {
+                const count = getPlayCounts()[song.id] || 0;
+                const playsLeft = MAX_PLAYS - count;
+                const isLocked = playsLeft <= 0;
+                const isWeddingSong = song.matrimonio === true;
+                let purchaseHTML = '';
 
-            // --- NUOVA LOGICA DI PREZZO POTENZIATA ---
-            if (isWeddingSong && !isLocked) {
-                // CASO 1: Canzone per Matrimonio
-                purchaseHTML = `<button class="acquista-btn wedding-request-btn" data-song-title="${song.titolo}">
-                    <i class="fas fa-ring"></i> Crea la Tua Canzone Nuziale
-                    </button>`;
-            } else if (song.stripe_link && song.stripe_link.startsWith('http') && !isLocked) {
-                // CASO 2: È presente un link di pagamento diretto
-                purchaseHTML = `<a href="${song.stripe_link}" target="_blank" class="acquista-btn">
-                    <i class="fas fa-shopping-cart"></i> Acquista Ora (Prezzo Fisso)
-                    </a>`;
-            } else if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
-                // CASO 3: Sistema a Tier (Argento, Oro, etc.)
-                purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn" 
-                    data-song-id="${song.id}" data-song-title="${song.titolo}"
-                    data-song-price="${song.prezzo}" data-song-tier="${song.tier}">
-                    Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
-                    </button>`;
-            } else if (song.stato?.toLowerCase() === 'venduto') {
-                // CASO 4: Brano venduto
-                purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
-            }
-            // (Il resto della funzione rimane identico, non devi toccare altro)
+                // --- LOGICA PULSANTE ACQUISTO SEMPLIFICATA ---
+                if (isWeddingSong && !isLocked) {
+                    // Manteniamo la logica per le canzoni nuziali
+                    purchaseHTML = `<button class="acquista-btn wedding-request-btn" data-song-title="${song.titolo}">
+                        <i class="fas fa-ring"></i> Crea la Tua Canzone Nuziale
+                        </button>`;
+                } else if (song.prezzo && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
+                    // Questo è ora il pulsante di acquisto principale per tutti gli altri brani
+                    purchaseHTML = `<button class="acquista-btn open-purchase-modal-btn">
+                        Acquista da ${parseFloat(song.prezzo).toFixed(2)}€
+                        </button>`;
+                } else if (song.stato?.toLowerCase() === 'venduto') {
+                    // Manteniamo il messaggio per i brani venduti
+                    purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1; align-self: center;">Brano Venduto</p>`;
+                }
+                
+                const hasLyrics = song.liriche && song.liriche.trim() !== "";
+                const hasVideo = song.link_video && song.link_video.trim() !== "";
+                
+                // Creiamo l'elemento songItem e aggiungiamo i dati necessari
+                const songItem = document.createElement('div');
+                songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
+                songItem.dataset.id = song.id;
+                songItem.dataset.src = song.link_ascolto;
+                songItem.dataset.title = song.titolo;
+                if (hasLyrics) songItem.dataset.lyrics = song.liriche.replace(/"/g, '&quot;');
+                
+                // --- Aggiungiamo TUTTI i dati del brano all'elemento DOM ---
+                // Questo ci permette di accedere a qualsiasi informazione (es. prezzo, link video)
+                // quando clicchiamo sul pulsante di acquisto.
+                Object.keys(song).forEach(key => {
+                    songItem.dataset[key] = song[key];
+                });
 
-            let tierBadge = '';
-            if (song.tier) {
-                let tierColor = '#c0c0c0';
-                if (song.tier.toLowerCase().includes('oro')) tierColor = '#ffd700';
-                if (song.tier.toLowerCase().includes('platino')) tierColor = '#e5e4e2';
-                tierBadge = `<span style="background-color: ${tierColor}; color: #121212; padding: 3px 8px; font-size: 0.7em; font-weight: 600; border-radius: 10px; margin-left: 10px;">${song.tier}</span>`;
-            }
-            const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const hasVideo = song.link_video && song.link_video.trim() !== "";
-            const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
-            const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
-            const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
-            const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
-            const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
-            const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
-
-            const songItemHTML = `
-                <div class="song-item ${isLocked ? 'disabled' : ''}" data-id="${song.id}" data-src="${song.link_ascolto}" data-title="${song.titolo}" data-lyrics="${hasLyrics ? song.liriche.replace(/"/g, '&quot;') : ''}">
-                    <div class="song-item-top">...</div>
+                const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
+                const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
+                const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
+                const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
+                const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
+                const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
+                
+                songItem.innerHTML = `
+                    <div class="song-item-top">
+                        <div class="song-info">
+                            <span class="title">${song.titolo}</span>
+                            <div class="plays-left">${playsLeftText}</div>
+                            ${detailsHTML}
+                        </div>
+                        ${infoBtnHTML}
+                    </div>
                     <div class="song-actions">
                         ${actionAudioBtn}
                         ${actionVideoBtn}
                         ${actionLyricsBtn}
                         ${purchaseHTML} 
-                    </div>
-                </div>`;
-            // Ricostruisci la parte interna dell'HTML come nel tuo file originale
-            songListContainer.innerHTML += songItemHTML.replace('<div class="song-item-top">...</div>', `
-                <div class="song-item-top">
-                    <div class="song-info">
-                        <span class="title">${song.titolo}${tierBadge}</span>
-                        <div class="plays-left">${playsLeftText}</div>
-                        ${detailsHTML}
-                    </div>
-                    ${infoBtnHTML}
-                </div>`);
-        });
-    } else {
-        songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
+                    </div>`;
+
+                songListContainer.appendChild(songItem);
+            });
+        } else {
+            songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>';
+        }
     }
-}
     
-    // --- SETUP DEGLI EVENT LISTENER ---
+    // =============================================================
+    // --- 4. GESTIONE EVENTI (Leggermente Modificato) ---
+    // =============================================================
     function setupEventListeners() {
         loginForm.addEventListener('submit', handleLogin);
         contactForm.addEventListener('submit', handleContactForm);
+        
         songListContainer.addEventListener('click', function(e) {
-    // Aggiungiamo .wedding-request-btn alla lista dei selettori
-    const target = e.target.closest('.btn, .open-purchase-modal-btn, .wedding-request-btn, .title');
-    if (!target) return;
-    
-    const songItem = target.closest('.song-item');
-    if (!songItem || songItem.classList.contains('disabled')) return;
+            const target = e.target.closest('.btn, .open-purchase-modal-btn, .wedding-request-btn, .title');
+            if (!target) return;
+            
+            const songItem = target.closest('.song-item');
+            if (!songItem || songItem.classList.contains('disabled')) return;
 
-    if (target.matches('.open-purchase-modal-btn')) {
-        openPurchaseModal({
-            id: target.dataset.songId,
-            title: target.dataset.songTitle,
-            price: target.dataset.songPrice,
-            tier: target.dataset.songTier,
+            // --- NUOVA GESTIONE PULSANTE ACQUISTO ---
+            if (target.matches('.open-purchase-modal-btn')) {
+                // Passiamo l'intero dataset dell'elemento songItem, che contiene tutti i dati dal Google Sheet
+                openPurchaseModal(songItem.dataset);
+            } 
+            else if (target.matches('.wedding-request-btn')) {
+                modals.weddingRequest.querySelector('#base-song-input').value = songItem.dataset.title;
+                modals.weddingRequest.style.display = 'flex';
+            } else if (target.matches('.action-btn.audio') || target.matches('.title')) {
+                handlePlay(songItem, 'audio');
+            } else if (target.matches('.action-btn.video')) {
+                handlePlay(songItem, 'video', target.dataset.videoSrc);
+            } else if (target.matches('.action-btn.lyrics')) {
+                showLyrics(songItem);
+            } else if (target.matches('.info-btn')) {
+                modals.purchaseInfo.style.display = 'flex';
+            }
         });
-    } else if (target.matches('.wedding-request-btn')) {
-        // --- GESTIONE NUOVO PULSANTE ---
-        const songTitle = target.dataset.songTitle;
-        // Inseriamo il titolo del brano nel campo nascosto del form
-        modals.weddingRequest.querySelector('#base-song-input').value = songTitle;
-        // Apriamo il nuovo modal
-        modals.weddingRequest.style.display = 'flex';
-    } else if (target.matches('.action-btn.audio') || target.matches('.title')) {
-        handlePlay(songItem, 'audio');
-    } else if (target.matches('.action-btn.video')) {
-        handlePlay(songItem, 'video', target.dataset.videoSrc);
-    } else if (target.matches('.action-btn.lyrics')) {
-        showLyrics(songItem);
-    } else if (target.matches('.info-btn')) {
-        modals.purchaseInfo.style.display = 'flex';
-    }
-});
+        
+        // Il resto degli event listener rimane invariato
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => modals.contact.style.display = 'flex');
         document.getElementById('show-gadget-modal-btn').addEventListener('click', () => modals.gadget.style.display = 'flex');
         document.getElementById('contact-for-gadgets-btn')?.addEventListener('click', () => { closeAllModals(); modals.contact.style.display = 'flex'; });
@@ -508,150 +487,18 @@ function redirectToDynamicCheckout(data) {
         });
     }
 
-    // --- FUNZIONI CORE (Login, API, Filtri) ---
+    // =============================================================
+    // --- 5. FUNZIONI CORE E HELPER (Invariate) ---
+    // =============================================================
+    // Tutte le funzioni da qui in poi (handleLogin, loadMusicFromApi, populateFilters,
+    // applyFilters, handlePlay, getPlayCounts, ecc.) rimangono esattamente
+    // come erano nel tuo file originale, non c'è bisogno di modificarle.
+    
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = new URL(sheetApiUrl); url.searchParams.append('emailCheck', email); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { loginScreen.style.display = 'none'; jukeboxContainer.style.display = 'block'; clientNameEl.textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error('Errore login:', err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = new URL(sheetApiUrl); url.searchParams.append('userEmail', userEmail); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const songs = await res.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API.'); allSongs = songs.songs; populateFilters(allSongs); applyFilters(); } catch (err) { console.error('Errore caricamento:', err); songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; } }
-    function populateFilters(songs) {
-    // Inizializza i contenitori per i filtri unici (Set evita i duplicati)
-    const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
-
-    // --- INIZIO DELLA PARTE MODIFICATA ---
-    // Scorre ogni canzone per estrarre i filtri
-    songs.forEach(s => {
-        // Gestisce la Categoria, dividendo la stringa
-        if (s.categoria && typeof s.categoria === 'string') {
-            const categorie = s.categoria.split(/[;,]/); // Divide sia per punto e virgola (;) che per virgola (,)
-            categorie.forEach(cat => {
-                const trimmedCat = cat.trim(); // Rimuove spazi vuoti inutili all'inizio o alla fine
-                if (trimmedCat) { // Aggiunge il filtro solo se non è una stringa vuota
-                    filters.categoria.add(trimmedCat);
-                }
-            });
-        }
-
-        // Gestisce l'Argomento, dividendo la stringa
-        if (s.argomento && typeof s.argomento === 'string') {
-            const argomenti = s.argomento.split(/[;,]/); // Divide sia per punto e virgola (;) che per virgola (,)
-            argomenti.forEach(arg => {
-                const trimmedArg = arg.trim(); // Rimuove spazi vuoti
-                if (trimmedArg) { // Aggiunge il filtro solo se non è una stringa vuota
-                    filters.argomento.add(trimmedArg);
-                }
-            });
-        }
-        
-        // La gestione dei BPM non cambia, essendo un valore singolo
-        if (s.bpm) {
-            filters.bpm.add(s.bpm);
-        }
-    });
-    // --- FINE DELLA PARTE MODIFICATA ---
-
-    // Funzione interna per creare i pulsanti (questa parte non è cambiata)
-    const createBtns = (type, items, label) => {
-        const cont = document.getElementById(`filter-${type}`);
-        if (!cont) return;
-        cont.innerHTML = '';
-        const allBtn = document.createElement('button');
-        allBtn.textContent = label;
-        allBtn.value = '';
-        allBtn.className = 'active';
-        cont.appendChild(allBtn);
-        [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => {
-            const btn = document.createElement('button');
-            btn.textContent = item;
-            btn.value = item;
-            cont.appendChild(btn);
-        });
-        cont.addEventListener('click', e => {
-            if (e.target.tagName === 'BUTTON') {
-                cont.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                applyFilters();
-            }
-        });
-    };
-
-    // Crea i gruppi di pulsanti usando i filtri che abbiamo raccolto
-    createBtns('categoria', filters.categoria, 'Tutte');
-    createBtns('argomento', filters.argomento, 'Tutti');
-    createBtns('bpm', filters.bpm, 'Tutti');
-}
-  function applyFilters() {
-    const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? '';
-    const selectedCategory = getActive('categoria');
-    const selectedArgument = getActive('argomento');
-    const selectedBpm = getActive('bpm');
-
-    const filtered = allSongs.filter(song => {
-        // Verifica se la categoria della canzone (anche se multipla) include quella selezionata
-        const categoryMatch = !selectedCategory || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(selectedCategory));
-        
-        // Verifica se l'argomento della canzone (anche se multiplo) include quello selezionato
-        const argumentMatch = !selectedArgument || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(selectedArgument));
-        
-        // La verifica dei BPM rimane invariata
-        const bpmMatch = !selectedBpm || (song.bpm && String(song.bpm) === selectedBpm);
-
-        return categoryMatch && argumentMatch && bpmMatch;
-    });
-
-    renderSongs(filtered);
-}
-    
-    // --- FUNZIONI PLAYER (CON BUG CORRETTO) ---
-    function handlePlay(item, type, sourceUrl = null) {
-        const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType;
-        if (isPlayingThisItem) {
-            if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
-            else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
-            return;
-        }
-
-        const counts = getPlayCounts();
-        const songId = item.dataset.id;
-        let count = counts[songId] || 0;
-        if (count >= MAX_PLAYS) {
-            alert("Hai raggiunto il limite di ascolti per questo brano.");
-            return;
-        }
-
-        // Prima avvia la musica, poi aggiorna i conteggi
-        resetPlayingState();
-        currentPlayingItem = item;
-        currentPlayingType = type;
-
-        if (type === 'audio') {
-            footerPlayer.classList.add('visible');
-            footerPlayerTitle.textContent = item.dataset.title;
-            audioPlayer.src = item.dataset.src;
-            audioPlayer.play();
-        } else if (type === 'video') {
-            videoPlayer.src = sourceUrl;
-            modals.video.style.display = 'flex';
-            videoPlayer.play();
-        }
-
-        // Ora che la musica è partita, aggiorna i conteggi e la UI
-        count++;
-        counts[songId] = count;
-        savePlayCounts(counts);
-        trackPlay(songId, currentUserEmail);
-        
-        // Aggiorna solo il testo del brano corrente invece di ricaricare tutto
-        const playsLeftEl = item.querySelector('.plays-left');
-        if (playsLeftEl) {
-            const playsLeft = MAX_PLAYS - count;
-            if (playsLeft > 0) {
-                playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`;
-            } else {
-                item.classList.add('disabled');
-                playsLeftEl.textContent = 'Limite ascolti raggiunto';
-            }
-        }
-    }
-    
-    // --- FUNZIONI HELPER ---
+    function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') { s.categoria.split(/[;,]/).forEach(cat => { const trimmedCat = cat.trim(); if (trimmedCat) { filters.categoria.add(trimmedCat); } }); } if (s.argomento && typeof s.argomento === 'string') { s.argomento.split(/[;,]/).forEach(arg => { const trimmedArg = arg.trim(); if (trimmedArg) { filters.argomento.add(trimmedArg); } }); } if (s.bpm) { filters.bpm.add(s.bpm); } }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
+    function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const selectedCategory = getActive('categoria'); const selectedArgument = getActive('argomento'); const selectedBpm = getActive('bpm'); const filtered = allSongs.filter(song => { const categoryMatch = !selectedCategory || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(selectedCategory)); const argumentMatch = !selectedArgument || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(selectedArgument)); const bpmMatch = !selectedBpm || (song.bpm && String(song.bpm) === selectedBpm); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
+    function handlePlay(item, type, sourceUrl = null) { const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; if (count >= MAX_PLAYS) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.title; audioPlayer.src = item.dataset.src; audioPlayer.play(); } else if (type === 'video') { videoPlayer.src = sourceUrl; modals.video.style.display = 'flex'; videoPlayer.play(); } count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, currentUserEmail); const playsLeftEl = item.querySelector('.plays-left'); if (playsLeftEl) { const playsLeft = MAX_PLAYS - count; if (playsLeft > 0) { playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`; } else { item.classList.add('disabled'); playsLeftEl.textContent = 'Limite ascolti raggiunto'; } } }
     function getPlayCounts() { if (!currentUserEmail) return {}; return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
     async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
