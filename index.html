@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
     handleResetFromUrl();
 
     // =============================================================
-    // --- 2. NUOVA LOGICA DI ACQUISTO FLESSIBILE ---
+    // --- 2. LOGICA DI ACQUISTO FLESSIBILE ---
     // =============================================================
     function openPurchaseModal(songData) {
         const modalContent = modals.purchase.querySelector('#purchase-modal-content');
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 price_data: {
                     currency: 'eur',
                     product_data: { name: `Brano: ${item.title}` },
-                    unit_amount: item.price * 100,
+                    unit_amount: Math.round(item.price * 100),
                 },
                 quantity: 1
             });
@@ -336,6 +336,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }).catch(error => {
             console.error("ERRORE DA STRIPE:", error);
             alert("Si è verificato un errore con Stripe. Controlla la console.");
+            // Riabilita il pulsante in caso di errore
+            const finalBtn = document.getElementById('final-purchase-btn');
+            if (finalBtn) {
+                finalBtn.textContent = 'Riprova Pagamento';
+                finalBtn.disabled = false;
+            }
         });
     }
 
@@ -415,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =============================================================
-    // --- 4. RENDER DEI BRANI E GESTIONE PULSANTI ---
+    // --- 4. RENDER DEI BRANI ---
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
@@ -443,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const camelCaseKey = toCamelCase(key);
                     songItem.dataset[camelCaseKey] = song[key];
                 });
-
+                
                 const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
                 const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
                 const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
@@ -511,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (target.closest('.action-btn.lyrics')) {
                 showLyrics(songItem);
             } else if (target.closest('.info-btn')) {
-                modals.purchaseInfo.style.display = 'flex';
+                openPurchaseInfoModal(); // Funzione da creare se non esiste
             } else if (isMultiSelectMode && target.closest('.song-item')) {
                 const selectBtn = songItem.querySelector('.select-btn');
                 if(selectBtn) handleMultiSelectClick(songItem, selectBtn);
@@ -581,10 +587,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function savePlayCounts(counts) { if (!currentUserEmail) return; localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
     async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { if (modals.lyrics) { modals.lyrics.querySelector('#lyrics-title').innerText = item.dataset.titolo; modals.lyrics.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modals.lyrics.style.display = 'flex'; } }
+    function openPurchaseInfoModal() { if (modals.purchaseInfo) modals.purchaseInfo.style.display = 'flex'; }
     function closeAllModals() { Object.values(modals).forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
     function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
-
 });
 </script>
 </body>
