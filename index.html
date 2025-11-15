@@ -2,7 +2,19 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://js.stripe.com https://cdnjs.cloudflare.com 'unsafe-eval';">
+
+  <!-- CSP COMPLETA E CORRETTA -->
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self';
+                 script-src 'self' https://js.stripe.com 'unsafe-eval';
+                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+                 font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+                 connect-src 'self' https://script.google.com https://api.web3forms.com https://api.stripe.com;
+                 frame-src https://js.stripe.com;
+                 img-src 'self' https://pub-89945f8350374b50818d716fdc3c108b.r2.dev;
+                 media-src 'self' https://github.com;
+                 object-src 'none';">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jukebox FF</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
@@ -126,7 +138,7 @@
         <div id="login-screen">
           <h1>Jukebox FF Riservato</h1>
           <form id="login-form">
-            <input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required />
+            <input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required autocomplete="email" />
             <button type="submit" class="button">Accedi</button>
           </form>
         </div>
