@@ -2,6 +2,8 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
+  <!-- Aggiunto Meta Tag per CSP, anche se Google Sites ha le sue regole, aiuta -->
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://js.stripe.com https://cdnjs.cloudflare.com;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jukebox FF</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
@@ -289,20 +291,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const lineItemsPayload = [];
         let clientReferenceIds = [];
         
-        // Usiamo un loop for...of per poter usare 'return' e bloccare l'esecuzione in caso di errore
         for (const item of data.items) {
             const unitAmount = Math.round(parseFloat(item.price) * 100);
             
             if (isNaN(unitAmount) || unitAmount <= 0) {
                 console.error("Prezzo non valido per il brano:", item);
                 alert(`Errore: il prezzo per il brano "${item.title}" non è valido.`);
-                // Riabilita il pulsante di acquisto se esiste
                 const finalBtn = document.getElementById('final-purchase-btn');
                 if (finalBtn) {
                     finalBtn.textContent = 'Riprova Pagamento';
                     finalBtn.disabled = false;
                 }
-                return; // Blocca l'esecuzione della funzione
+                return;
             }
 
             lineItemsPayload.push({
@@ -577,8 +577,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = new URL(sheetApiUrl); url.searchParams.append('emailCheck', email); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { loginScreen.style.display = 'none'; jukeboxContainer.style.display = 'block'; clientNameEl.textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error('Errore login:', err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
-    async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = new URL(sheetApiUrl); url.searchParams.append('userEmail', userEmail); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const songs = await res.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API.'); allSongs = songs.songs; populateFilters(allSongs); applyFilters(); } catch (err) { console.error('Errore caricamento:', err); songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; } }
+    async function handleLogin(e) { 
+        e.preventDefault(); 
+        const email = document.getElementById('email-input').value.trim().toLowerCase(); 
+        if (!email) { 
+            alert('Per favore, inserisci un\'email.'); 
+            return; 
+        } 
+        currentUserEmail = email; 
+        const btn = e.target.querySelector('button'); 
+        btn.textContent = 'Verifico...'; 
+        btn.disabled = true; 
+        try { 
+            const url = `${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`;
+            const res = await fetch(url); 
+            if (!res.ok) throw new Error('Errore di rete.'); 
+            const result = await res.json(); 
+            if (result.status === "ok" && result.name) { 
+                loginScreen.style.display = 'none'; 
+                jukeboxContainer.style.display = 'block'; 
+                clientNameEl.textContent = result.name; 
+                await loadMusicFromApi(email); 
+            } else { 
+                alert(result.message || 'Accesso non autorizzato.'); 
+            } 
+        } catch (err) { 
+            console.error('Errore login:', err); 
+            alert('Errore di comunicazione.'); 
+        } finally { 
+            btn.textContent = 'Accedi'; 
+            btn.disabled = false; 
+        } 
+    }
+
+    async function loadMusicFromApi(userEmail) { 
+        songListContainer.innerHTML = `<p>Caricamento...</p>`; 
+        try { 
+            const url = `${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`;
+            const res = await fetch(url); 
+            if (!res.ok) throw new Error('Errore di rete.'); 
+            const songs = await res.json(); 
+            if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API.'); 
+            allSongs = songs.songs; 
+            populateFilters(allSongs); 
+            applyFilters(); 
+        } catch (err) { 
+            console.error('Errore caricamento:', err); 
+            songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; 
+        } 
+    }
+    
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') { s.categoria.split(/[;,]/).forEach(cat => { const trimmedCat = cat.trim(); if (trimmedCat) { filters.categoria.add(trimmedCat); } }); } if (s.argomento && typeof s.argomento === 'string') { s.argomento.split(/[;,]/).forEach(arg => { const trimmedArg = arg.trim(); if (trimmedArg) { filters.argomento.add(trimmedArg); } }); } if (s.bpm) { filters.bpm.add(s.bpm); } }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const selectedCategory = getActive('categoria'); const selectedArgument = getActive('argomento'); const selectedBpm = getActive('bpm'); const filtered = allSongs.filter(song => { const categoryMatch = !selectedCategory || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(selectedCategory)); const argumentMatch = !selectedArgument || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(selectedArgument)); const bpmMatch = !selectedBpm || (song.bpm && String(song.bpm) === selectedBpm); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     function handlePlay(item, type = 'audio') { const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; if (count >= MAX_PLAYS) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.titolo; audioPlayer.src = item.dataset.linkAscolto; audioPlayer.play(); } else if (type === 'video') { videoPlayer.src = item.dataset.linkVideo; document.getElementById('video-modal').style.display = 'flex'; videoPlayer.play(); } count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, currentUserEmail); const playsLeftEl = item.querySelector('.plays-left'); if (playsLeftEl) { const playsLeft = MAX_PLAYS - count; if (playsLeft > 0) { playsLeftEl.textContent = `Ascolti rimasti: ${playsLeft}`; } else { item.classList.add('disabled'); playsLeftEl.textContent = 'Limite ascolti raggiunto'; } } }
