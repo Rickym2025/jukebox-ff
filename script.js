@@ -5,9 +5,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
     
+    // SOSTITUISCI QUESTI CON I TUOI ID PREZZO REALI CREATI SU STRIPE
     const ADDON_PRICE_IDS = {
-        siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", // SOSTITUISCI CON IL TUO ID PREZZO REALE PER LA SIAE
-        video: "price_1S5QcrLyZ8FXl87PipiY314W",  // SOSTITUISCI CON IL TUO ID PREZZO REALE PER IL VIDEO
+        siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", // Esempio: Prezzo per la licenza SIAE
+        video: "price_1S5QcrLyZ8FXl87PipiY314W",  // Esempio: Prezzo per il video addizionale
     };
 
     const MAX_PLAYS = 3;
@@ -47,8 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>`;
 
-        // === BUG CORRETTO QUI ===
-        // Aggiungi l'opzione video SOLO se il link esiste, non è vuoto e non è la stringa "FALSE"
+        // CONTROLLO CORRETTO: Aggiungi l'opzione video SOLO se il link è valido
         if (songData.linkVideo && songData.linkVideo.trim() !== '' && songData.linkVideo.toUpperCase() !== 'FALSE') {
             optionsHTML += `
                 <div class="upsell-item" data-price="49" data-id="add-video">
@@ -119,9 +119,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const lineItemsPayload = [];
-        let clientReferenceIds = [];
         
         for (const item of data.items) {
+            // Crea il prodotto "brano" al volo
             lineItemsPayload.push({
                 price_data: {
                     currency: 'eur',
@@ -130,8 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 quantity: 1
             });
-            clientReferenceIds.push(item.id);
 
+            // Aggiunge gli add-on usando i Price ID che hai configurato
             if (item.addSIAE) {
                 lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
             }
@@ -148,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
             allow_promotion_codes: true,
             successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
             cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
-            clientReferenceId: clientReferenceIds.join(',')
         }).catch(error => {
             console.error("ERRORE DA STRIPE:", error);
             alert("Si è verificato un errore con Stripe. Controlla la console.");
@@ -207,9 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
             shoppingCart.push({
                 id: songId,
                 title: songItem.dataset.titolo,
-                price: parseFloat(songItem.dataset.prezzo),
-                addSIAE: false, 
-                addVideo: false
+                price: parseFloat(songItem.dataset.prezzo)
             });
             songItem.classList.add('selected-for-cart');
             button.classList.add('selected');
@@ -224,10 +221,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (shoppingCart.length > 0) {
             const total = shoppingCart.reduce((sum, item) => sum + item.price, 0);
             const itemText = shoppingCart.length === 1 ? 'brano' : 'brani';
-            cartInfo.textContent = `${shoppingCart.length} ${itemText} selezionati - Totale: ${total.toFixed(2)}€`;
-            cartBar.classList.add('visible');
+            cartInfo.textContent = `${shoppingCart.length} ${itemText} selezionati - Totale Base: ${total.toFixed(2)}€`;
+            cartBar.style.display = 'flex'; // Cambiato da add('visible') per sicurezza
         } else {
-            cartBar.classList.remove('visible');
+            cartBar.style.display = 'none'; // Cambiato da remove('visible')
         }
     }
 
@@ -262,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
-                const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}" data-video-src="${song.link_video}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
+                const actionVideoBtn = hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>';
                 const actionLyricsBtn = hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>';
                 const infoBtnHTML = `<button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>`;
                 const detailsHTML = (song.bpm || song.durata) ? `<div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div>` : '';
@@ -297,6 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('cart-checkout-btn').addEventListener('click', () => {
             if (shoppingCart.length === 0) return;
+            // Per il checkout multiplo, apriamo un modal che chiede se aggiungere SIAE/Video a TUTTI i brani
+            // (Semplificazione: per ora, il checkout multiplo non ha opzioni extra)
             redirectToCheckout({ items: shoppingCart });
         });
 
