@@ -44,11 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i class="fas fa-check-circle check-icon"></i>
                 <div class="upsell-item-details">
                     <strong>Aggiungi Gestione Diritti SIAE</strong>
-                    <span>Include il deposito dell'opera e la gestione burocratica completa per la tutela dei diritti d'autore (+100.00€).</span>
+                    <span>Include il deposito dell'opera e la gestione burocratica completa (+100.00€).</span>
                 </div>
             </div>`;
 
-        // CONTROLLO CORRETTO: Aggiungi l'opzione video SOLO se il link è valido
         if (songData.linkVideo && songData.linkVideo.trim() !== '' && songData.linkVideo.toUpperCase() !== 'FALSE') {
             optionsHTML += `
                 <div class="upsell-item" data-price="49" data-id="add-video">
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="song-title-highlight">${songData.titolo}</span>
             <div class="upsell-options">${optionsHTML}</div>
             <div class="info-box">
-                <strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20% come sostituto d'imposta. Riceverai una ricevuta dettagliata.
+                <strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.
             </div>
             <div id="purchase-summary">
                 <button id="final-purchase-btn" class="acquista-btn">Vai al Pagamento - ${basePrice.toFixed(2)}€</button>
@@ -101,7 +100,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const checkoutData = {
                 items: [{
-                    id: songData.id,
                     title: songData.titolo,
                     price: basePrice,
                     addSIAE: modalContent.querySelector('.upsell-item[data-id="add-siae"]').classList.contains('selected'),
@@ -112,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // === FIX #2: FUNZIONE DI CHECKOUT RESA PIÙ ROBUSTA ===
     function redirectToCheckout(data) {
         if (!STRIPE_PUBLISHABLE_KEY) {
             alert("Errore: Chiave Stripe non configurata.");
@@ -121,17 +120,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const lineItemsPayload = [];
         
         for (const item of data.items) {
-            // Crea il prodotto "brano" al volo
+            const unitAmount = Math.round(parseFloat(item.price) * 100);
+
+            // Controllo di sicurezza: verifica che il prezzo sia un numero valido
+            if (isNaN(unitAmount) || unitAmount <= 0) {
+                console.error("Prezzo non valido per il brano:", item);
+                alert(`Errore: il prezzo per il brano "${item.title}" non è valido. Controlla il foglio Google.`);
+                const finalBtn = document.getElementById('final-purchase-btn');
+                if (finalBtn) {
+                    finalBtn.textContent = 'Riprova Pagamento';
+                    finalBtn.disabled = false;
+                }
+                return; // Blocca l'esecuzione se il prezzo è errato
+            }
+
             lineItemsPayload.push({
                 price_data: {
                     currency: 'eur',
                     product_data: { name: `Brano: ${item.title}` },
-                    unit_amount: Math.round(parseFloat(item.price) * 100),
+                    unit_amount: unitAmount,
                 },
                 quantity: 1
             });
 
-            // Aggiunge gli add-on usando i Price ID che hai configurato
             if (item.addSIAE) {
                 lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
             }
@@ -151,6 +162,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }).catch(error => {
             console.error("ERRORE DA STRIPE:", error);
             alert("Si è verificato un errore con Stripe. Controlla la console.");
+            const finalBtn = document.getElementById('final-purchase-btn');
+             if (finalBtn) {
+                finalBtn.textContent = 'Riprova Pagamento';
+                finalBtn.disabled = false;
+            }
         });
     }
 
@@ -215,6 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCartBar();
     }
     
+    // === FIX #1: FUNZIONE CARRELLO CORRETTA ===
     function updateCartBar() {
         const cartBar = document.getElementById('cart-bar');
         const cartInfo = document.getElementById('cart-info');
@@ -222,14 +239,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const total = shoppingCart.reduce((sum, item) => sum + item.price, 0);
             const itemText = shoppingCart.length === 1 ? 'brano' : 'brani';
             cartInfo.textContent = `${shoppingCart.length} ${itemText} selezionati - Totale Base: ${total.toFixed(2)}€`;
-            cartBar.style.display = 'flex'; // Cambiato da add('visible') per sicurezza
+            cartBar.classList.add('visible'); // USA LA CLASSE CSS PER L'ANIMAZIONE
         } else {
-            cartBar.style.display = 'none'; // Cambiato da remove('visible')
+            cartBar.classList.remove('visible'); // RIMUOVE LA CLASSE CSS
         }
     }
 
     // =============================================================
-    // --- 4. RENDER DEI BRANI E GESTIONE EVENTI ---
+    // --- 4. RENDER E EVENT LISTENER ---
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
@@ -294,8 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('cart-checkout-btn').addEventListener('click', () => {
             if (shoppingCart.length === 0) return;
-            // Per il checkout multiplo, apriamo un modal che chiede se aggiungere SIAE/Video a TUTTI i brani
-            // (Semplificazione: per ora, il checkout multiplo non ha opzioni extra)
             redirectToCheckout({ items: shoppingCart });
         });
 
