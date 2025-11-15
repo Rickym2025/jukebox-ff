@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         stripe.redirectToCheckout({
             lineItems: lineItemsPayload,
             mode: 'payment',
-            allow_promotion_codes: true, // Permette di usare codici sconto in checkout
+            allow_promotion_codes: true,
             successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
             cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
             clientReferenceId: clientReferenceIds.join(',')
@@ -440,7 +440,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
                 
                 Object.keys(song).forEach(key => {
-                    songItem.dataset[toCamelCase(key)] = song[key];
+                    const camelCaseKey = toCamelCase(key);
+                    songItem.dataset[camelCaseKey] = song[key];
                 });
 
                 const actionAudioBtn = `<button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>`;
@@ -473,20 +474,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================================
-    // --- 5. GESTIONE EVENTI (Versione Corretta e Completa) ---
+    // --- 5. GESTIONE EVENTI ---
     // =============================================================
     function setupEventListeners() {
         const loginForm = document.getElementById('login-form');
         const contactForm = document.getElementById('contact-form');
-        const cartCheckoutBtn = document.getElementById('cart-checkout-btn');
-        const multiSelectToggleBtn = document.getElementById('multi-select-toggle');
-
+        
         loginForm.addEventListener('submit', handleLogin);
         contactForm.addEventListener('submit', handleContactForm);
-        multiSelectToggleBtn.addEventListener('click', toggleMultiSelectMode);
-        cartCheckoutBtn.addEventListener('click', () => {
+        
+        document.getElementById('multi-select-toggle').addEventListener('click', toggleMultiSelectMode);
+        document.getElementById('cart-checkout-btn').addEventListener('click', () => {
             if (shoppingCart.length === 0) return;
-            // Nel checkout del carrello, non ci sono add-on per semplicità.
             const checkoutData = { items: shoppingCart };
             redirectToCheckout(checkoutData);
         });
@@ -521,7 +520,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => modals.contact.style.display = 'flex');
         document.getElementById('show-gadget-modal-btn').addEventListener('click', () => {
-             // Semplifichiamo il gadget: apriamo direttamente il modulo di contatto
              closeAllModals();
              modals.contact.style.display = 'flex';
         });
@@ -545,8 +543,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
     // --- 6. FUNZIONI CORE E HELPER ---
     // =============================================================
-    
-    // --- Ho aggiunto la funzione mancante 'handleContactForm' ---
     async function handleContactForm(e) {
         e.preventDefault();
         const contactForm = document.getElementById('contact-form');
@@ -575,8 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitButton.disabled = false;
         }
     }
-
-    // (Le altre funzioni da qui in poi sono corrette e rimangono invariate)
+    
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = new URL(sheetApiUrl); url.searchParams.append('emailCheck', email); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { loginScreen.style.display = 'none'; jukeboxContainer.style.display = 'block'; clientNameEl.textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error('Errore login:', err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = new URL(sheetApiUrl); url.searchParams.append('userEmail', userEmail); const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const songs = await res.json(); if (songs.error || songs.status === "error") throw new Error(songs.message || 'Errore API.'); allSongs = songs.songs; populateFilters(allSongs); applyFilters(); } catch (err) { console.error('Errore caricamento:', err); songListContainer.innerHTML = `<p style="color: #f44336;">${err.message}.</p>`; } }
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') { s.categoria.split(/[;,]/).forEach(cat => { const trimmedCat = cat.trim(); if (trimmedCat) { filters.categoria.add(trimmedCat); } }); } if (s.argomento && typeof s.argomento === 'string') { s.argomento.split(/[;,]/).forEach(arg => { const trimmedArg = arg.trim(); if (trimmedArg) { filters.argomento.add(trimmedArg); } }); } if (s.bpm) { filters.bpm.add(s.bpm); } }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
@@ -589,9 +584,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeAllModals() { Object.values(modals).forEach(m => m.style.display = 'none'); videoPlayer.pause(); videoPlayer.src = ''; if (currentPlayingType === 'video') resetPlayingState(); }
     function resetPlayingState() { if (currentPlayingItem) currentPlayingItem.classList.remove('playing-audio', 'playing-video'); currentPlayingItem = null; currentPlayingType = null; footerPlayer.classList.remove('visible'); audioPlayer.pause(); }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
-    function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); window.history.replaceState({}, document.title, window.location.pathname); alert(`Conteggio per ${email} resettato.`); } } }
-  
-</script>
 
+});
+</script>
 </body>
 </html>
