@@ -12,7 +12,7 @@
     :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; padding-top: 100px; /* Spazio per il carrello */ }
+    body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; padding-top: 100px; }
     #background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); }
     .container-wrapper { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 120px 20px 50px; }
     .main-content { position: relative; width: 100%; max-width: 850px; }
@@ -20,7 +20,7 @@
     .profile-logo-image { width: 160px; height: 160px; border-radius: 50%; border: 6px solid #2c2c2c; box-shadow: 0 5px 25px rgba(0,0,0,0.7); background-image: url('https://pub-89945f8350374b50818d716fdc3c108b.r2.dev/logo%20png.png'); background-size: 180%; background-position: center; }
     #login-screen, #jukebox-container { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 40px 30px; padding-top: 100px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
     #jukebox-container { display: none; }
-    h1, h2 { color: var(--primary-color); } h1 { font-size: 2em; margin-bottom: 25px; } h2 { font-size: 1.8em; margin-bottom: 10px; } h3 { color: var(--primary-color); margin-bottom: 20px; font-size: 1.4em; }
+    h1, h2, h3 { color: var(--primary-color); } h1 { font-size: 2em; margin-bottom: 25px; } h2 { font-size: 1.8em; margin-bottom: 10px; } h3 { margin-bottom: 20px; font-size: 1.4em; }
     #client-name { color: var(--primary-color); font-size: 1.4em; font-weight: 600; text-shadow: 0 0 8px var(--glow-color); animation: subtle-glow 3s infinite ease-in-out; }
     @keyframes subtle-glow { 0%, 100% { text-shadow: 0 0 8px var(--glow-color); } 50% { text-shadow: 0 0 16px var(--glow-color); } }
     input { width: 100%; padding: 14px; border-radius: 25px; border: 1px solid #555; background-color: #2c2c2c; color: #f0f0f0; font-size: 1em; margin-bottom: 20px; text-align: center; }
@@ -53,11 +53,8 @@
     .add-to-cart-btn { background-color: var(--success-color); border: 2px solid var(--success-color); color: white; padding: 12px 20px; border-radius: 12px; font-size: 1em; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; grid-column: 1 / -1; font-family: 'Montserrat', sans-serif; cursor: pointer; }
     .song-item.in-cart .add-to-cart-btn { background-color: #046a9e; border-color: #046a9e; }
     .song-item.playing-audio .action-btn.audio, .song-item.playing-video .action-btn.video { background-color: currentColor; color: white; }
-    .song-item.disabled { opacity: 0.5; cursor: not-allowed; }
-    .song-item.disabled .title, .song-item.disabled .btn, .song-item.disabled .add-to-cart-btn { cursor: not-allowed; }
-    .song-item.disabled .plays-left { opacity: 1; color: #f44336; font-weight: 500; }
-    .song-item.disabled .action-btn { border-color: #555; color: #777; cursor: not-allowed; }
-    .song-item.disabled .action-btn:hover { background-color: transparent; transform: none; }
+    .action-btn.disabled { opacity: 0.5; cursor: not-allowed; border-color: #555; color: #777; }
+    .action-btn.disabled:hover { background-color: transparent; transform: none; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 100%; max-width: 600px; position: relative; max-height: 80vh; overflow-y: auto; text-align: center; }
     .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2.5em; color: #aaa; cursor: pointer; line-height: 1; transition: color 0.2s ease; z-index: 1001; }
@@ -92,16 +89,7 @@
     #confirm-add-to-cart-btn { width: 100%; max-width: 400px; margin: 0 auto; font-size: 1.2em; padding: 15px; }
     .info-box { font-size: 0.8em; text-align: left; color: #aaa; background-color: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-top: 15px; border-left: 3px solid var(--primary-color); }
     
-    #cart-banner {
-        position: fixed; top: 0; left: 50%; transform: translate(-50%, -120%);
-        width: 100%; max-width: 850px;
-        background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
-        z-index: 1002; color: white; padding: 15px;
-        transition: transform 0.4s ease-out;
-        border-bottom: 1px solid var(--primary-color);
-        border-radius: 0 0 15px 15px;
-        display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px;
-    }
+    #cart-banner { position: fixed; top: 0; left: 50%; transform: translate(-50%, -120%); width: 100%; max-width: 850px; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1002; color: white; padding: 15px; transition: transform 0.4s ease-out; border-bottom: 1px solid var(--primary-color); border-radius: 0 0 15px 15px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; }
     #cart-banner.visible { transform: translate(-50%, 0); }
     #cart-items-container { text-align: left; flex-grow: 1; min-width: 250px; }
     #cart-items-container h4 { margin: 0 0 10px 0; font-size: 1em; color: var(--primary-color); }
@@ -120,14 +108,8 @@
 </head>
 <body>
   <div id="cart-banner">
-    <div id="cart-items-container">
-      <h4><i class="fas fa-shopping-cart"></i> Il Tuo Carrello</h4>
-      <div id="cart-items-list"></div>
-    </div>
-    <div id="cart-summary">
-      <div id="cart-total">Totale: 0.00€</div>
-      <button id="cart-checkout-btn">Procedi alla Cassa</button>
-    </div>
+    <div id="cart-items-container"><h4><i class="fas fa-shopping-cart"></i> Il Tuo Carrello</h4><div id="cart-items-list"></div></div>
+    <div id="cart-summary"><div id="cart-total">Totale: 0.00€</div><button id="cart-checkout-btn">Procedi alla Cassa</button></div>
   </div>
   <video autoplay muted loop playsinline preload="auto" id="background-video"><source src="https://github.com/Rickym2025/fausto-fusetti-links/raw/main/video_sfondo_compressed.mp4" type="video/mp4" /></video>
   <div class="container-wrapper">
@@ -135,63 +117,27 @@
         <div class="profile-logo"><div class="profile-logo-image"></div></div>
         <div id="login-screen">
           <h1>Jukebox FF Riservato</h1>
-          <form id="login-form">
-            <input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required autocomplete="email" />
-            <button type="submit" class="button">Accedi</button>
-          </form>
+          <form id="login-form"><input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required autocomplete="email" /><button type="submit" class="button">Accedi</button></form>
         </div>
         <div id="jukebox-container">
           <h2>Jukebox Personalizzato</h2>
           <p class="subtitle">per <strong id="client-name"></strong></p>
-          <div id="filter-container">
-            <div class="filter-group"> <span class="filter-label">Categoria:</span> <div id="filter-categoria" class="filter-buttons"></div> </div>
-            <div class="filter-group"> <span class="filter-label">Argomento:</span> <div id="filter-argomento" class="filter-buttons"></div> </div>
-            <div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div>
-          </div>
-          <div class="extra-actions">
-            <button id="show-contact-modal-btn" class="button"><i class="fas fa-pen"></i> Richieste</button>
-          </div>
+          <div id="filter-container"><div class="filter-group"> <span class="filter-label">Categoria:</span> <div id="filter-categoria" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">Argomento:</span> <div id="filter-argomento" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div></div>
+          <div class="extra-actions"><button id="show-contact-modal-btn" class="button"><i class="fas fa-pen"></i> Richieste</button></div>
           <div id="song-list-container"><p>Caricamento brani...</p></div>
         </div>
     </div>
   </div>
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="purchase-info-modal" class="modal-overlay">
-    <div class="modal-content">
-        <span class="modal-close">&times;</span>
-        <h3>Cosa Ricevi con l'Acquisto?</h3>
-        <p style="text-align: left; font-size: 0.9em; color: #ccc;">Finalizzando la transazione, acquisisci la piena proprietà dell'opera. Riceverai immediatamente via email un link per scaricare il pacchetto completo del brano, che include:<br><br></p>
-        <ul style="list-style: none; padding-left: 0; text-align: left;">
-            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
-                <i class="fas fa-file-contract" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
-                <div><strong>Cessione Totale dei Diritti</strong><br><span style="font-size: 0.9em; color: #bbb;">Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
-                <i class="fas fa-music" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
-                <div><strong>Brano Master (.wav)</strong><br><span style="font-size: 0.9em; color: #bbb;">Qualità audio professionale non compressa.</span></div>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
-                <i class="fas fa-sliders-h" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
-                <div><strong>Tracce Separate (.wav)</strong><br><span style="font-size: 0.9em; color: #bbb;">Tutti gli strumenti isolati per remix e modifiche.</span></div>
-            </li>
-            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
-                <i class="fas fa-file-alt" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
-                <div><strong>Testo del Brano (.pdf)</strong><br><span style="font-size: 0.9em; color: #bbb;">Testo ufficiale formattato.</span></div>
-            </li>
-        </ul>
-    </div>
-</div>
+  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><ul style="list-style:none;padding:0;text-align:left"><li style="display:flex;align-items:flex-start;gap:15px;margin-bottom:20px;font-size:1em"><i class="fas fa-file-contract" style="color:var(--primary-color);width:20px;text-align:center;margin-top:5px;font-size:1.1em"></i><div><strong>Cessione Totale dei Diritti</strong><br><span style="font-size:.9em;color:#bbb">Diventi l'unico proprietario dell'opera.</span></div></li><li style="display:flex;align-items:flex-start;gap:15px;margin-bottom:20px;font-size:1em"><i class="fas fa-music" style="color:var(--primary-color);width:20px;text-align:center;margin-top:5px;font-size:1.1em"></i><div><strong>Brano Master (.wav)</strong><br><span style="font-size:.9em;color:#bbb">Qualità audio non compressa.</span></div></li><li style="display:flex;align-items:flex-start;gap:15px;margin-bottom:20px;font-size:1em"><i class="fas fa-sliders-h" style="color:var(--primary-color);width:20px;text-align:center;margin-top:5px;font-size:1.1em"></i><div><strong>Tracce Separate (.wav)</strong><br><span style="font-size:.9em;color:#bbb">Tutti gli strumenti isolati per modifiche.</span></div></li></ul></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player">
     <span id="footer-player-title">Nessun brano in riproduzione</span>
     <audio controls controlsList="nodownload" id="jukebox-audio-player"></audio>
   </div>
   <div id="add-to-cart-modal" class="modal-overlay">
-    <div class="modal-content">
-      <span class="modal-close">&times;</span>
-      <div id="add-to-cart-modal-content"></div>
-    </div>
+    <div class="modal-content"><span class="modal-close">&times;</span><div id="add-to-cart-modal-content"></div></div>
   </div>
 <script src="script.js"></script>
 </body>
