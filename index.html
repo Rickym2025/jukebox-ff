@@ -156,46 +156,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- SOLUZIONE DEFINITIVA STRIPE: CREA SESSIONE SUL SERVER ---
     async function redirectToCheckout() {
-        if (shoppingCart.length === 0) {
-            alert("Il carrello è vuoto.");
-            return;
-        }
-
-        const checkoutButton = document.getElementById('cart-checkout-btn');
-        checkoutButton.textContent = 'Attendi...';
-        checkoutButton.disabled = true;
-
-        try {
-            const payload = {
-                action: 'create-checkout-session',
-                cart: shoppingCart
-            };
-
-            const response = await fetch(sheetApiUrl, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' },
-                redirect: 'follow'
-            });
-
-            if (!response.ok) {
-                throw new Error(`Errore dal server: ${response.statusText}`);
-            }
-
-            const session = await response.json();
-            if (session.sessionId) {
-                const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-                await stripe.redirectToCheckout({ sessionId: session.sessionId });
-            } else {
-                throw new Error("ID di sessione non ricevuto dal server.");
-            }
-        } catch (e) {
-            console.error("ERRORE CRITICO durante il checkout:", e);
-            alert(`Errore critico durante il checkout: ${e.message}`);
-            checkoutButton.textContent = 'Procedi alla Cassa';
-            checkoutButton.disabled = false;
-        }
+    if (shoppingCart.length === 0) {
+        alert("Il carrello è vuoto.");
+        return;
     }
+
+    const checkoutButton = document.getElementById('cart-checkout-btn');
+    checkoutButton.textContent = 'Attendi...';
+    checkoutButton.disabled = true;
+
+    try {
+        const payload = {
+            action: 'create-checkout-session',
+            cart: shoppingCart
+        };
+
+        const response = await fetch(sheetApiUrl, {
+            method: 'POST',
+            // --- MODIFICA CHIAVE: INVIA COME TESTO SEMPLICE ---
+            headers: { 'Content-Type': 'text/plain' }, 
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Errore dal server: ${response.statusText}`);
+        }
+
+        const session = await response.json();
+        if (session.sessionId) {
+            const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+            await stripe.redirectToCheckout({ sessionId: session.sessionId });
+        } else {
+            // Se lo script ha restituito un errore, mostralo
+            throw new Error(session.message || "ID di sessione non ricevuto dal server.");
+        }
+    } catch (e) {
+        console.error("ERRORE CRITICO durante il checkout:", e);
+        alert(`Errore critico durante il checkout: ${e.message}`);
+        checkoutButton.textContent = 'Procedi alla Cassa';
+        checkoutButton.disabled = false;
+    }
+}
 
     function renderSongs(songsToRender) { songListContainer.innerHTML = ''; if (songsToRender.length === 0) { songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>'; return; } songsToRender.forEach(song => { const count = getPlayCounts()[song.id] || 0; const playsLeft = MAX_PLAYS - count; const isLocked = playsLeft <= 0; let purchaseHTML = ''; if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto') { purchaseHTML = `<button class="add-to-cart-btn">Aggiungi al carrello da ${parseFloat(song.prezzo).toFixed(2)}€</button>`; } else if (song.stato?.toLowerCase() === 'venduto') { purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1;">Brano Venduto</p>`; } const hasLyrics = song.liriche && song.liriche.trim() !== ""; const hasVideo = song.video_link && String(song.video_link).toUpperCase() !== 'FALSE'; const songItem = document.createElement('div'); songItem.className = 'song-item'; Object.keys(song).forEach(key => { const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase()); songItem.dataset[camelCaseKey] = song[key]; }); songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`; songListContainer.appendChild(songItem); }); updateSongItemsUI(); }
     function setupEventListeners() { document.getElementById('login-form').addEventListener('submit', handleLogin); document.getElementById('contact-form').addEventListener('submit', handleContactForm); document.getElementById('cart-checkout-btn').addEventListener('click', redirectToCheckout); document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex'); cartItemsList.addEventListener('click', (e) => { if (e.target.classList.contains('cart-item-remove')) removeFromCart(e.target.dataset.id); }); songListContainer.addEventListener('click', function(e) { const songItem = e.target.closest('.song-item'); if (!songItem) return; if (e.target.closest('.add-to-cart-btn')) openAddToCartModal(songItem.dataset); else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio'); else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video'); else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem); else if (e.target.closest('.info-btn')) openPurchaseInfoModal(); }); allModalOverlays.forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); }); modal.querySelector('.modal-close')?.addEventListener('click', () => closeAllModals()); }); audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio')); videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video')); audioPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-audio', 'playing-video')); videoPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-video')); audioPlayer.addEventListener('ended', resetPlayingState); videoPlayer.addEventListener('ended', closeAllModals); }
@@ -239,22 +241,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- SOLUZIONE DEFINITIVA PLAY COUNT: INVIA DATI IN FORMATO JSON ---
     async function trackPlay(songId, songTitle, userEmail) {
-        const payload = {
-            id: songId,
-            title: songTitle,
-            email: userEmail
-        };
-        try {
-            await fetch(sheetApiUrl, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' },
-                mode: 'no-cors' // Google Scripts a volte richiede no-cors per POST da browser
-            });
-        } catch (error) {
-            console.error("Impossibile tracciare l'ascolto:", error);
-        }
+    const payload = {
+        id: songId,
+        title: songTitle,
+        email: userEmail
+    };
+    try {
+        await fetch(sheetApiUrl, {
+            method: 'POST',
+            // --- MODIFICA CHIAVE: INVIA COME TESTO SEMPLICE ---
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            mode: 'no-cors' 
+        });
+    } catch (error) {
+        console.error("Impossibile tracciare l'ascolto:", error);
     }
+}
 
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
