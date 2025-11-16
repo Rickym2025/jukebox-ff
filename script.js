@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const MAX_PLAYS = 3;
     let allSongs = [];
-    let shoppingCart = []; // Struttura item: { id, title, price, withSIAE, withVideo }
+    let shoppingCart = [];
 
     // Riferimenti DOM
     const songListContainer = document.getElementById('song-list-container');
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>`;
 
-        if (songData.linkVideo && songData.linkVideo.trim() !== '' && songData.linkVideo.toUpperCase() !== 'FALSE') {
+        if (songData.videolink && songData.videolink.trim() !== '' && songData.videolink.toUpperCase() !== 'FALSE') {
             optionsHTML += `
                 <div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video">
                     <i class="fas fa-check-circle check-icon"></i>
@@ -84,15 +84,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function addToCart(songToAdd) {
         const existingIndex = shoppingCart.findIndex(item => item.id === songToAdd.id);
         if (existingIndex > -1) {
-            shoppingCart[existingIndex] = songToAdd; // Aggiorna se già presente
+            shoppingCart[existingIndex] = songToAdd;
         } else {
-            shoppingCart.push(songToAdd); // Aggiunge se nuovo
+            shoppingCart.push(songToAdd);
         }
         renderCart();
     }
 
     function removeFromCart(songId) {
-        shoppingCart = shoppingCart.filter(item => item.id !== songId);
+        shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString());
         renderCart();
     }
 
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         songsToRender.forEach(song => {
-            const count = 0; // Semplifichiamo, la logica playcounts è separata
+            let count = 0;
             const playsLeft = MAX_PLAYS - count;
             const isLocked = playsLeft <= 0;
             let purchaseHTML = '';
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const hasVideo = song.link_video && song.link_video.trim() !== '' && song.link_video.toUpperCase() !== 'FALSE';
+            const hasVideo = song.video_link && song.video_link.trim() !== '' && song.video_link.toUpperCase() !== 'FALSE';
             const songItem = document.createElement('div');
             songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
             
@@ -246,17 +246,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.matches('.add-to-cart-btn')) {
                 openAddToCartModal(songItem.dataset);
             }
-            // Aggiungi qui gli altri listener (play, video, lyrics) se necessario
         });
         
-        // Listener per modali e altro...
         document.querySelectorAll('.modal-overlay .modal-close').forEach(btn => btn.addEventListener('click', () => {
             btn.closest('.modal-overlay').style.display = 'none';
         }));
     }
 
     // =============================================================
-    // --- 5. FUNZIONI CORE E HELPER (Semplificate dove possibile) ---
+    // --- 5. FUNZIONI CORE E HELPER ---
     // =============================================================
     async function handleLogin(e) {
         e.preventDefault();
@@ -267,6 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.disabled = true;
         try {
             const res = await fetch(`${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`);
+            if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
             const result = await res.json();
             if (result.status === "ok" && result.name) {
                 document.getElementById('login-screen').style.display = 'none';
@@ -277,6 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(result.message || 'Accesso non autorizzato.');
             }
         } catch (err) {
+            console.error("Login fetch error:", err);
             alert('Errore di comunicazione.');
         } finally {
             btn.textContent = 'Accedi';
@@ -288,11 +288,17 @@ document.addEventListener('DOMContentLoaded', function() {
         songListContainer.innerHTML = `<p>Caricamento...</p>`;
         try {
             const res = await fetch(`${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`);
+            if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
             const data = await res.json();
-            allSongs = data.songs;
-            // Qui dovresti popolare i filtri se li usi
-            renderSongs(allSongs);
+
+            if (data && data.songs) {
+                allSongs = data.songs;
+                renderSongs(allSongs);
+            } else {
+                throw new Error("Formato dati non valido dalla API.");
+            }
         } catch (err) {
+            console.error("loadMusicFromApi error:", err);
             songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`;
         }
     }
