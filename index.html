@@ -251,15 +251,16 @@ async function redirectToCheckout() {
     try {
         await fetch(sheetApiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
+            headers: {
+                'Content-Type': 'text/plain',
+            },
             body: JSON.stringify(payload),
-            // --- MODIFICA CHIAVE: DISABILITA I REINDIRIZZAMENTI ---
-            redirect: 'follow', 
-            mode: 'no-cors' 
+            mode: 'no-cors'
         });
-    } catch (error) {
+    } catch (error) { // <-- La parentesi di chiusura del blocco try era mancante
         console.error("Impossibile tracciare l'ascolto:", error);
     }
+}
 
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
