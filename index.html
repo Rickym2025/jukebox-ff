@@ -157,7 +157,31 @@
   </div>
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><p>...</p></div></div>
+  <div id="purchase-info-modal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h3>Cosa Ricevi con l'Acquisto?</h3>
+        <p style="text-align: left; font-size: 0.9em; color: #ccc;">Finalizzando la transazione, acquisisci la piena proprietà dell'opera. Riceverai immediatamente via email un link per scaricare il pacchetto completo del brano, che include:<br><br></p>
+        <ul style="list-style: none; padding-left: 0; text-align: left;">
+            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
+                <i class="fas fa-file-contract" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
+                <div><strong>Cessione Totale dei Diritti</strong><br><span style="font-size: 0.9em; color: #bbb;">Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
+                <i class="fas fa-music" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
+                <div><strong>Brano Master (.wav)</strong><br><span style="font-size: 0.9em; color: #bbb;">Qualità audio professionale non compressa.</span></div>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
+                <i class="fas fa-sliders-h" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
+                <div><strong>Tracce Separate (.wav)</strong><br><span style="font-size: 0.9em; color: #bbb;">Tutti gli strumenti isolati per remix e modifiche.</span></div>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em;">
+                <i class="fas fa-file-alt" style="color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em;"></i>
+                <div><strong>Testo del Brano (.pdf)</strong><br><span style="font-size: 0.9em; color: #bbb;">Testo ufficiale formattato.</span></div>
+            </li>
+        </ul>
+    </div>
+</div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player">
     <span id="footer-player-title">Nessun brano in riproduzione</span>
