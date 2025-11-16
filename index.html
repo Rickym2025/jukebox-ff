@@ -2,9 +2,9 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.web3forms.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https://pub-89945f8350374b50818d716fdc3c108b.r2.dev; media-src 'self' https://raw.githubusercontent.com https://github.com; frame-src https://js.stripe.com;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jukebox FF</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <script src="https://js.stripe.com/v3/"></script>
@@ -33,7 +33,7 @@
     .filter-buttons button { background-color: #2c2c2c; border: 1px solid #555; color: #f0f0f0; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.85em; transition: all 0.2s ease; }
     .filter-buttons button.active { background-color: var(--primary-color); color: white; }
     .song-list-container { max-height: 45vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
-    .song-item { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; background-color: rgba(0,0,0,0.2); transition: opacity 0.3s ease; }
+    .song-item { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; background-color: rgba(0,0,0,0.2); transition: all 0.3s ease; }
     .song-item-top { display: flex; width: 100%; align-items: center; gap: 15px; }
     .song-info { flex-grow: 1; text-align: left; min-width: 0; }
     .song-info .title { font-size: 1.2em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
@@ -129,18 +129,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // =============================================================
-    // --- 1. CONFIGURAZIONE E VARIABILI ---
-    // =============================================================
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
-
     let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '';
-
     const songListContainer = document.getElementById('song-list-container');
     const audioPlayer = document.getElementById('jukebox-audio-player');
     const videoPlayer = document.getElementById('jukebox-video-player');
@@ -151,9 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
-    // =============================================================
-    // --- 2. LOGICA CARRELLO E CHECKOUT (NUOVA) ---
-    // =============================================================
     function openAddToCartModal(songData) {
         const modal = document.getElementById('add-to-cart-modal');
         const modalContent = document.getElementById('add-to-cart-modal-content');
@@ -190,13 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btn) {
                 const songId = item.dataset.id;
                 const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId);
-                if (isInCart) {
-                    item.classList.add('in-cart');
-                    btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni';
-                } else {
-                    item.classList.remove('in-cart');
-                    btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`;
-                }
+                if (isInCart) { item.classList.add('in-cart'); btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni'; }
+                else { item.classList.remove('in-cart'); btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`; }
             }
         });
     }
@@ -220,10 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
         }).catch(error => { console.error("ERRORE DA STRIPE:", error); alert("Si è verificato un errore con Stripe."); });
     }
-
-    // =============================================================
-    // --- 3. RENDER (DAL TUO CODICE ORIGINALE) ---
-    // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
         if (songsToRender.length === 0) { songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>'; return; }
@@ -250,10 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateSongItemsUI();
     }
-    
-    // =============================================================
-    // --- 4. SETUP EVENTI (DAL TUO CODICE ORIGINALE, COMPLETO) ---
-    // =============================================================
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('contact-form').addEventListener('submit', handleContactForm);
@@ -263,11 +242,11 @@ document.addEventListener('DOMContentLoaded', function() {
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
             if (!songItem) return;
-            if (e.target.closest('.add-to-cart-btn')) { openAddToCartModal(songItem.dataset); }
-            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) { handlePlay(songItem, 'audio'); }
-            else if (e.target.closest('.action-btn.video')) { handlePlay(songItem, 'video'); }
-            else if (e.target.closest('.action-btn.lyrics')) { showLyrics(songItem); }
-            else if (e.target.closest('.info-btn')) { openPurchaseInfoModal(); }
+            if (e.target.closest('.add-to-cart-btn')) openAddToCartModal(songItem.dataset);
+            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio');
+            else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video');
+            else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem);
+            else if (e.target.closest('.info-btn')) openPurchaseInfoModal();
         });
         allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
@@ -280,10 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
         audioPlayer.addEventListener('ended', resetPlayingState);
         videoPlayer.addEventListener('ended', closeAllModals);
     }
-
-    // =============================================================
-    // --- 5. FUNZIONI CORE (TUTTE DAL TUO CODICE ORIGINALE) ---
-    // =============================================================
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = `${sheetApiUrl}?source=jukebox&userEmail=${encodeURIComponent(userEmail)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
