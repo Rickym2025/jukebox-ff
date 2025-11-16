@@ -162,7 +162,6 @@ async function redirectToCheckout() {
         alert("Il carrello è vuoto.");
         return;
     }
-
     const checkoutButton = document.getElementById('cart-checkout-btn');
     checkoutButton.textContent = 'Attendi...';
     checkoutButton.disabled = true;
@@ -172,20 +171,19 @@ async function redirectToCheckout() {
             action: 'create-checkout-session',
             cart: shoppingCart
         };
-
+        // Usa una richiesta POST con 'text/plain' per evitare il preflight CORS
         const response = await fetch(sheetApiUrl, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload),
             redirect: 'follow'
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Errore dal server: ${errorText}`);
         }
-
         const session = await response.json();
-
         if (session && session.sessionId) {
             const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
             await stripe.redirectToCheckout({ sessionId: session.sessionId });
@@ -249,15 +247,14 @@ async function redirectToCheckout() {
         email: userEmail
     };
     try {
+        // Usa una richiesta POST con 'text/plain' per evitare il preflight CORS
         await fetch(sheetApiUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain',
-            },
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload),
             mode: 'no-cors'
         });
-    } catch (error) { 
+    } catch (error) {
         console.error("Impossibile tracciare l'ascolto:", error);
     }
 }
