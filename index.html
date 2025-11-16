@@ -173,29 +173,29 @@ async function redirectToCheckout() {
             cart: shoppingCart
         };
 
-        // --- SOLUZIONE ALTERNATIVA: USARE UN MODULO INVISIBILE ---
-        // 1. Crea un modulo in memoria
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = sheetApiUrl;
-        form.target = "_self"; // Apre il risultato nella stessa finestra
+        const response = await fetch(sheetApiUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Errore dal server: ${errorText}`);
+        }
 
-        // 2. Crea un campo nascosto per contenere i dati del carrello
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'payload'; // Il nome del campo non è importante
-        input.value = JSON.stringify(payload);
-        
-        // 3. Aggiungi il campo al modulo e il modulo alla pagina
-        form.appendChild(input);
-        document.body.appendChild(form);
-        
-        // 4. Invia il modulo. Il browser gestirà il reindirizzamento alla pagina di Stripe
-        form.submit();
-        
+        const session = await response.json();
+
+        if (session && session.sessionId) {
+            const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+            await stripe.redirectToCheckout({ sessionId: session.sessionId });
+        } else {
+            throw new Error(session.message || "ID di sessione non ricevuto dal server.");
+        }
     } catch (e) {
-        console.error("ERRORE CRITICO durante la preparazione del checkout:", e);
-        alert(`Errore critico durante la preparazione del checkout: ${e.message}`);
+        console.error("ERRORE CRITICO durante il checkout:", e);
+        alert(`Errore critico durante il checkout: ${e.message}`);
+    } finally {
         checkoutButton.textContent = 'Procedi alla Cassa';
         checkoutButton.disabled = false;
     }
@@ -257,7 +257,7 @@ async function redirectToCheckout() {
             body: JSON.stringify(payload),
             mode: 'no-cors'
         });
-    } catch (error) { // <-- La parentesi di chiusura del blocco try era mancante
+    } catch (error) { 
         console.error("Impossibile tracciare l'ascolto:", error);
     }
 }
