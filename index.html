@@ -134,7 +134,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
-    const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
@@ -155,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderCart() { if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; } cartItemsList.innerHTML = ''; let total = 0; shoppingCart.forEach(item => { let itemTotal = item.price; let optionsText = []; if (item.withSIAE) { itemTotal += ADDON_PRICES.siae; optionsText.push('SIAE'); } if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); } total += itemTotal; cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`; }); cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`; cartBanner.classList.add('visible'); }
     function updateSongItemsUI() { document.querySelectorAll('.song-item').forEach(item => { const btn = item.querySelector('.add-to-cart-btn'); if (btn) { const songId = item.dataset.id; const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId); if (isInCart) { item.classList.add('in-cart'); btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni'; } else { item.classList.remove('in-cart'); btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`; } } }); }
 
-    // --- CORREZIONE 3: RISTRUTTURATA LA CHIAMATA A STRIPE ---
+    // --- CORREZIONE FINALE STRIPE: USA price_data PER TUTTI GLI ARTICOLI ---
     function redirectToCheckout() {
         if (shoppingCart.length === 0) {
             alert("Il carrello è vuoto.");
@@ -171,30 +170,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 hasError = true;
                 return;
             }
-            // La struttura di price_data è corretta, ma l'errore precedente indicava un problema
-            // di integrazione. Assicuriamoci che l'oggetto Stripe sia caricato.
             lineItemsPayload.push({
-                price_data: {
-                    currency: 'eur',
-                    product_data: {
-                        name: `Brano: ${item.title}`
-                    },
-                    unit_amount: unitAmount
-                },
+                price_data: { currency: 'eur', product_data: { name: `Brano: ${item.title}` }, unit_amount: unitAmount },
                 quantity: 1
             });
-            if (item.withSIAE) lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
-            if (item.withVideo) lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
+            if (item.withSIAE) {
+                lineItemsPayload.push({
+                    price_data: { currency: 'eur', product_data: { name: 'Servizio Gestione Diritti SIAE' }, unit_amount: ADDON_PRICES.siae * 100 },
+                    quantity: 1
+                });
+            }
+            if (item.withVideo) {
+                lineItemsPayload.push({
+                    price_data: { currency: 'eur', product_data: { name: 'Servizio Video Promozionale' }, unit_amount: ADDON_PRICES.video * 100 },
+                    quantity: 1
+                });
+            }
         });
-        if (hasError) {
-            return;
-        }
+        if (hasError) { return; }
         
         try {
             const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-            if (!stripe) {
-                throw new Error("Oggetto Stripe non inizializzato.");
-            }
             stripe.redirectToCheckout({
                 lineItems: lineItemsPayload,
                 mode: 'payment',
@@ -217,54 +213,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     
-    // --- CORREZIONE 1 & 2: UTILIZZO DI camelCase PER LEGGERE I DATASET ---
-    function handlePlay(item, type = 'audio') {
-        const targetButton = item.querySelector(`.action-btn.${type}`);
-        if (targetButton && targetButton.classList.contains('disabled')) {
-            alert("Hai raggiunto il limite di ascolti per questo brano.");
-            return;
-        }
-        const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType;
-        if (isPlayingThisItem) {
-            if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
-            else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
-            return;
-        }
-        resetPlayingState(); 
-        currentPlayingItem = item;
-        currentPlayingType = type;
-        if (type === 'audio') {
-            // Correzione: `linkascolto` invece di `link_ascolto`
-            const audioUrl = item.dataset.linkascolto; 
-            if (!audioUrl) {
-                console.error("URL audio non trovato nel dataset. Assicurati che 'data-link_ascolto' esista e non sia vuoto.");
-                return;
-            }
-            audioPlayer.src = audioUrl;
-            footerPlayer.classList.add('visible');
-            footerPlayerTitle.textContent = item.dataset.titolo;
-            audioPlayer.play().catch(e => console.error("Errore durante la riproduzione audio:", e));
-        } else if (type === 'video') {
-            // Correzione: `videolink` invece di `video_link`
-            const videoUrl = item.dataset.videolink;
-            if (!videoUrl) {
-                console.error("URL video non trovato nel dataset. Assicurati che 'data-video_link' esista e non sia vuoto.");
-                return;
-            }
-            videoPlayer.src = videoUrl;
-            document.getElementById('video-modal').style.display = 'flex';
-            videoPlayer.play().catch(e => console.error("Errore durante la riproduzione video:", e));
-        }
-        const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, item.dataset.titolo, currentUserEmail); applyFilters();
-    }
-
+    function handlePlay(item, type = 'audio') { const targetButton = item.querySelector(`.action-btn.${type}`); if (targetButton && targetButton.classList.contains('disabled')) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { const audioUrl = item.dataset.linkascolto; if (!audioUrl) { console.error("URL audio non trovato nel dataset. Assicurati che nel foglio Google la colonna 'link_ascolto' esista e non sia vuota per questo brano."); return; } audioPlayer.src = audioUrl; footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.titolo; audioPlayer.play().catch(e => console.error("Errore durante la riproduzione audio:", e)); } else if (type === 'video') { const videoUrl = item.dataset.videolink; if (!videoUrl) { console.error("URL video non trovato nel dataset. Assicurati che nel foglio Google la colonna 'video_link' esista e non sia vuota per questo brano."); return; } videoPlayer.src = videoUrl; document.getElementById('video-modal').style.display = 'flex'; videoPlayer.play().catch(e => console.error("Errore durante la riproduzione video:", e)); } const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, item.dataset.titolo, currentUserEmail); applyFilters(); }
     function getPlayCounts() { return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
     async function trackPlay(songId, songTitle, userEmail) { const formData = new FormData(); formData.append('action', 'play'); formData.append('id', songId); formData.append('title', songTitle); formData.append('email', userEmail); try { await fetch(sheetApiUrl, { method: 'POST', body: formData }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
-    
     function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { audioPlayer.pause(); } audioPlayer.src = ''; footerPlayer.classList.remove('visible'); if (!videoPlayer.paused) { videoPlayer.pause(); } videoPlayer.src = ''; }
     async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formData = new FormData(form); const resultEl = form.querySelector('#form-result'); resultEl.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { resultEl.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { resultEl.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`; } } catch (err) { resultEl.innerHTML = "<span style='color: #e53935;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); alert(`Conteggio per ${email} resettato.`); window.history.replaceState({}, document.title, window.location.pathname); window.location.reload(); } } }
