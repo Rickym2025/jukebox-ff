@@ -157,14 +157,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- SOLUZIONE DEFINITIVA STRIPE: CREA SESSIONE SUL SERVER ---
     // Nel tuo file HTML, sostituisci la funzione redirectToCheckout
 
-function redirectToCheckout() {
+async function redirectToCheckout() {
     if (shoppingCart.length === 0) {
         alert("Il carrello è vuoto.");
         return;
     }
-
     const checkoutButton = document.getElementById('cart-checkout-btn');
-    checkoutButton.textContent = 'Reindirizzamento...';
+    checkoutButton.textContent = 'Attendi...';
     checkoutButton.disabled = true;
 
     try {
@@ -172,36 +171,28 @@ function redirectToCheckout() {
             action: 'create-checkout-session',
             cart: shoppingCart
         };
+        const response = await fetch(sheetApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, // Torniamo al metodo standard
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        });
 
-        // --- SOLUZIONE DEFINITIVA: USARE UN MODULO INVISIBILE ---
-        
-        // 1. Crea un modulo in memoria (non sarà visibile sulla pagina)
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = sheetApiUrl; 
-        
-        // Imposta l'encoding corretto per aggirare il preflight CORS
-        form.enctype = 'text/plain';
-
-        // 2. Crea un campo nascosto che conterrà tutti i dati del carrello
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        
-        // Google Script leggerà i dati dal corpo della richiesta, non dal nome del campo
-        input.name = 'data'; 
-        input.value = JSON.stringify(payload);
-        
-        // 3. Aggiungi il campo al modulo e il modulo alla pagina
-        form.appendChild(input);
-        document.body.appendChild(form);
-        
-        // 4. Invia il modulo. Il browser navigherà alla risposta dello script,
-        // che è una pagina HTML che ci reindirizzerà a Stripe.
-        form.submit();
-        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Errore dal server: ${errorText}`);
+        }
+        const session = await response.json();
+        if (session && session.sessionId) {
+            const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+            await stripe.redirectToCheckout({ sessionId: session.sessionId });
+        } else {
+            throw new Error(session.message || "ID di sessione non ricevuto dal server.");
+        }
     } catch (e) {
-        console.error("ERRORE CRITICO durante la preparazione del checkout:", e);
-        alert(`Errore critico: ${e.message}`);
+        console.error("ERRORE CRITICO durante il checkout:", e);
+        alert(`Errore critico durante il checkout: ${e.message}`);
+    } finally {
         checkoutButton.textContent = 'Procedi alla Cassa';
         checkoutButton.disabled = false;
     }
@@ -255,10 +246,9 @@ function redirectToCheckout() {
         email: userEmail
     };
     try {
-        // Usa una richiesta POST con 'text/plain' per evitare il preflight CORS
         await fetch(sheetApiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            headers: { 'Content-Type': 'application/json' }, // Torniamo al metodo standard
             body: JSON.stringify(payload),
             mode: 'no-cors'
         });
