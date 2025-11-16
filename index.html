@@ -134,11 +134,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
-    const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
-    
-    // --- CORREZIONE 1: PREZZO SIAE AGGIORNATO ---
-    const ADDON_PRICES = { siae: 99, video: 49 }; 
-    
+    const ADDON_PRICES = { siae: 99, video: 49 };
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
     let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '';
@@ -152,57 +148,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
-    // --- CORREZIONE 1: TESTI E PREZZI NEL MODALE CORRETTI ---
-    function openAddToCartModal(songData) {
-        const modal = document.getElementById('add-to-cart-modal');
-        const modalContent = document.getElementById('add-to-cart-modal-content');
-        const basePrice = parseFloat(songData.prezzo);
-        modalContent.innerHTML = `<h3>Aggiungi Opzioni per</h3><p class="song-title-highlight">${songData.titolo}</p>
-        <div class="upsell-options">
-            <div class="upsell-item" data-price="${ADDON_PRICES.siae}" data-id="add-siae">
-                <i class="fas fa-check-circle check-icon"></i>
-                <div class="upsell-item-details">
-                    <strong>Cessione Diritti Totale (Deposito SIAE autonomo)</strong>
-                    <span>Ti forniamo la documentazione per depositare l'opera a tuo nome. Diventi l'unico proprietario (Master & Publishing) (+${ADDON_PRICES.siae.toFixed(2)}€).</span>
-                </div>
-            </div>
-            ${(songData.videolink && String(songData.videolink).toUpperCase() !== 'FALSE') ? `
-            <div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video">
-                <i class="fas fa-check-circle check-icon"></i>
-                <div class="upsell-item-details">
-                    <strong>Aggiungi Video Promozionale</strong>
-                    <span>Un video ottimizzato per i tuoi canali social (+${ADDON_PRICES.video.toFixed(2)}€).</span>
-                </div>
-            </div>` : ''}
-        </div>
-        <div class="info-box">
-            <strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.
-        </div>
-        <div id="purchase-summary">
-            <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
-        </div>`;
-        modal.style.display = 'flex';
-        modalContent.querySelectorAll('.upsell-item').forEach(item => item.addEventListener('click', () => item.classList.toggle('selected')));
-        document.getElementById('confirm-add-to-cart-btn').onclick = () => {
-            const songToAdd = { id: songData.id, title: songData.titolo, price: basePrice, withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false };
-            addToCart(songToAdd);
-            closeAllModals();
-        };
-    }
-    
+    function openAddToCartModal(songData) { const modal = document.getElementById('add-to-cart-modal'); const modalContent = document.getElementById('add-to-cart-modal-content'); const basePrice = parseFloat(songData.prezzo); modalContent.innerHTML = `<h3>Aggiungi Opzioni per</h3><p class="song-title-highlight">${songData.titolo}</p><div class="upsell-options"><div class="upsell-item" data-price="${ADDON_PRICES.siae}" data-id="add-siae"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Cessione Diritti Totale (Deposito SIAE autonomo)</strong><span>Ti forniamo la documentazione per depositare l'opera a tuo nome. Diventi l'unico proprietario (Master & Publishing) (+${ADDON_PRICES.siae.toFixed(2)}€).</span></div></div>${(songData.videolink && String(songData.videolink).toUpperCase() !== 'FALSE') ? `<div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Aggiungi Video Promozionale</strong><span>Un video ottimizzato per i tuoi canali social (+${ADDON_PRICES.video.toFixed(2)}€).</span></div></div>` : ''}</div><div class="info-box"><strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.</div><div id="purchase-summary"><button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button></div>`; modal.style.display = 'flex'; modalContent.querySelectorAll('.upsell-item').forEach(item => item.addEventListener('click', () => item.classList.toggle('selected'))); document.getElementById('confirm-add-to-cart-btn').onclick = () => { const songToAdd = { id: songData.id, title: songData.titolo, price: basePrice, withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false }; addToCart(songToAdd); closeAllModals(); }; }
     function addToCart(songToAdd) { const existingIndex = shoppingCart.findIndex(item => item.id === songToAdd.id); if (existingIndex > -1) shoppingCart[existingIndex] = songToAdd; else shoppingCart.push(songToAdd); renderCart(); updateSongItemsUI(); }
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     function renderCart() { if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; } cartItemsList.innerHTML = ''; let total = 0; shoppingCart.forEach(item => { let itemTotal = item.price; let optionsText = []; if (item.withSIAE) { itemTotal += ADDON_PRICES.siae; optionsText.push('SIAE'); } if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); } total += itemTotal; cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`; }); cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`; cartBanner.classList.add('visible'); }
     function updateSongItemsUI() { document.querySelectorAll('.song-item').forEach(item => { const btn = item.querySelector('.add-to-cart-btn'); if (btn) { const songId = item.dataset.id; const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId); if (isInCart) { item.classList.add('in-cart'); btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni'; } else { btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`; } } }); }
 
-    // --- CORREZIONE 2: CHECKOUT CON SOLO PRICE_DATA ---
+    // --- SOLUZIONE DEFINITIVA STRIPE: USA price_data PER TUTTI GLI ARTICOLI ---
     function redirectToCheckout() {
         if (shoppingCart.length === 0) {
             alert("Il carrello è vuoto.");
-            return;
-        }
-        if (!STRIPE_PUBLISHABLE_KEY) {
-            alert("Errore: Chiave Stripe non configurata.");
             return;
         }
         const lineItemsPayload = [];
@@ -255,12 +210,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     
-    // --- AUDIO/VIDEO FUNZIONANTI ---
     function handlePlay(item, type = 'audio') { const targetButton = item.querySelector(`.action-btn.${type}`); if (targetButton && targetButton.classList.contains('disabled')) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { const audioUrl = item.dataset.linkAscolto; if (!audioUrl) { alert("Impossibile riprodurre: link audio mancante."); return; } audioPlayer.src = audioUrl; footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.titolo; audioPlayer.play().catch(e => console.error("Errore durante la riproduzione audio:", e)); } else if (type === 'video') { const videoUrl = item.dataset.videoLink; if (!videoUrl || String(videoUrl).toUpperCase() === 'FALSE') { alert("Video non disponibile per questo brano."); return; } videoPlayer.src = videoUrl; document.getElementById('video-modal').style.display = 'flex'; videoPlayer.play().catch(e => console.error("Errore durante la riproduzione video:", e)); } const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, item.dataset.titolo, currentUserEmail); applyFilters(); }
     
     function getPlayCounts() { return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
-    async function trackPlay(songId, songTitle, userEmail) { const formData = new FormData(); formData.append('action', 'play'); formData.append('id', songId); formData.append('title', songTitle); formData.append('email', userEmail); try { await fetch(sheetApiUrl, { method: 'POST', body: formData }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
+    
+    // --- SOLUZIONE DEFINITIVA PLAY COUNT: INVIA DATI IN FORMATO JSON ---
+    async function trackPlay(songId, songTitle, userEmail) {
+        const payload = {
+            id: songId,
+            title: songTitle,
+            email: userEmail
+        };
+        try {
+            // Invia i dati come stringa JSON
+            await fetch(sheetApiUrl, {
+                method: 'POST',
+                mode: 'no-cors', // Spesso necessario per Google Scripts
+                body: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error("Impossibile tracciare l'ascolto:", error);
+        }
+    }
+
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
