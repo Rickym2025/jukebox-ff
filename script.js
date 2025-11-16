@@ -13,9 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const MAX_PLAYS = 3;
     let allSongs = [];
-    let shoppingCart = [];
+    let shoppingCart = []; 
 
-    // Riferimenti DOM
     const songListContainer = document.getElementById('song-list-container');
     const cartBanner = document.getElementById('cart-banner');
     const cartItemsList = document.getElementById('cart-items-list');
@@ -187,9 +186,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         songsToRender.forEach(song => {
-            let count = 0;
+            const count = 0;
             const playsLeft = MAX_PLAYS - count;
-            const isLocked = playsLeft <= 0;
+            const isLocked = false; 
             let purchaseHTML = '';
 
             if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
@@ -204,7 +203,10 @@ document.addEventListener('DOMContentLoaded', function() {
             songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
             
             Object.keys(song).forEach(key => {
-                songItem.dataset[key.toLowerCase().replace(/_/g, '')] = song[key];
+                if (/^[a-zA-Z0-9_]+$/.test(key)) {
+                   const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase());
+                   songItem.dataset[camelCaseKey] = song[key];
+                }
             });
             
             songItem.innerHTML = `
@@ -293,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data && data.songs) {
                 allSongs = data.songs;
+                populateFilters(allSongs); // FUNZIONE REINSERITA
                 renderSongs(allSongs);
             } else {
                 throw new Error("Formato dati non valido dalla API.");
@@ -301,6 +304,56 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error("loadMusicFromApi error:", err);
             songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`;
         }
+    }
+
+    // === FUNZIONE REINSERITA ===
+    function populateFilters(songs) {
+        const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
+        songs.forEach(s => {
+            if (s.categoria && typeof s.categoria === 'string') {
+                s.categoria.split(/[;,]/).forEach(cat => {
+                    const trimmedCat = cat.trim();
+                    if (trimmedCat) filters.categoria.add(trimmedCat);
+                });
+            }
+            if (s.argomento && typeof s.argomento === 'string') {
+                s.argomento.split(/[;,]/).forEach(arg => {
+                    const trimmedArg = arg.trim();
+                    if (trimmedArg) filters.argomento.add(trimmedArg);
+                });
+            }
+            if (s.bpm) {
+                filters.bpm.add(s.bpm);
+            }
+        });
+
+        const createBtns = (type, items, label) => {
+            const cont = document.getElementById(`filter-${type}`);
+            if (!cont) return;
+            cont.innerHTML = '';
+            const allBtn = document.createElement('button');
+            allBtn.textContent = label;
+            allBtn.value = '';
+            allBtn.className = 'active';
+            cont.appendChild(allBtn);
+            [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => {
+                const btn = document.createElement('button');
+                btn.textContent = item;
+                btn.value = item;
+                cont.appendChild(btn);
+            });
+            cont.addEventListener('click', e => {
+                if (e.target.tagName === 'BUTTON') {
+                    cont.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    // Qui dovresti richiamare una funzione che filtra e ri-renderizza i brani
+                    // applyFilters(); 
+                }
+            });
+        };
+        createBtns('categoria', filters.categoria, 'Tutte');
+        createBtns('argomento', filters.argomento, 'Tutti');
+        createBtns('bpm', filters.bpm, 'Tutti');
     }
     
     setupEventListeners();
