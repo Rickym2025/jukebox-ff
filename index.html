@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <!-- CSP COMPLETA E CORRETTA PER FAR FUNZIONARE TUTTO -->
+  <!-- CSP DEFINITIVA E COMPLETA -->
   <meta http-equiv="Content-Security-Policy" 
         content="default-src 'self'; 
                  script-src 'self' 'unsafe-inline' https://js.stripe.com; 
@@ -141,7 +141,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
+    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
@@ -254,11 +254,11 @@ document.addEventListener('DOMContentLoaded', function() {
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
             if (!songItem) return;
-            if (e.target.closest('.add-to-cart-btn')) openAddToCartModal(songItem.dataset);
-            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio');
-            else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video');
-            else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem);
-            else if (e.target.closest('.info-btn')) openPurchaseInfoModal();
+            if (e.target.closest('.add-to-cart-btn')) { openAddToCartModal(songItem.dataset); }
+            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) { handlePlay(songItem, 'audio'); }
+            else if (e.target.closest('.action-btn.video')) { handlePlay(songItem, 'video'); }
+            else if (e.target.closest('.action-btn.lyrics')) { showLyrics(songItem); }
+            else if (e.target.closest('.info-btn')) { openPurchaseInfoModal(); }
         });
         allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
