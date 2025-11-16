@@ -155,7 +155,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSongItemsUI() { document.querySelectorAll('.song-item').forEach(item => { const btn = item.querySelector('.add-to-cart-btn'); if (btn) { const songId = item.dataset.id; const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId); if (isInCart) { item.classList.add('in-cart'); btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni'; } else { btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`; } } }); }
 
     // --- SOLUZIONE DEFINITIVA STRIPE: CREA SESSIONE SUL SERVER ---
-    async function redirectToCheckout() {
+    // Nel tuo file HTML, sostituisci la funzione redirectToCheckout
+
+async function redirectToCheckout() {
     if (shoppingCart.length === 0) {
         alert("Il carrello è vuoto.");
         return;
@@ -171,31 +173,29 @@ document.addEventListener('DOMContentLoaded', function() {
             cart: shoppingCart
         };
 
-        const response = await fetch(sheetApiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' }, 
-            body: JSON.stringify(payload),
-            // --- MODIFICA CHIAVE: DISABILITA I REINDIRIZZAMENTI ---
-            redirect: 'follow' 
-        });
+        // --- SOLUZIONE ALTERNATIVA: USARE UN MODULO INVISIBILE ---
+        // 1. Crea un modulo in memoria
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = sheetApiUrl;
+        form.target = "_self"; // Apre il risultato nella stessa finestra
 
-        if (!response.ok) {
-            throw new Error(`Errore dal server: ${response.statusText}`);
-        }
+        // 2. Crea un campo nascosto per contenere i dati del carrello
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'payload'; // Il nome del campo non è importante
+        input.value = JSON.stringify(payload);
         
-        // Google Script a volte restituisce un JSON "avvolto", dobbiamo gestirlo
-        const textResponse = await response.text();
-        const session = JSON.parse(textResponse);
+        // 3. Aggiungi il campo al modulo e il modulo alla pagina
+        form.appendChild(input);
+        document.body.appendChild(form);
         
-        if (session.sessionId) {
-            const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-            await stripe.redirectToCheckout({ sessionId: session.sessionId });
-        } else {
-            throw new Error(session.message || "ID di sessione non ricevuto dal server.");
-        }
+        // 4. Invia il modulo. Il browser gestirà il reindirizzamento alla pagina di Stripe
+        form.submit();
+        
     } catch (e) {
-        console.error("ERRORE CRITICO durante il checkout:", e);
-        alert(`Errore critico durante il checkout: ${e.message}`);
+        console.error("ERRORE CRITICO durante la preparazione del checkout:", e);
+        alert(`Errore critico durante la preparazione del checkout: ${e.message}`);
         checkoutButton.textContent = 'Procedi alla Cassa';
         checkoutButton.disabled = false;
     }
