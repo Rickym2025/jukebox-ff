@@ -92,11 +92,10 @@
     #confirm-add-to-cart-btn { width: 100%; max-width: 400px; margin: 0 auto; font-size: 1.2em; padding: 15px; }
     .info-box { font-size: 0.8em; text-align: left; color: #aaa; background-color: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-top: 15px; border-left: 3px solid var(--primary-color); }
     
-    /* === STILI DEL CARRELLO AGGIORNATI E CORRETTI === */
     #cart-banner {
         position: fixed; top: 0; left: 50%; transform: translate(-50%, -120%);
         width: 100%; max-width: 850px;
-        background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+        background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
         z-index: 1002; color: white; padding: 15px;
         transition: transform 0.4s ease-out;
         border-bottom: 1px solid var(--primary-color);
@@ -117,11 +116,9 @@
     #cart-total { font-size: 1.2em; font-weight: 600; margin-bottom: 10px; }
     #cart-checkout-btn { background-color: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; white-space: nowrap; }
     #cart-checkout-btn:hover { background-color: #45a049; }
-</style>
+  </style>
 </head>
 <body>
-
-  <!-- NUOVO BANNER CARRELLO -->
   <div id="cart-banner">
     <div id="cart-items-container">
       <h4><i class="fas fa-shopping-cart"></i> Il Tuo Carrello</h4>
@@ -132,9 +129,7 @@
       <button id="cart-checkout-btn">Procedi alla Cassa</button>
     </div>
   </div>
-
   <video autoplay muted loop playsinline preload="auto" id="background-video"><source src="https://github.com/Rickym2025/fausto-fusetti-links/raw/main/video_sfondo_compressed.mp4" type="video/mp4" /></video>
-  
   <div class="container-wrapper">
     <div class="main-content">
         <div class="profile-logo"><div class="profile-logo-image"></div></div>
@@ -154,32 +149,26 @@
             <div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div>
           </div>
           <div class="extra-actions">
-            <!-- PULSANTE SELEZIONE MULTIPLA RIMOSSO -->
             <button id="show-contact-modal-btn" class="button"><i class="fas fa-pen"></i> Richieste</button>
           </div>
           <div id="song-list-container"><p>Caricamento brani...</p></div>
         </div>
     </div>
   </div>
-  
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
   <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><p>...</p></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
-  
   <div id="footer-player">
     <span id="footer-player-title">Nessun brano in riproduzione</span>
     <audio controls controlsList="nodownload" id="jukebox-audio-player"></audio>
   </div>
-
-  <!-- Questo modal ora serve per aggiungere al carrello -->
   <div id="add-to-cart-modal" class="modal-overlay">
     <div class="modal-content">
       <span class="modal-close">&times;</span>
       <div id="add-to-cart-modal-content"></div>
     </div>
   </div>
-
 <script src="script.js"></script>
 </body>
 </html>
