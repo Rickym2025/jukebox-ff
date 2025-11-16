@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- 1. CONFIGURAZIONE E VARIABILI GLOBALI ---
     // =============================================================
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
-    const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET"; 
+    const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     
     const ADDON_PRICE_IDS = {
         siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm",
@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPlayingType = null;
     let currentUserEmail = '';
 
-    // Riferimenti DOM
     const songListContainer = document.getElementById('song-list-container');
     const cartBanner = document.getElementById('cart-banner');
     const cartItemsList = document.getElementById('cart-items-list');
@@ -28,9 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoPlayer = document.getElementById('jukebox-video-player');
     const footerPlayer = document.getElementById('footer-player');
     const footerPlayerTitle = document.getElementById('footer-player-title');
-
+    
     // =============================================================
-    // --- 2. LOGICA DEL CARRELLO ---
+    // --- 2. LOGICA CARRELLO (AGGIUNTA) ---
     // =============================================================
     function openAddToCartModal(songData) {
         const modal = document.getElementById('add-to-cart-modal');
@@ -88,14 +87,11 @@ document.addEventListener('DOMContentLoaded', function() {
             closeAllModals();
         };
     }
-
+    
     function addToCart(songToAdd) {
         const existingIndex = shoppingCart.findIndex(item => item.id === songToAdd.id);
-        if (existingIndex > -1) {
-            shoppingCart[existingIndex] = songToAdd;
-        } else {
-            shoppingCart.push(songToAdd);
-        }
+        if (existingIndex > -1) shoppingCart[existingIndex] = songToAdd;
+        else shoppingCart.push(songToAdd);
         renderCart();
         updateSongItemsUI();
     }
@@ -153,9 +149,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
     // =============================================================
-    // --- 3. LOGICA DI CHECKOUT ---
+    // --- 3. LOGICA DI CHECKOUT (AGGIUNTA) ---
     // =============================================================
     function redirectToCheckout() {
         if (shoppingCart.length === 0) return;
@@ -182,9 +178,9 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
         }).catch(error => { console.error("ERRORE DA STRIPE:", error); alert("Si è verificato un errore con Stripe."); });
     }
-
+    
     // =============================================================
-    // --- 4. RENDER DEI BRANI E SETUP EVENTI ---
+    // --- 4. RENDER E FUNZIONI BASE (DAL TUO CODICE ORIGINALE) ---
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
@@ -206,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const hasVideo = song.video_link && song.video_link.trim() !== '' && String(song.video_link).toUpperCase() !== 'FALSE';
+            const hasVideo = song.video_link && String(song.video_link).trim() !== '' && String(song.video_link).toUpperCase() !== 'FALSE';
             const songItem = document.createElement('div');
             songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
             
@@ -242,10 +238,14 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSongItemsUI();
     }
     
-    // === FIX FINALE: TUTTI GLI EVENT LISTENER SONO STATI RIPRISTINATI CORRETTAMENTE ===
+    // =============================================================
+    // --- 5. SETUP EVENTI (COMPLETO E CORRETTO) ---
+    // =============================================================
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('cart-checkout-btn').addEventListener('click', redirectToCheckout);
+        document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
+
         cartItemsList.addEventListener('click', (e) => {
             if (e.target.classList.contains('cart-item-remove')) {
                 removeFromCart(e.target.dataset.id);
@@ -269,12 +269,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
+        allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
             modal.querySelector('.modal-close')?.addEventListener('click', () => closeAllModals());
         });
-
-        document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
         
         audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
         videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video'));
@@ -285,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =============================================================
-    // --- 5. FUNZIONI CORE E HELPER (LOGICA ORIGINALE RIPRISTINATA) ---
+    // --- 6. FUNZIONI CORE E HELPER (DAL TUO CODICE ORIGINALE) ---
     // =============================================================
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) return; currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const res = await fetch(`${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`); if (!res.ok) throw new Error(`Network response was not ok`); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const res = await fetch(`${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`); if (!res.ok) throw new Error(`Network response was not ok`); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
