@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSongItemsUI();
     }
     
+    // === FIX FINALE: TUTTI GLI EVENT LISTENER SONO STATI RIPRISTINATI CORRETTAMENTE ===
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('cart-checkout-btn').addEventListener('click', redirectToCheckout);
@@ -274,6 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
+        
         audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
         videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video'));
         audioPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-audio', 'playing-video'));
@@ -355,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const playsLeft = MAX_PLAYS - count;
             playsLeftEl.textContent = playsLeft > 0 ? `Ascolti rimasti: ${playsLeft}` : 'Limite ascolti raggiunto';
             if (playsLeft <= 0) {
-                applyFilters(); // Ricarica la lista per mostrare il brano come disabilitato
+                applyFilters();
             }
         }
     }
@@ -365,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
-    function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } resetPlayingState(); }
+    function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { footerPlayer.classList.remove('visible'); audioPlayer.pause(); } }
 
     setupEventListeners();
