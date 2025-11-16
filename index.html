@@ -170,7 +170,7 @@ function redirectToCheckout() {
     // --- SOLUZIONE DEFINITIVA CON N8N ---
     
     // 1. Prepara l'URL del webhook di n8n
-    const n8nWebhookUrl = 'https://TUO-DOMINIO-N8N/webhook/crea-checkout'; // <-- USA L'URL DI PRODUZIONE!
+    const n8nWebhookUrl = 'https://n8n.automaita.it/webhook-test/crea-checkout-jukebox'; // <-- USA L'URL DI PRODUZIONE!
     
     // 2. Codifica il carrello per passarlo come parametro URL
     const cartParam = encodeURIComponent(JSON.stringify(shoppingCart));
