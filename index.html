@@ -304,7 +304,48 @@ function redirectToCheckout() {
         audioPlayer.addEventListener('ended', resetPlayingState);
         videoPlayer.addEventListener('ended', closeAllModals);
     }
-    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
+   // Sostituisci la vecchia funzione handleLogin con questa
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('email-input').value.trim().toLowerCase();
+    if (!email) {
+        alert('Per favore, inserisci un\'email.');
+        return;
+    }
+    currentUserEmail = email;
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Verifico...';
+    btn.disabled = true;
+    try {
+        const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Errore di rete.');
+        
+        const result = await res.json();
+
+        // --- MODIFICA DI DEBUG ---
+        // Questa riga mostrerà in un popup l'esatto contenuto della risposta
+        // che il tuo script sta ricevendo, prima di controllarla.
+        alert('Dati ricevuti dal server: ' + JSON.stringify(result));
+        // --- FINE MODIFICA DI DEBUG ---
+
+        if (result.status === "ok" && result.name) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('jukebox-container').style.display = 'block';
+            document.getElementById('client-name').textContent = result.name;
+            await loadMusicFromApi(email);
+        } else {
+            alert(result.message || 'Accesso non autorizzato.');
+        }
+    } catch (err) {
+        console.error("Login fetch error:", err);
+        alert('Errore di comunicazione: ' + err.message);
+    } finally {
+        btn.textContent = 'Accedi';
+        btn.disabled = false;
+    }
+}
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = `${sheetApiUrl}?source=jukebox&userEmail=${encodeURIComponent(userEmail)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
