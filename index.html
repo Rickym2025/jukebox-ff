@@ -132,7 +132,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
+    // --- CORREZIONE LOGIN: Rimuovi il parametro dalla costante base ---
+    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
+    
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
@@ -191,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- CORREZIONE BUG 2: FUNZIONE CHECKOUT ROBUSTA ---
+    // --- CORREZIONE BUG CHECKOUT: FUNZIONE PIÙ ROBUSTA ---
     function redirectToCheckout() {
         if (shoppingCart.length === 0) {
             alert("Il carrello è vuoto.");
@@ -203,24 +205,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const lineItemsPayload = [];
-        let hasError = false; // Flag per intercettare errori
+        let hasError = false;
 
         shoppingCart.forEach(item => {
-            if (hasError) return; // Se è stato trovato un errore, salta il resto degli articoli
-
+            if (hasError) return;
             const unitAmount = Math.round(parseFloat(item.price) * 100);
             if (isNaN(unitAmount) || unitAmount <= 0) {
                 alert(`Errore: Prezzo non valido per il brano "${item.title}".`);
-                console.error("Prezzo non valido per l'articolo:", item);
-                hasError = true; // Imposta il flag di errore
-                return; // Esce solo dall'iterazione corrente
+                hasError = true;
+                return;
             }
             lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: `Brano: ${item.title}` }, unit_amount: unitAmount }, quantity: 1 });
             if (item.withSIAE) lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
             if (item.withVideo) lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
         });
         
-        // Se il flag è stato impostato, interrompi l'intera funzione
         if (hasError) {
             console.error("Checkout interrotto a causa di un errore nei dati del carrello.");
             return;
@@ -233,13 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
             allow_promotion_codes: true,
             successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
             cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
-        }).then(function(result) {
-            // Se redirectToCheckout fallisce per motivi lato client, Stripe.js mostrerà un errore.
-            // Questo blocco gestisce errori più rari.
-            if (result.error) {
-                alert(result.error.message);
-                console.error("Errore da Stripe:", result.error);
-            }
         }).catch(error => {
             console.error("ERRORE DA STRIPE:", error);
             alert("Si è verificato un errore con Stripe. Controlla la console per i dettagli.");
@@ -298,33 +290,77 @@ document.addEventListener('DOMContentLoaded', function() {
         audioPlayer.addEventListener('ended', resetPlayingState);
         videoPlayer.addEventListener('ended', closeAllModals);
     }
-    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
-    async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const url = `${sheetApiUrl}?source=jukebox&userEmail=${encodeURIComponent(userEmail)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
+    
+    // --- CORREZIONE LOGIN: URL COSTRUITO CORRETTAMENTE ---
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('email-input').value.trim().toLowerCase();
+        if (!email) { alert('Per favore, inserisci un\'email.'); return; }
+        currentUserEmail = email;
+        const btn = e.target.querySelector('button');
+        btn.textContent = 'Verifico...';
+        btn.disabled = true;
+        try {
+            // L'URL ora viene costruito correttamente usando '?' per il primo parametro e '&' per i successivi
+            const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Errore di rete.');
+            const result = await res.json();
+            if (result.status === "ok" && result.name) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('jukebox-container').style.display = 'block';
+                document.getElementById('client-name').textContent = result.name;
+                await loadMusicFromApi(email);
+            } else {
+                alert(result.message || 'Accesso non autorizzato.');
+            }
+        } catch (err) {
+            console.error("Login fetch error:", err);
+            alert('Errore di comunicazione.');
+        } finally {
+            btn.textContent = 'Accedi';
+            btn.disabled = false;
+        }
+    }
+    async function loadMusicFromApi(userEmail) {
+        songListContainer.innerHTML = `<p>Caricamento...</p>`;
+        try {
+            const url = `${sheetApiUrl}?source=jukebox&userEmail=${encodeURIComponent(userEmail)}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Errore di rete.');
+            const data = await res.json();
+            if (data && data.songs) {
+                allSongs = data.songs;
+                populateFilters(allSongs);
+                applyFilters();
+            } else {
+                throw new Error("Formato dati non valido dalla API.");
+            }
+        } catch (err) {
+            console.error("loadMusicFromApi error:", err);
+            songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`;
+        }
+    }
+
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     
-    // --- CORREZIONE BUG 1: GESTIONE RIPRODUZIONE ---
+    // --- CORREZIONE BUG AUDIO/VIDEO: GESTIONE RIPRODUZIONE ---
     function handlePlay(item, type = 'audio') {
         const targetButton = item.querySelector(`.action-btn.${type}`);
         if (targetButton && targetButton.classList.contains('disabled')) {
             alert("Hai raggiunto il limite di ascolti per questo brano.");
             return;
         }
-        
         const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType;
-        
         if (isPlayingThisItem) {
             if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
             else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
             return;
         }
-
-        // Resetta lo stato di qualsiasi riproduzione precedente PRIMA di avviarne una nuova
         resetPlayingState(); 
-        
         currentPlayingItem = item;
         currentPlayingType = type;
-        
         if (type === 'audio') {
             footerPlayer.classList.add('visible');
             footerPlayerTitle.textContent = item.dataset.titolo;
@@ -335,7 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('video-modal').style.display = 'flex';
             videoPlayer.play();
         }
-        
         const counts = getPlayCounts();
         const songId = item.dataset.id;
         let count = counts[songId] || 0;
@@ -353,22 +388,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     
-    // --- CORREZIONE BUG 1: FUNZIONE DI RESET POTENZIATA ---
+    // --- CORREZIONE BUG AUDIO/VIDEO: FUNZIONE DI RESET POTENZIATA ---
     function resetPlayingState() {
         if (currentPlayingItem) {
             currentPlayingItem.classList.remove('playing-audio', 'playing-video');
         }
         currentPlayingItem = null;
         currentPlayingType = null;
-        
-        // Ferma e resetta esplicitamente l'audio player
         if (!audioPlayer.paused) {
             audioPlayer.pause();
         }
-        audioPlayer.src = ''; // Svuota la sorgente per prevenire conflitti
+        audioPlayer.src = '';
         footerPlayer.classList.remove('visible');
-        
-        // Ferma e resetta esplicitamente il video player (anche se non visibile)
         if (!videoPlayer.paused) {
             videoPlayer.pause();
         }
