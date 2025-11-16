@@ -2,9 +2,18 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
+  <!-- CSP COMPLETA E CORRETTA PER FAR FUNZIONARE TUTTO -->
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self'; 
+                 script-src 'self' 'unsafe-inline' https://js.stripe.com; 
+                 connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.web3forms.com; 
+                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; 
+                 font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; 
+                 img-src 'self' https://pub-89945f8350374b50818d716fdc3c108b.r2.dev; 
+                 media-src 'self' https://raw.githubusercontent.com https://github.com; 
+                 frame-src https://js.stripe.com;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jukebox FF</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <script src="https://js.stripe.com/v3/"></script>
@@ -33,7 +42,7 @@
     .filter-buttons button { background-color: #2c2c2c; border: 1px solid #555; color: #f0f0f0; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.85em; transition: all 0.2s ease; }
     .filter-buttons button.active { background-color: var(--primary-color); color: white; }
     .song-list-container { max-height: 45vh; overflow-y: auto; margin-top: 20px; padding-right: 10px; }
-    .song-item { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; background-color: rgba(0,0,0,0.2); transition: all 0.3s ease; }
+    .song-item { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; background-color: rgba(0,0,0,0.2); transition: opacity 0.3s ease; }
     .song-item-top { display: flex; width: 100%; align-items: center; gap: 15px; }
     .song-info { flex-grow: 1; text-align: left; min-width: 0; }
     .song-info .title { font-size: 1.2em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
@@ -88,6 +97,9 @@
     #purchase-summary { margin-top: 20px; padding-top: 20px; border-top: 1px solid #444; }
     #confirm-add-to-cart-btn { width: 100%; max-width: 400px; margin: 0 auto; font-size: 1.2em; padding: 15px; }
     .info-box { font-size: 0.8em; text-align: left; color: #aaa; background-color: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-top: 15px; border-left: 3px solid var(--primary-color); }
+    .package-list { list-style: none; padding-left: 0; text-align: left; }
+    .package-list li { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em; }
+    .package-list li i { color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em; }
     #cart-banner { position: fixed; top: 0; left: 50%; transform: translate(-50%, -120%); width: 100%; max-width: 850px; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1002; color: white; padding: 15px; transition: transform 0.4s ease-out; border-bottom: 1px solid var(--primary-color); border-radius: 0 0 15px 15px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; }
     #cart-banner.visible { transform: translate(-50%, 0); }
     #cart-items-container { text-align: left; flex-grow: 1; min-width: 250px; }
@@ -122,14 +134,14 @@
   </div>
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><ul style="list-style:none;padding:0;text-align:left"><li style="display:flex;align-items:flex-start;gap:15px;margin-bottom:20px;font-size:1em"><i class="fas fa-file-contract" style="color:var(--primary-color);width:20px;text-align:center;margin-top:5px;font-size:1.1em"></i><div><strong>Cessione Totale dei Diritti</strong><br><span style="font-size:.9em;color:#bbb">Diventi l'unico proprietario dell'opera.</span></div></li><li style="display:flex;align-items:flex-start;gap:15px;margin-bottom:20px;font-size:1em"><i class="fas fa-music" style="color:var(--primary-color);width:20px;text-align:center;margin-top:5px;font-size:1.1em"></i><div><strong>Brano Master (.wav)</strong><br><span style="font-size:.9em;color:#bbb">Qualità audio non compressa.</span></div></li><li style="display:flex;align-items:flex-start;gap:15px;margin-bottom:20px;font-size:1em"><i class="fas fa-sliders-h" style="color:var(--primary-color);width:20px;text-align:center;margin-top:5px;font-size:1.1em"></i><div><strong>Tracce Separate (.wav)</strong><br><span style="font-size:.9em;color:#bbb">Tutti gli strumenti isolati per modifiche.</span></div></li></ul></div></div>
+  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><ul class="package-list"><li><i class="fas fa-file-contract"></i> <div><strong>Cessione Totale dei Diritti</strong><br><span>Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div></li><li><i class="fas fa-share-alt"></i> <div><strong>Video Promozionale</strong><br><span>Ottimizzato per i tuoi canali social.</span></div></li><li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav)</strong><br><span>Qualità audio professionale non compressa.</span></div></li><li><i class="fas fa-sliders-h"></i> <div><strong>Tracce Separate (.wav)</strong><br><span>Tutti gli strumenti isolati per remix e modifiche.</span></div></li><li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li><li><i class="fas fa-guitar"></i> <div><strong>Spartiti Completi (.pdf)</strong><br><span>Linee melodiche e armonie per Pianoforte e Basso.</span></div></li></ul></div></div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player"><span id="footer-player-title">Nessun brano in riproduzione</span><audio controls controlsList="nodownload" id="jukebox-audio-player"></audio></div>
   <div id="add-to-cart-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="add-to-cart-modal-content"></div></div></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
+    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
