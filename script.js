@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
-    // --- 1. CONFIGURAZIONE E VARIABILI (DAL TUO CODICE) ---
+    // --- 1. CONFIGURAZIONE E VARIABILI (DAL TUO CODICE ORIGINALE) ---
     // =============================================================
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
@@ -29,43 +29,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartItemsList = document.getElementById('cart-items-list');
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
-
+    
     // =============================================================
-    // --- 2. LOGICA CARRELLO (NUOVA) ---
+    // --- 2. LOGICA CARRELLO (AGGIUNTA) ---
     // =============================================================
     function openAddToCartModal(songData) {
         const modal = document.getElementById('add-to-cart-modal');
         const modalContent = document.getElementById('add-to-cart-modal-content');
         const basePrice = parseFloat(songData.prezzo);
 
-        modalContent.innerHTML = `
-            <h3>Aggiungi Opzioni per</h3>
-            <p class="song-title-highlight">${songData.titolo}</p>
-            <div class="upsell-options">
-                 <div class="upsell-item" data-price="${ADDON_PRICES.siae}" data-id="add-siae">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Aggiungi Gestione Diritti SIAE</strong>
-                        <span>Include il deposito dell'opera e la gestione burocratica (+${ADDON_PRICES.siae.toFixed(2)}€).</span>
-                    </div>
-                </div>
-                ${(songData.videolink && songData.videolink.trim() !== '' && songData.videolink.toUpperCase() !== 'FALSE') ? `
-                <div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Aggiungi Video Promozionale</strong>
-                        <span>Un video ottimizzato per i tuoi canali social (+${ADDON_PRICES.video.toFixed(2)}€).</span>
-                    </div>
-                </div>` : ''}
-            </div>
-            <div class="info-box"><strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.</div>
-            <div id="purchase-summary"><button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button></div>`;
+        modalContent.innerHTML = `<h3>Aggiungi Opzioni per</h3><p class="song-title-highlight">${songData.titolo}</p><div class="upsell-options"><div class="upsell-item" data-price="${ADDON_PRICES.siae}" data-id="add-siae"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Aggiungi Gestione Diritti SIAE</strong><span>Include il deposito dell'opera e la gestione burocratica (+${ADDON_PRICES.siae.toFixed(2)}€).</span></div></div>${(songData.videolink && songData.videolink.trim() !== '' && songData.videolink.toUpperCase() !== 'FALSE') ? `<div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Aggiungi Video Promozionale</strong><span>Un video ottimizzato per i tuoi canali social (+${ADDON_PRICES.video.toFixed(2)}€).</span></div></div>` : ''}</div><div class="info-box"><strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.</div><div id="purchase-summary"><button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button></div>`;
         
         modal.style.display = 'flex';
         
-        modalContent.querySelectorAll('.upsell-item').forEach(item => {
-            item.addEventListener('click', () => item.classList.toggle('selected'));
-        });
+        modalContent.querySelectorAll('.upsell-item').forEach(item => item.addEventListener('click', () => item.classList.toggle('selected')));
 
         document.getElementById('confirm-add-to-cart-btn').onclick = () => {
             const songToAdd = {
@@ -106,10 +83,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function updateSongItemsUI() {
         document.querySelectorAll('.song-item').forEach(item => {
-            const songId = item.dataset.id;
-            const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId);
             const btn = item.querySelector('.add-to-cart-btn');
             if (btn) {
+                const songId = item.dataset.id;
+                const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId);
                 if (isInCart) {
                     item.classList.add('in-cart');
                     btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni';
@@ -120,10 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // =============================================================
-    // --- 3. CHECKOUT (NUOVO) ---
-    // =============================================================
     function redirectToCheckout() {
         if (shoppingCart.length === 0) return;
         if (!STRIPE_PUBLISHABLE_KEY) { alert("Errore: Chiave Stripe non configurata."); return; }
@@ -149,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================================
-    // --- 4. RENDER (DAL TUO CODICE, CON FIX) ---
+    // --- 4. RENDER DEI BRANI (DAL TUO CODICE, CON FIX) ---
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
@@ -172,53 +145,37 @@ document.addEventListener('DOMContentLoaded', function() {
             const songItem = document.createElement('div');
             songItem.className = 'song-item';
             Object.keys(song).forEach(key => {
-                if (/^[a-zA-Z0-9_]+$/.test(key)) {
-                   const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase());
-                   songItem.dataset[camelCaseKey] = song[key];
-                }
+                const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase());
+                songItem.dataset[camelCaseKey] = song[key];
             });
-            songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`;
+            songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`;
             songListContainer.appendChild(songItem);
         });
         updateSongItemsUI();
     }
     
     // =============================================================
-    // --- 5. SETUP EVENTI (DAL TUO CODICE, CON INTEGRAZIONI) ---
+    // --- 5. SETUP EVENTI (DAL TUO CODICE, COMPLETO) ---
     // =============================================================
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('contact-form').addEventListener('submit', handleContactForm);
         document.getElementById('cart-checkout-btn').addEventListener('click', redirectToCheckout);
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
-
-        cartItemsList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('cart-item-remove')) {
-                removeFromCart(e.target.dataset.id);
-            }
-        });
-
+        cartItemsList.addEventListener('click', (e) => { if (e.target.classList.contains('cart-item-remove')) removeFromCart(e.target.dataset.id); });
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
             if (!songItem) return;
-            if (e.target.closest('.add-to-cart-btn')) {
-                openAddToCartModal(songItem.dataset);
-            } else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) {
-                handlePlay(songItem, 'audio');
-            } else if (e.target.closest('.action-btn.video')) {
-                handlePlay(songItem, 'video');
-            } else if (e.target.closest('.action-btn.lyrics')) {
-                showLyrics(songItem);
-            } else if (e.target.closest('.info-btn')) {
-                openPurchaseInfoModal();
-            }
+            if (e.target.closest('.add-to-cart-btn')) openAddToCartModal(songItem.dataset);
+            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio');
+            else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video');
+            else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem);
+            else if (e.target.closest('.info-btn')) openPurchaseInfoModal();
         });
-        
         allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
             modal.querySelector('.modal-close')?.addEventListener('click', () => closeAllModals());
         });
-        
         audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
         videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video'));
         audioPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-audio', 'playing-video'));
@@ -281,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-
     handleResetFromUrl();
     setupEventListeners();
 });
