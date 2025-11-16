@@ -13,15 +13,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const MAX_PLAYS = 3;
     let allSongs = [];
-    let shoppingCart = []; 
+    let shoppingCart = [];
+    let currentPlayingItem = null;
+    let currentPlayingType = null;
+    let currentUserEmail = '';
 
+    // Riferimenti DOM
     const songListContainer = document.getElementById('song-list-container');
     const cartBanner = document.getElementById('cart-banner');
     const cartItemsList = document.getElementById('cart-items-list');
     const cartTotalEl = document.getElementById('cart-total');
+    const allModalOverlays = document.querySelectorAll('.modal-overlay');
+    const audioPlayer = document.getElementById('jukebox-audio-player');
+    const videoPlayer = document.getElementById('jukebox-video-player');
+    const footerPlayer = document.getElementById('footer-player');
+    const footerPlayerTitle = document.getElementById('footer-player-title');
 
     // =============================================================
-    // --- 2. NUOVA LOGICA DEL CARRELLO ---
+    // --- 2. LOGICA DEL CARRELLO ---
     // =============================================================
     function openAddToCartModal(songData) {
         const modal = document.getElementById('add-to-cart-modal');
@@ -76,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false
             };
             addToCart(songToAdd);
-            modal.style.display = 'none';
+            closeAllModals();
         };
     }
 
@@ -88,11 +97,13 @@ document.addEventListener('DOMContentLoaded', function() {
             shoppingCart.push(songToAdd);
         }
         renderCart();
+        updateSongItemsUI();
     }
 
     function removeFromCart(songId) {
         shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString());
         renderCart();
+        updateSongItemsUI();
     }
 
     function renderCart() {
@@ -107,17 +118,11 @@ document.addEventListener('DOMContentLoaded', function() {
         shoppingCart.forEach(item => {
             let itemTotal = item.price;
             let optionsText = [];
-            if (item.withSIAE) {
-                itemTotal += ADDON_PRICES.siae;
-                optionsText.push('SIAE');
-            }
-            if (item.withVideo) {
-                itemTotal += ADDON_PRICES.video;
-                optionsText.push('Video');
-            }
+            if (item.withSIAE) { itemTotal += ADDON_PRICES.siae; optionsText.push('SIAE'); }
+            if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); }
             total += itemTotal;
 
-            const itemHTML = `
+            cartItemsList.innerHTML += `
                 <div class="cart-item">
                     <div class="cart-item-details">
                         <span class="title">${item.title}</span>
@@ -126,11 +131,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="cart-item-price">${itemTotal.toFixed(2)}€</div>
                     <button class="cart-item-remove" data-id="${item.id}">&times;</button>
                 </div>`;
-            cartItemsList.innerHTML += itemHTML;
         });
 
         cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`;
         cartBanner.classList.add('visible');
+    }
+
+    function updateSongItemsUI() {
+        document.querySelectorAll('.song-item').forEach(item => {
+            const songId = item.dataset.id;
+            const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId);
+            const btn = item.querySelector('.add-to-cart-btn');
+            if (btn) {
+                if (isInCart) {
+                    item.classList.add('in-cart');
+                    btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni';
+                } else {
+                    item.classList.remove('in-cart');
+                    btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`;
+                }
+            }
+        });
     }
 
     // =============================================================
@@ -138,28 +159,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
     function redirectToCheckout() {
         if (shoppingCart.length === 0) return;
-        if (!STRIPE_PUBLISHABLE_KEY) {
-            alert("Errore: Chiave Stripe non configurata.");
-            return;
-        }
+        if (!STRIPE_PUBLISHABLE_KEY) { alert("Errore: Chiave Stripe non configurata."); return; }
 
         const lineItemsPayload = [];
         shoppingCart.forEach(item => {
             const unitAmount = Math.round(parseFloat(item.price) * 100);
-            if (isNaN(unitAmount) || unitAmount <= 0) {
-                alert(`Errore: Prezzo non valido per il brano "${item.title}".`);
-                return;
-            }
+            if (isNaN(unitAmount) || unitAmount <= 0) { alert(`Errore: Prezzo non valido per il brano "${item.title}".`); return; }
             lineItemsPayload.push({
                 price_data: { currency: 'eur', product_data: { name: `Brano: ${item.title}` }, unit_amount: unitAmount },
                 quantity: 1
             });
-            if (item.withSIAE) {
-                lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
-            }
-            if (item.withVideo) {
-                lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
-            }
+            if (item.withSIAE) lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
+            if (item.withVideo) lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
         });
 
         const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
@@ -169,10 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             allow_promotion_codes: true,
             successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
             cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
-        }).catch(error => {
-            console.error("ERRORE DA STRIPE:", error);
-            alert("Si è verificato un errore con Stripe. Controlla la console.");
-        });
+        }).catch(error => { console.error("ERRORE DA STRIPE:", error); alert("Si è verificato un errore con Stripe."); });
     }
 
     // =============================================================
@@ -186,9 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         songsToRender.forEach(song => {
-            const count = 0;
+            const count = getPlayCounts()[song.id] || 0;
             const playsLeft = MAX_PLAYS - count;
-            const isLocked = false; 
+            const isLocked = playsLeft <= 0;
             let purchaseHTML = '';
 
             if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
@@ -198,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const hasVideo = song.video_link && song.video_link.trim() !== '' && song.video_link.toUpperCase() !== 'FALSE';
+            const hasVideo = song.video_link && song.video_link.trim() !== '' && String(song.video_link).toUpperCase() !== 'FALSE';
             const songItem = document.createElement('div');
             songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
             
@@ -209,11 +217,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
+            const playsLeftText = isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`;
+
             songItem.innerHTML = `
                 <div class="song-item-top">
                     <div class="song-info">
                         <span class="title">${song.titolo}</span>
-                        <div class="plays-left">Ascolti rimasti: ${playsLeft}</div>
+                        <div class="plays-left">${playsLeftText}</div>
                         <div class="song-details">
                           ${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}
                           ${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}
@@ -222,19 +232,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>
                 </div>
                 <div class="song-actions">
-                    <button class="btn action-btn audio"><i class="fas fa-headphones"></i> Audio</button>
-                    ${hasVideo ? `<button class="btn action-btn video"><i class="fas fa-film"></i> Video</button>` : '<div></div>'}
-                    ${hasLyrics ? `<button class="btn action-btn lyrics"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}
+                    <button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>
+                    ${hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}
+                    ${hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi Testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>'}
                     ${purchaseHTML}
                 </div>`;
             songListContainer.appendChild(songItem);
         });
+        updateSongItemsUI();
     }
     
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
         document.getElementById('cart-checkout-btn').addEventListener('click', redirectToCheckout);
-
         cartItemsList.addEventListener('click', (e) => {
             if (e.target.classList.contains('cart-item-remove')) {
                 removeFromCart(e.target.dataset.id);
@@ -243,118 +253,120 @@ document.addEventListener('DOMContentLoaded', function() {
 
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
-            if (!songItem || songItem.classList.contains('disabled')) return;
+            if (!songItem) return;
 
-            if (e.target.matches('.add-to-cart-btn')) {
+            if (e.target.matches('.add-to-cart-btn') && !songItem.classList.contains('disabled')) {
                 openAddToCartModal(songItem.dataset);
+            } else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) {
+                handlePlay(songItem, 'audio');
+            } else if (e.target.closest('.action-btn.video')) {
+                handlePlay(songItem, 'video');
+            } else if (e.target.closest('.action-btn.lyrics')) {
+                showLyrics(songItem);
+            } else if (e.target.closest('.info-btn')) {
+                openPurchaseInfoModal();
             }
         });
         
-        document.querySelectorAll('.modal-overlay .modal-close').forEach(btn => btn.addEventListener('click', () => {
-            btn.closest('.modal-overlay').style.display = 'none';
-        }));
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
+            modal.querySelector('.modal-close')?.addEventListener('click', () => closeAllModals());
+        });
+
+        document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
+        audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
+        videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video'));
+        audioPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-audio', 'playing-video'));
+        videoPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-video'));
+        audioPlayer.addEventListener('ended', resetPlayingState);
+        videoPlayer.addEventListener('ended', closeAllModals);
     }
 
     // =============================================================
-    // --- 5. FUNZIONI CORE E HELPER ---
+    // --- 5. FUNZIONI CORE E HELPER (LOGICA ORIGINALE RIPRISTINATA) ---
     // =============================================================
-    async function handleLogin(e) {
-        e.preventDefault();
-        const email = document.getElementById('email-input').value.trim().toLowerCase();
-        if (!email) return;
-        const btn = e.target.querySelector('button');
-        btn.textContent = 'Verifico...';
-        btn.disabled = true;
-        try {
-            const res = await fetch(`${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`);
-            if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
-            const result = await res.json();
-            if (result.status === "ok" && result.name) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('jukebox-container').style.display = 'block';
-                document.getElementById('client-name').textContent = result.name;
-                await loadMusicFromApi(email);
-            } else {
-                alert(result.message || 'Accesso non autorizzato.');
-            }
-        } catch (err) {
-            console.error("Login fetch error:", err);
-            alert('Errore di comunicazione.');
-        } finally {
-            btn.textContent = 'Accedi';
-            btn.disabled = false;
-        }
-    }
-
-    async function loadMusicFromApi(userEmail) {
-        songListContainer.innerHTML = `<p>Caricamento...</p>`;
-        try {
-            const res = await fetch(`${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`);
-            if (!res.ok) throw new Error(`Network response was not ok: ${res.statusText}`);
-            const data = await res.json();
-
-            if (data && data.songs) {
-                allSongs = data.songs;
-                populateFilters(allSongs); // FUNZIONE REINSERITA
-                renderSongs(allSongs);
-            } else {
-                throw new Error("Formato dati non valido dalla API.");
-            }
-        } catch (err) {
-            console.error("loadMusicFromApi error:", err);
-            songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`;
-        }
-    }
-
-    // === FUNZIONE REINSERITA ===
+    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) return; currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const res = await fetch(`${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`); if (!res.ok) throw new Error(`Network response was not ok`); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
+    async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const res = await fetch(`${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`); if (!res.ok) throw new Error(`Network response was not ok`); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
+    
     function populateFilters(songs) {
         const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() };
         songs.forEach(s => {
-            if (s.categoria && typeof s.categoria === 'string') {
-                s.categoria.split(/[;,]/).forEach(cat => {
-                    const trimmedCat = cat.trim();
-                    if (trimmedCat) filters.categoria.add(trimmedCat);
-                });
-            }
-            if (s.argomento && typeof s.argomento === 'string') {
-                s.argomento.split(/[;,]/).forEach(arg => {
-                    const trimmedArg = arg.trim();
-                    if (trimmedArg) filters.argomento.add(trimmedArg);
-                });
-            }
-            if (s.bpm) {
-                filters.bpm.add(s.bpm);
-            }
+            if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); });
+            if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); });
+            if (s.bpm) filters.bpm.add(s.bpm);
         });
 
         const createBtns = (type, items, label) => {
             const cont = document.getElementById(`filter-${type}`);
             if (!cont) return;
             cont.innerHTML = '';
-            const allBtn = document.createElement('button');
-            allBtn.textContent = label;
-            allBtn.value = '';
-            allBtn.className = 'active';
-            cont.appendChild(allBtn);
-            [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => {
-                const btn = document.createElement('button');
-                btn.textContent = item;
-                btn.value = item;
-                cont.appendChild(btn);
-            });
-            cont.addEventListener('click', e => {
-                if (e.target.tagName === 'BUTTON') {
-                    cont.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    // Qui dovresti richiamare una funzione che filtra e ri-renderizza i brani
-                    // applyFilters(); 
-                }
-            });
+            const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn);
+            [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); });
+            cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } });
         };
         createBtns('categoria', filters.categoria, 'Tutte');
         createBtns('argomento', filters.argomento, 'Tutti');
         createBtns('bpm', filters.bpm, 'Tutti');
     }
+
+    function applyFilters() {
+        const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? '';
+        const filtered = allSongs.filter(song => {
+            const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria')));
+            const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento')));
+            const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm'));
+            return categoryMatch && argumentMatch && bpmMatch;
+        });
+        renderSongs(filtered);
+    }
     
+    function handlePlay(item, type = 'audio') {
+        if (item.classList.contains('disabled')) return;
+        const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType;
+        if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; }
+        
+        const counts = getPlayCounts();
+        const songId = item.dataset.id;
+        let count = counts[songId] || 0;
+        if (count >= MAX_PLAYS) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; }
+        
+        resetPlayingState();
+        currentPlayingItem = item;
+        currentPlayingType = type;
+        
+        if (type === 'audio') {
+            footerPlayer.classList.add('visible');
+            footerPlayerTitle.textContent = item.dataset.titolo;
+            audioPlayer.src = item.dataset.linkascolto;
+            audioPlayer.play();
+        } else if (type === 'video') {
+            videoPlayer.src = item.dataset.videolink;
+            document.getElementById('video-modal').style.display = 'flex';
+            videoPlayer.play();
+        }
+        
+        count++;
+        counts[songId] = count;
+        savePlayCounts(counts);
+        trackPlay(songId, currentUserEmail);
+        
+        const playsLeftEl = item.querySelector('.plays-left');
+        if (playsLeftEl) {
+            const playsLeft = MAX_PLAYS - count;
+            playsLeftEl.textContent = playsLeft > 0 ? `Ascolti rimasti: ${playsLeft}` : 'Limite ascolti raggiunto';
+            if (playsLeft <= 0) {
+                applyFilters(); // Ricarica la lista per mostrare il brano come disabilitato
+            }
+        }
+    }
+    
+    function getPlayCounts() { return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
+    function savePlayCounts(counts) { localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
+    async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
+    function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
+    function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
+    function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } resetPlayingState(); }
+    function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { footerPlayer.classList.remove('visible'); audioPlayer.pause(); } }
+
     setupEventListeners();
 });
