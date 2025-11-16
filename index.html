@@ -132,12 +132,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Aggiungiamo un sistema di cattura errori globale per non perderci nulla
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("ERRORE GLOBALE CATTURATO:", { message, source, lineno, error });
-        alert("Si è verificato un errore critico. Controlla la console per i dettagli (F12).");
-    };
-
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
@@ -197,23 +191,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- CORREZIONE 2: RIMOSSO PARAMETRO NON VALIDO PER STRIPE ---
     function redirectToCheckout() {
-        console.log("--- DIAGNOSTICA CHECKOUT: Funzione redirectToCheckout avviata ---");
         if (shoppingCart.length === 0) {
-            console.warn("DIAGNOSTICA CHECKOUT: Tentativo di checkout con carrello vuoto.");
             alert("Il carrello è vuoto.");
             return;
         }
-        console.log("DIAGNOSTICA CHECKOUT: Contenuto carrello:", JSON.stringify(shoppingCart, null, 2));
-
+        if (!STRIPE_PUBLISHABLE_KEY) {
+            alert("Errore: Chiave Stripe non configurata.");
+            return;
+        }
         const lineItemsPayload = [];
         let hasError = false;
         shoppingCart.forEach(item => {
             if (hasError) return;
             const unitAmount = Math.round(parseFloat(item.price) * 100);
-            console.log(`DIAGNOSTICA CHECKOUT: Processo articolo "${item.title}". Prezzo grezzo: ${item.price}, Prezzo calcolato (in centesimi): ${unitAmount}`);
             if (isNaN(unitAmount) || unitAmount <= 0) {
-                console.error(`DIAGNOSTICA CHECKOUT: ERRORE! Prezzo non valido per il brano "${item.title}".`);
                 alert(`Errore: Prezzo non valido per il brano "${item.title}".`);
                 hasError = true;
                 return;
@@ -222,29 +215,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if (item.withSIAE) lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
             if (item.withVideo) lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
         });
-        
         if (hasError) {
-            console.error("DIAGNOSTICA CHECKOUT: Checkout interrotto a causa di errore nei dati.");
             return;
         }
-
-        console.log("DIAGNOSTICA CHECKOUT: Dati pronti per Stripe:", JSON.stringify(lineItemsPayload, null, 2));
-        try {
-            const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-            stripe.redirectToCheckout({
-                lineItems: lineItemsPayload,
-                mode: 'payment',
-                allow_promotion_codes: true,
-                successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
-                cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
-            }).catch(error => {
-                console.error("DIAGNOSTICA CHECKOUT: ERRORE restituito da Stripe.js:", error);
-                alert("Si è verificato un errore con Stripe. Controlla la console per i dettagli.");
-            });
-        } catch(e) {
-            console.error("DIAGNOSTICA CHECKOUT: ERRORE CRITICO prima della chiamata a Stripe:", e);
-            alert("Errore critico di Stripe. Controlla la console.");
-        }
+        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        stripe.redirectToCheckout({
+            lineItems: lineItemsPayload,
+            mode: 'payment',
+            // allow_promotion_codes: true, // <-- RIMOSSA RIGA CHE CAUSAVA L'ERRORE
+            successUrl: `${window.location.origin}${window.location.pathname}?payment=success`,
+            cancelUrl: `${window.location.origin}${window.location.pathname}?payment=cancel`,
+        }).catch(error => {
+            console.error("ERRORE DA STRIPE:", error);
+            alert("Si è verificato un errore con Stripe. Controlla la console per i dettagli.");
+        });
     }
 
     function renderSongs(songsToRender) { songListContainer.innerHTML = ''; if (songsToRender.length === 0) { songListContainer.innerHTML = '<p>Nessun brano corrisponde ai filtri selezionati.</p>'; return; } songsToRender.forEach(song => { const count = getPlayCounts()[song.id] || 0; const playsLeft = MAX_PLAYS - count; const isLocked = playsLeft <= 0; let purchaseHTML = ''; if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto') { purchaseHTML = `<button class="add-to-cart-btn">Aggiungi al carrello da ${parseFloat(song.prezzo).toFixed(2)}€</button>`; } else if (song.stato?.toLowerCase() === 'venduto') { purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1;">Brano Venduto</p>`; } const hasLyrics = song.liriche && song.liriche.trim() !== ""; const hasVideo = song.video_link && String(song.video_link).trim() !== '' && String(song.video_link).toUpperCase() !== 'FALSE'; const songItem = document.createElement('div'); songItem.className = 'song-item'; Object.keys(song).forEach(key => { const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase()); songItem.dataset[camelCaseKey] = song[key]; }); songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`; songListContainer.appendChild(songItem); }); updateSongItemsUI(); }
@@ -254,12 +238,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     
+    // --- CORREZIONE 1: DEFINITA VARIABILE MANCANTE ---
     function handlePlay(item, type = 'audio') {
-        console.log(`--- DIAGNOSTICA PLAY: Tentativo di riproduzione (${type}) ---`);
-        console.log("DIAGNOSTICA PLAY: Dati del brano:", item.dataset);
-
+        // La variabile 'targetButton' viene definita qui, correggendo l'errore.
+        const targetButton = item.querySelector(`.action-btn.${type}`);
+        
         if (targetButton && targetButton.classList.contains('disabled')) {
-            console.warn("DIAGNOSTICA PLAY: Riproduzione bloccata, limite ascolti raggiunto.");
             alert("Hai raggiunto il limite di ascolti per questo brano.");
             return;
         }
@@ -272,29 +256,26 @@ document.addEventListener('DOMContentLoaded', function() {
         resetPlayingState(); 
         currentPlayingItem = item;
         currentPlayingType = type;
-        
-        try {
-            if (type === 'audio') {
-                const audioUrl = item.dataset.linkascolto;
-                console.log("DIAGNOSTICA PLAY: Imposto sorgente audio:", audioUrl);
-                if (!audioUrl) throw new Error("URL audio mancante!");
-                audioPlayer.src = audioUrl;
-                footerPlayer.classList.add('visible');
-                footerPlayerTitle.textContent = item.dataset.titolo;
-                audioPlayer.play().catch(e => console.error("DIAGNOSTICA PLAY: Errore durante audioPlayer.play()", e));
-            } else if (type === 'video') {
-                const videoUrl = item.dataset.videolink;
-                console.log("DIAGNOSTICA PLAY: Imposto sorgente video:", videoUrl);
-                if (!videoUrl) throw new Error("URL video mancante!");
-                videoPlayer.src = videoUrl;
-                document.getElementById('video-modal').style.display = 'flex';
-                videoPlayer.play().catch(e => console.error("DIAGNOSTICA PLAY: Errore durante videoPlayer.play()", e));
+        if (type === 'audio') {
+            const audioUrl = item.dataset.linkascolto;
+            if (!audioUrl) {
+                console.error("URL audio non trovato nel dataset del brano.");
+                return;
             }
-        } catch (e) {
-            console.error("DIAGNOSTICA PLAY: ERRORE CRITICO durante l'avvio della riproduzione:", e);
-            alert("Impossibile avviare la riproduzione. Controlla la console (F12).");
+            audioPlayer.src = audioUrl;
+            footerPlayer.classList.add('visible');
+            footerPlayerTitle.textContent = item.dataset.titolo;
+            audioPlayer.play().catch(e => console.error("Errore durante la riproduzione audio:", e));
+        } else if (type === 'video') {
+            const videoUrl = item.dataset.videolink;
+            if (!videoUrl) {
+                console.error("URL video non trovato nel dataset del brano.");
+                return;
+            }
+            videoPlayer.src = videoUrl;
+            document.getElementById('video-modal').style.display = 'flex';
+            videoPlayer.play().catch(e => console.error("Errore durante la riproduzione video:", e));
         }
-        
         const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, item.dataset.titolo, currentUserEmail); applyFilters();
     }
 
@@ -306,7 +287,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     
     function resetPlayingState() {
-        console.log("DIAGNOSTICA PLAY: Eseguo resetPlayingState.");
         if (currentPlayingItem) {
             currentPlayingItem.classList.remove('playing-audio', 'playing-video');
         }
@@ -329,6 +309,5 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
 });
 </script>
-
 </body>
 </html>
