@@ -173,22 +173,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const response = await fetch(sheetApiUrl, {
             method: 'POST',
-            // --- MODIFICA CHIAVE: INVIA COME TESTO SEMPLICE ---
             headers: { 'Content-Type': 'text/plain' }, 
             body: JSON.stringify(payload),
-            redirect: 'follow'
+            // --- MODIFICA CHIAVE: DISABILITA I REINDIRIZZAMENTI ---
+            redirect: 'follow' 
         });
 
         if (!response.ok) {
             throw new Error(`Errore dal server: ${response.statusText}`);
         }
-
-        const session = await response.json();
+        
+        // Google Script a volte restituisce un JSON "avvolto", dobbiamo gestirlo
+        const textResponse = await response.text();
+        const session = JSON.parse(textResponse);
+        
         if (session.sessionId) {
             const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
             await stripe.redirectToCheckout({ sessionId: session.sessionId });
         } else {
-            // Se lo script ha restituito un errore, mostralo
             throw new Error(session.message || "ID di sessione non ricevuto dal server.");
         }
     } catch (e) {
@@ -249,15 +251,15 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         await fetch(sheetApiUrl, {
             method: 'POST',
-            // --- MODIFICA CHIAVE: INVIA COME TESTO SEMPLICE ---
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(payload),
+            // --- MODIFICA CHIAVE: DISABILITA I REINDIRIZZAMENTI ---
+            redirect: 'follow', 
             mode: 'no-cors' 
         });
     } catch (error) {
         console.error("Impossibile tracciare l'ascolto:", error);
     }
-}
 
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
