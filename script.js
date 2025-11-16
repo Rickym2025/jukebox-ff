@@ -1,24 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     // =============================================================
-    // --- 1. CONFIGURAZIONE E VARIABILI (DAL TUO CODICE ORIGINALE) ---
+    // --- 1. CONFIGURAZIONE E VARIABILI ---
     // =============================================================
-    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
+    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
-    
-    const ADDON_PRICE_IDS = {
-        siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm",
-        video: "price_1S5QcrLyZ8FXl87PipiY314W",
-    };
+    const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
-
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
 
-    let allSongs = [];
-    let shoppingCart = [];
-    let currentPlayingItem = null;
-    let currentPlayingType = null;
-    let currentUserEmail = '';
+    let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '';
 
     const songListContainer = document.getElementById('song-list-container');
     const audioPlayer = document.getElementById('jukebox-audio-player');
@@ -29,35 +20,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartItemsList = document.getElementById('cart-items-list');
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
-    
+
     // =============================================================
-    // --- 2. LOGICA CARRELLO (AGGIUNTA) ---
+    // --- 2. LOGICA CARRELLO E CHECKOUT (NUOVA) ---
     // =============================================================
     function openAddToCartModal(songData) {
         const modal = document.getElementById('add-to-cart-modal');
         const modalContent = document.getElementById('add-to-cart-modal-content');
         const basePrice = parseFloat(songData.prezzo);
-
         modalContent.innerHTML = `<h3>Aggiungi Opzioni per</h3><p class="song-title-highlight">${songData.titolo}</p><div class="upsell-options"><div class="upsell-item" data-price="${ADDON_PRICES.siae}" data-id="add-siae"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Aggiungi Gestione Diritti SIAE</strong><span>Include il deposito dell'opera e la gestione burocratica (+${ADDON_PRICES.siae.toFixed(2)}€).</span></div></div>${(songData.videolink && songData.videolink.trim() !== '' && songData.videolink.toUpperCase() !== 'FALSE') ? `<div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Aggiungi Video Promozionale</strong><span>Un video ottimizzato per i tuoi canali social (+${ADDON_PRICES.video.toFixed(2)}€).</span></div></div>` : ''}</div><div class="info-box"><strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.</div><div id="purchase-summary"><button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button></div>`;
-        
         modal.style.display = 'flex';
-        
         modalContent.querySelectorAll('.upsell-item').forEach(item => item.addEventListener('click', () => item.classList.toggle('selected')));
-
         document.getElementById('confirm-add-to-cart-btn').onclick = () => {
-            const songToAdd = {
-                id: songData.id, title: songData.titolo, price: basePrice,
-                withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'),
-                withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false
-            };
+            const songToAdd = { id: songData.id, title: songData.titolo, price: basePrice, withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false };
             addToCart(songToAdd);
             closeAllModals();
         };
     }
     function addToCart(songToAdd) {
         const existingIndex = shoppingCart.findIndex(item => item.id === songToAdd.id);
-        if (existingIndex > -1) shoppingCart[existingIndex] = songToAdd;
-        else shoppingCart.push(songToAdd);
+        if (existingIndex > -1) shoppingCart[existingIndex] = songToAdd; else shoppingCart.push(songToAdd);
         renderCart();
         updateSongItemsUI();
     }
@@ -104,10 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         shoppingCart.forEach(item => {
             const unitAmount = Math.round(parseFloat(item.price) * 100);
             if (isNaN(unitAmount) || unitAmount <= 0) { alert(`Errore: Prezzo non valido per il brano "${item.title}".`); return; }
-            lineItemsPayload.push({
-                price_data: { currency: 'eur', product_data: { name: `Brano: ${item.title}` }, unit_amount: unitAmount },
-                quantity: 1
-            });
+            lineItemsPayload.push({ price_data: { currency: 'eur', product_data: { name: `Brano: ${item.title}` }, unit_amount: unitAmount }, quantity: 1 });
             if (item.withSIAE) lineItemsPayload.push({ price: ADDON_PRICE_IDS.siae, quantity: 1 });
             if (item.withVideo) lineItemsPayload.push({ price: ADDON_PRICE_IDS.video, quantity: 1 });
         });
@@ -122,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================================
-    // --- 4. RENDER DEI BRANI (DAL TUO CODICE, CON FIX) ---
+    // --- 3. RENDER (DAL TUO CODICE ORIGINALE) ---
     // =============================================================
     function renderSongs(songsToRender) {
         songListContainer.innerHTML = '';
@@ -155,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================================
-    // --- 5. SETUP EVENTI (DAL TUO CODICE, COMPLETO) ---
+    // --- 4. SETUP EVENTI (DAL TUO CODICE ORIGINALE, CON INTEGRAZIONI) ---
     // =============================================================
     function setupEventListeners() {
         document.getElementById('login-form').addEventListener('submit', handleLogin);
@@ -185,10 +164,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =============================================================
-    // --- 6. FUNZIONI CORE (TUTTE DAL TUO CODICE ORIGINALE) ---
+    // --- 5. FUNZIONI CORE (TUTTE DAL TUO CODICE ORIGINALE) ---
     // =============================================================
-    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) return; currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const res = await fetch(`${sheetApiUrl}?emailCheck=${encodeURIComponent(email)}`); if (!res.ok) throw new Error(`Network response was not ok`); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
-    async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const res = await fetch(`${sheetApiUrl}?userEmail=${encodeURIComponent(userEmail)}`); if (!res.ok) throw new Error(`Network response was not ok`); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
+    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const res = await fetch(`${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`); if (!res.ok) throw new Error(`Network response was not ok`); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
+    async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const res = await fetch(`${sheetApiUrl}?source=jukebox&userEmail=${encodeURIComponent(userEmail)}`); if (!res.ok) throw new Error(`Network response was not ok`); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     function handlePlay(item, type = 'audio') {
