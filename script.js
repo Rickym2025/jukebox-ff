@@ -195,7 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const isLocked = playsLeft <= 0;
             let purchaseHTML = '';
 
-            if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto' && !isLocked) {
+            // --- FIX #2: Il pulsante di acquisto è sempre presente se c'è un prezzo ---
+            if (song.prezzo && String(song.prezzo).trim() !== '' && song.stato?.toLowerCase() !== 'venduto') {
                 purchaseHTML = `<button class="add-to-cart-btn">Aggiungi al carrello da ${parseFloat(song.prezzo).toFixed(2)}€</button>`;
             } else if (song.stato?.toLowerCase() === 'venduto') {
                 purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1;">Brano Venduto</p>`;
@@ -204,7 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasLyrics = song.liriche && song.liriche.trim() !== "";
             const hasVideo = song.video_link && String(song.video_link).trim() !== '' && String(song.video_link).toUpperCase() !== 'FALSE';
             const songItem = document.createElement('div');
-            songItem.className = `song-item ${isLocked ? 'disabled' : ''}`;
+            // La classe 'disabled' si applica solo agli elementi di riproduzione, non all'intero item
+            songItem.className = 'song-item';
             
             Object.keys(song).forEach(key => {
                 if (/^[a-zA-Z0-9_]+$/.test(key)) {
@@ -228,9 +230,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>
                 </div>
                 <div class="song-actions">
-                    <button class="btn action-btn audio" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>
-                    ${hasVideo ? `<button class="btn action-btn video" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}
-                    ${hasLyrics ? `<button class="btn action-btn lyrics" title="${isLocked ? 'Limite ascolti' : 'Leggi Testo'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-file-lines'}"></i> Testo</button>` : '<div></div>'}
+                    <button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>
+                    ${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}
+                    ${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}
                     ${purchaseHTML}
                 </div>`;
             songListContainer.appendChild(songItem);
@@ -257,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const songItem = e.target.closest('.song-item');
             if (!songItem) return;
 
-            if (e.target.matches('.add-to-cart-btn') && !songItem.classList.contains('disabled')) {
+            if (e.target.closest('.add-to-cart-btn')) {
                 openAddToCartModal(songItem.dataset);
             } else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) {
                 handlePlay(songItem, 'audio');
@@ -284,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // =============================================================
-    // --- 6. FUNZIONI CORE E HELPER (DAL TUO CODICE ORIGINALE) ---
+    // --- 6. FUNZIONI CORE E HELPER (LOGICA ORIGINALE RIPRISTINATA) ---
     // =============================================================
     async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) return; currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const res = await fetch(`${sheetApiUrl}&emailCheck=${encodeURIComponent(email)}`); if (!res.ok) throw new Error(`Network response was not ok`); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     async function loadMusicFromApi(userEmail) { songListContainer.innerHTML = `<p>Caricamento...</p>`; try { const res = await fetch(`${sheetApiUrl}&userEmail=${encodeURIComponent(userEmail)}`); if (!res.ok) throw new Error(`Network response was not ok`); const data = await res.json(); if (data && data.songs) { allSongs = data.songs; populateFilters(allSongs); applyFilters(); } else { throw new Error("Formato dati non valido dalla API."); } } catch (err) { console.error("loadMusicFromApi error:", err); songListContainer.innerHTML = `<p style="color: #f44336;">Errore nel caricamento dei brani.</p>`; } }
@@ -321,15 +323,21 @@ document.addEventListener('DOMContentLoaded', function() {
         renderSongs(filtered);
     }
     
+    // === FIX #1, #2, #3: LOGICA DI PLAY RIPRISTINATA E CORRETTA ===
     function handlePlay(item, type = 'audio') {
-        if (item.classList.contains('disabled')) return;
+        const targetButton = item.querySelector(`.action-btn.${type}`);
+        if (targetButton && targetButton.classList.contains('disabled')) {
+             alert("Hai raggiunto il limite di ascolti per questo brano.");
+             return;
+        }
+
         const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType;
         if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; }
         
         const counts = getPlayCounts();
         const songId = item.dataset.id;
         let count = counts[songId] || 0;
-        if (count >= MAX_PLAYS) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; }
+        if (count >= MAX_PLAYS) { return; }
         
         resetPlayingState();
         currentPlayingItem = item;
@@ -338,10 +346,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (type === 'audio') {
             footerPlayer.classList.add('visible');
             footerPlayerTitle.textContent = item.dataset.titolo;
-            audioPlayer.src = item.dataset.linkascolto; // CORRETTO
+            audioPlayer.src = item.dataset.linkascolto; // Corretto
             audioPlayer.play();
         } else if (type === 'video') {
-            videoPlayer.src = item.dataset.videolink; // CORRETTO
+            videoPlayer.src = item.dataset.videolink; // Corretto
             document.getElementById('video-modal').style.display = 'flex';
             videoPlayer.play();
         }
@@ -349,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
         count++;
         counts[songId] = count;
         savePlayCounts(counts);
-        trackPlay(songId, currentUserEmail); // CORRETTO
+        trackPlay(songId, currentUserEmail); // Chiamata ripristinata
         
         const playsLeftEl = item.querySelector('.plays-left');
         if (playsLeftEl) {
@@ -363,12 +371,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getPlayCounts() { return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
-    async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
+    async function trackPlay(songId, userEmail) { try { await fetch(sheetApiUrl, { method: 'POST', mode: 'no-cors',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'play', id: songId, email: userEmail }) }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
     function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { footerPlayer.classList.remove('visible'); audioPlayer.pause(); } }
-    async function handleContactForm(e) { e.preventDefault(); /* ... logica form contatti ... */ }
+    async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formData = new FormData(form); const resultEl = form.querySelector('#form-result') || form.parentElement.querySelector('#form-result'); resultEl.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { resultEl.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { resultEl.innerHTML = `<span style='color: #e53935;'>Errore: ${result.message}</span>`; } } catch (err) { resultEl.innerHTML = "<span style='color: #e53935;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
     
     setupEventListeners();
 });
