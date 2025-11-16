@@ -2,16 +2,6 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <!-- CSP DEFINITIVA E COMPLETA -->
-  <meta http-equiv="Content-Security-Policy" 
-        content="default-src 'self'; 
-                 script-src 'self' 'unsafe-inline' https://js.stripe.com; 
-                 connect-src 'self' https://script.google.com https://script.googleusercontent.com https://api.web3forms.com; 
-                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; 
-                 font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; 
-                 img-src 'self' https://pub-89945f8350374b50818d716fdc3c108b.r2.dev; 
-                 media-src 'self' https://raw.githubusercontent.com https://github.com; 
-                 frame-src https://js.stripe.com;">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jukebox FF</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
@@ -141,7 +131,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
+    const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec?source=jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICE_IDS = { siae: "price_1S5NN8LyZ8FXl87PRrpQOXDm", video: "price_1S5QcrLyZ8FXl87PipiY314W" };
     const ADDON_PRICES = { siae: 100, video: 49 };
@@ -254,11 +244,11 @@ document.addEventListener('DOMContentLoaded', function() {
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
             if (!songItem) return;
-            if (e.target.closest('.add-to-cart-btn')) { openAddToCartModal(songItem.dataset); }
-            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) { handlePlay(songItem, 'audio'); }
-            else if (e.target.closest('.action-btn.video')) { handlePlay(songItem, 'video'); }
-            else if (e.target.closest('.action-btn.lyrics')) { showLyrics(songItem); }
-            else if (e.target.closest('.info-btn')) { openPurchaseInfoModal(); }
+            if (e.target.closest('.add-to-cart-btn')) openAddToCartModal(songItem.dataset);
+            else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio');
+            else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video');
+            else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem);
+            else if (e.target.closest('.info-btn')) openPurchaseInfoModal();
         });
         allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
