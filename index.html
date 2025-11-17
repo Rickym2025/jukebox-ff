@@ -211,7 +211,35 @@ document.addEventListener('DOMContentLoaded', function() {
         closeAllModals();
     };
 }
-    function addToCart(songToAdd) { const existingIndex = shoppingCart.findIndex(item => item.id === songToAdd.id); if (existingIndex > -1) shoppingCart[existingIndex] = songToAdd; else shoppingCart.push(songToAdd); renderCart(); updateSongItemsUI(); }
+    function addToCart(songToAdd) {
+    // Calcola il prezzo finale basato sulle selezioni
+    let finalPrice = songToAdd.price; // Questo è il prezzo base (Brano + SIAE)
+    
+    if (!songToAdd.withSIAE) {
+        finalPrice -= ADDON_PRICES.siae; // Sottrai il costo della SIAE se deselezionata
+    }
+    if (songToAdd.withVideo) {
+        finalPrice += ADDON_PRICES.video; // Aggiungi il costo del video se selezionato
+    }
+
+    // Crea un nuovo oggetto per il carrello con il prezzo finale calcolato
+    const itemForCart = {
+        id: songToAdd.id,
+        title: songToAdd.title,
+        price: finalPrice, // Usa il prezzo finale!
+        withSIAE: songToAdd.withSIAE,
+        withVideo: songToAdd.withVideo
+    };
+
+    const existingIndex = shoppingCart.findIndex(item => item.id === itemForCart.id);
+    if (existingIndex > -1) {
+        shoppingCart[existingIndex] = itemForCart;
+    } else {
+        shoppingCart.push(itemForCart);
+    }
+    renderCart();
+    updateSongItemsUI();
+}
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     function renderCart() { if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; } cartItemsList.innerHTML = ''; let total = 0; shoppingCart.forEach(item => { let itemTotal = item.price; let optionsText = []; if (item.withSIAE) { itemTotal += ADDON_PRICES.siae; optionsText.push('SIAE'); } if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); } total += itemTotal; cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`; }); cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`; cartBanner.classList.add('visible'); }
     function updateSongItemsUI() { document.querySelectorAll('.song-item').forEach(item => { const btn = item.querySelector('.add-to-cart-btn'); if (btn) { const songId = item.dataset.id; const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId); if (isInCart) { item.classList.add('in-cart'); btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni'; } else { btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`; } } }); }
