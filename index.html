@@ -154,9 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderCart() { if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; } cartItemsList.innerHTML = ''; let total = 0; shoppingCart.forEach(item => { let itemTotal = item.price; let optionsText = []; if (item.withSIAE) { itemTotal += ADDON_PRICES.siae; optionsText.push('SIAE'); } if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); } total += itemTotal; cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`; }); cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`; cartBanner.classList.add('visible'); }
     function updateSongItemsUI() { document.querySelectorAll('.song-item').forEach(item => { const btn = item.querySelector('.add-to-cart-btn'); if (btn) { const songId = item.dataset.id; const isInCart = shoppingCart.some(cartItem => cartItem.id.toString() === songId); if (isInCart) { item.classList.add('in-cart'); btn.innerHTML = '<i class="fas fa-edit"></i> Modifica Opzioni'; } else { btn.innerHTML = `Aggiungi al carrello da ${parseFloat(item.dataset.prezzo).toFixed(2)}€`; } } }); }
 
-    // --- SOLUZIONE DEFINITIVA STRIPE: CREA SESSIONE SUL SERVER ---
-    // Nel tuo file HTML, sostituisci la funzione redirectToCheckout
-
 function redirectToCheckout() {
     if (shoppingCart.length === 0) {
         alert("Il carrello è vuoto.");
@@ -167,15 +164,16 @@ function redirectToCheckout() {
     checkoutButton.textContent = 'Reindirizzamento...';
     checkoutButton.disabled = true;
 
-    // --- SOLUZIONE DEFINITIVA CON N8N ---
+    // --- PUNTO CHIAVE: L'URL DEVE ESSERE QUELLO DEL TUO WEBHOOK N8N ---
     
-    // 1. Prepara l'URL del webhook di n8n
-    const n8nWebhookUrl = 'https://n8n.automaita.it/webhook-test/crea-checkout-jukebox'; // <-- USA L'URL DI PRODUZIONE!
+    // 1. Inserisci qui l'URL di PRODUZIONE del tuo NUOVO workflow n8n
+    const n8nWebhookUrl = 'https://n8n.automaita.it/webhook/crea-checkout-jukebox'; // <-- METTI QUI IL TUO URL
     
     // 2. Codifica il carrello per passarlo come parametro URL
     const cartParam = encodeURIComponent(JSON.stringify(shoppingCart));
     
-    // 3. Reindirizza l'utente al webhook, passando il carrello
+    // 3. Reindirizza l'utente al webhook, passando il carrello.
+    //    Questa azione NON usa fetch() e quindi NON può essere bloccata da CORS.
     window.location.href = `${n8nWebhookUrl}?cart=${cartParam}`;
 }
 
