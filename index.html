@@ -156,7 +156,61 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
-    function openAddToCartModal(songData) { const modal = document.getElementById('add-to-cart-modal'); const modalContent = document.getElementById('add-to-cart-modal-content'); const basePrice = parseFloat(songData.prezzo); modalContent.innerHTML = `<h3>Aggiungi Opzioni per</h3><p class="song-title-highlight">${songData.titolo}</p><div class="upsell-options"><div class="upsell-item" data-price="${ADDON_PRICES.siae}" data-id="add-siae"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Cessione Diritti Totale (Deposito SIAE autonomo)</strong><span>Ti forniamo la documentazione per depositare l'opera a tuo nome. Diventi l'unico proprietario (Master & Publishing) (+${ADDON_PRICES.siae.toFixed(2)}€).</span></div></div>${(songData.videolink && String(songData.videolink).toUpperCase() !== 'FALSE') ? `<div class="upsell-item" data-price="${ADDON_PRICES.video}" data-id="add-video"><i class="fas fa-check-circle check-icon"></i><div class="upsell-item-details"><strong>Aggiungi Video Promozionale</strong><span>Un video ottimizzato per i tuoi canali social (+${ADDON_PRICES.video.toFixed(2)}€).</span></div></div>` : ''}</div><div class="info-box"><strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.</div><div id="purchase-summary"><button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button></div>`; modal.style.display = 'flex'; modalContent.querySelectorAll('.upsell-item').forEach(item => item.addEventListener('click', () => item.classList.toggle('selected'))); document.getElementById('confirm-add-to-cart-btn').onclick = () => { const songToAdd = { id: songData.id, title: songData.titolo, price: basePrice, withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false }; addToCart(songToAdd); closeAllModals(); }; }
+    function openAddToCartModal(songData) {
+    const modal = document.getElementById('add-to-cart-modal');
+    const modalContent = document.getElementById('add-to-cart-modal-content');
+    const basePrice = parseFloat(songData.prezzo);
+    
+    modalContent.innerHTML = `
+        <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
+        
+        <div class="upsell-options">
+            <div class="upsell-item selected" data-id="add-siae">
+                <i class="fas fa-check-circle check-icon"></i>
+                <div class="upsell-item-details">
+                    <strong>Cessione Diritti Totale (Deposito SIAE autonomo) - INCLUSA</strong>
+                    <span>Acquisisci la totalità dei diritti (Master & Publishing) e potrai depositare l'opera a tuo nome. <strong>Licenza SIAE: 189515-0</strong>.</span>
+                </div>
+            </div>
+            
+            ${(songData.videolink && String(songData.videolink).toUpperCase() !== 'FALSE') ? `
+            <div class="upsell-item" data-id="add-video">
+                <i class="fas fa-check-circle check-icon"></i>
+                <div class="upsell-item-details">
+                    <strong>Aggiungi Video Promozionale (+${ADDON_PRICES.video.toFixed(2)}€)</strong>
+                    <span>Un video ottimizzato per i tuoi canali social.</span>
+                </div>
+            </div>` : ''}
+        </div>
+
+        <div class="info-box" style="text-align: center; font-size: 1em; padding: 15px;">
+            <strong>Nota:</strong> La Cessione dei Diritti Totali è inclusa di default. <strong>Clicca sulla spunta verde per rimuoverla (-${ADDON_PRICES.siae.toFixed(2)}€)</strong> e acquisire solo i diritti di sfruttamento commerciale del master.
+        </div>
+
+        <div id="purchase-summary">
+            <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
+        </div>`;
+    
+    modal.style.display = 'flex';
+    
+    // Gestione del click per aggiungere/togliere la selezione
+    modalContent.querySelectorAll('.upsell-item').forEach(item => {
+        item.addEventListener('click', () => item.classList.toggle('selected'));
+    });
+
+    // La logica per aggiungere al carrello rimane identica
+    document.getElementById('confirm-add-to-cart-btn').onclick = () => {
+        const songToAdd = { 
+            id: songData.id, 
+            title: songData.titolo, 
+            price: basePrice, 
+            withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), 
+            withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false 
+        };
+        addToCart(songToAdd);
+        closeAllModals();
+    };
+}
     function addToCart(songToAdd) { const existingIndex = shoppingCart.findIndex(item => item.id === songToAdd.id); if (existingIndex > -1) shoppingCart[existingIndex] = songToAdd; else shoppingCart.push(songToAdd); renderCart(); updateSongItemsUI(); }
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     function renderCart() { if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; } cartItemsList.innerHTML = ''; let total = 0; shoppingCart.forEach(item => { let itemTotal = item.price; let optionsText = []; if (item.withSIAE) { itemTotal += ADDON_PRICES.siae; optionsText.push('SIAE'); } if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); } total += itemTotal; cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`; }); cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`; cartBanner.classList.add('visible'); }
