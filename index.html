@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <div id="purchase-summary" style="margin-top: 25px;">
             <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
-        </div>`;
+        </div>`; // <-- La stringa del template si chiude QUI.
     
     modal.style.display = 'flex';
     
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
         item.addEventListener('click', () => item.classList.toggle('selected'));
     });
 
-    // La logica per aggiungere al carrello rimane identica
+    // La logica per aggiungere al carrello
     document.getElementById('confirm-add-to-cart-btn').onclick = () => {
         const songToAdd = { 
             id: songData.id, 
