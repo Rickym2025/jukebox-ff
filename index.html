@@ -251,23 +251,25 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
     function renderCart() {
-        if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
-        cartItemsList.innerHTML = '';
-        let total = 0;
-        shoppingCart.forEach(item => {
-            let itemTotal = item.price; // Prezzo base (con o senza SIAE)
-            let optionsText = [];
-            if (item.withSIAE) optionsText.push('SIAE');
-            if (item.withVideo) { 
-                itemTotal += ADDON_PRICES.video; 
-                optionsText.push('Video'); 
-            }
-            total += itemTotal;
-            cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
-        });
-        cartTotalEl.textContent = `Totale: ${total.toFixed(2)}€`;
-        cartBanner.classList.add('visible');
-    }
+    if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
+    cartItemsList.innerHTML = '';
+    let total = 0;
+    shoppingCart.forEach(item => {
+        // Il totale mostrato al cliente nel carrello è il totale netto che pagherà
+        let itemTotal = item.priceToCharge; 
+        let optionsText = [];
+        if (item.withSIAE) optionsText.push('SIAE');
+        if (item.withVideo) { 
+            itemTotal += ADDON_PRICES.video; // Aggiungiamo il prezzo del video al netto
+            optionsText.push('Video'); 
+        }
+        total += itemTotal;
+        cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
+    });
+    // Mostriamo il totale netto che il cliente pagherà
+    cartTotalEl.textContent = `Totale da Pagare: ${total.toFixed(2)}€`; 
+    cartBanner.classList.add('visible');
+}
     
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     
