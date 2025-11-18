@@ -117,27 +117,33 @@
     <div class="main-content">
         <div class="profile-logo"><div class="profile-logo-image"></div></div>
         <div id="login-screen"><h1>Jukebox FF Riservato</h1><form id="login-form"><input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required autocomplete="email" /><button type="submit" class="button">Accedi</button></form></div>
+        
         <div id="jukebox-container">
           <h2>Jukebox Personalizzato</h2><p class="subtitle">per <strong id="client-name"></strong></p>
           <div style="padding: 10px; border: 1px solid #444; border-radius: 8px; margin: 25px auto; max-width: 400px; font-size: 0.9em; background-color: rgba(0,0,0,0.2);">
             Autore e Compositore: <strong>Fausto Fusetti</strong><br>
             Licenza Autore SIAE: <strong>189515-0</strong>
           </div>
-          <div id="payment-success-screen" style="display: none; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 40px 30px; padding-top: 100px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);">
-    <i class="fas fa-check-circle" style="font-size: 4em; color: var(--success-color); margin-bottom: 25px;"></i>
-    <h1>Pagamento Riuscito!</h1>
-    <h3 style="color: #f0f0f0; font-weight: 400; line-height: 1.6;">Grazie per il tuo acquisto.</h3>
-    <p style="font-size: 1.1em; color: #ddd; margin-top: 20px;">
-        A breve riceverai un'email all'indirizzo fornito durante il pagamento con il riepilogo dell'ordine e i link per scaricare i file acquistati.
-    </p>
-    <p style="font-size: 0.9em; color: #aaa; margin-top: 30px;">
-        Se non dovessi ricevere l'email entro 5 minuti, controlla la cartella Spam o contattami.
-    </p>
-</div>
           <div id="filter-container"><div class="filter-group"> <span class="filter-label">Categoria:</span> <div id="filter-categoria" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">Argomento:</span> <div id="filter-argomento" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div></div>
           <div class="extra-actions"><button id="show-contact-modal-btn" class="button"><i class="fas fa-pen"></i> Richieste</button></div>
           <div id="song-list-container"><p>Caricamento brani...</p></div>
         </div>
+
+        <!-- ========= INIZIO CORREZIONE 1: POSIZIONE DEL BLOCCO SPOSTATA ========= -->
+        <!-- Questo blocco ora è DOPO il jukebox-container, non dentro. -->
+        <div id="payment-success-screen" style="display: none; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 40px 30px; padding-top: 100px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <i class="fas fa-check-circle" style="font-size: 4em; color: var(--success-color); margin-bottom: 25px;"></i>
+            <h1>Pagamento Riuscito!</h1>
+            <h3 style="color: #f0f0f0; font-weight: 400; line-height: 1.6;">Grazie per il tuo acquisto.</h3>
+            <p style="font-size: 1.1em; color: #ddd; margin-top: 20px;">
+                A breve riceverai un'email all'indirizzo fornito durante il pagamento con il riepilogo dell'ordine e i link per scaricare i file acquistati.
+            </p>
+            <p style="font-size: 0.9em; color: #aaa; margin-top: 30px;">
+                Se non dovessi ricevere l'email entro 5 minuti, controlla la cartella Spam o contattami.
+            </p>
+        </div>
+        <!-- ========= FINE CORREZIONE 1 ========= -->
+
     </div>
   </div>
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
@@ -150,24 +156,25 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
-    // --- INIZIO BLOCCO DA AGGIUNGERE ---
+    // ========= INIZIO CORREZIONE 2: CODICE PER GESTIRE IL RITORNO DA STRIPE =========
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
-        // Se l'URL contiene ?payment=success
+        // Se l'URL contiene ?payment=success, mostriamo la schermata di ringraziamento
         document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('jukebox-container').style.display = 'none'; // Nascondiamo anche il jukebox
+        document.getElementById('jukebox-container').style.display = 'none';
         document.getElementById('payment-success-screen').style.display = 'block';
 
-        // Facciamo sparire il logo per dare più spazio al messaggio
         const logo = document.querySelector('.profile-logo');
         if(logo) logo.style.display = 'none';
         
-        return; // Fermiamo l'esecuzione del resto dello script di login/jukebox
+        return; // Stoppiamo lo script per non caricare il resto (login, jukebox, etc.)
     }
-    // Potresti anche aggiungere un messaggio per ?payment=cancel se vuoi
     if (params.get('payment') === 'cancel') {
-         // Opzionale: mostra un messaggio che dice "Pagamento annullato, puoi riprovare"
+         // Qui potresti mostrare un messaggio di pagamento annullato se volessi
     }
+    // ========= FINE CORREZIONE 2 =========
+    
+    // Il resto del tuo codice originale inizia qui
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const n8nWebhookUrl = 'https://n8n-nuovo.duckdns.org/webhook/crea-checkout-jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
