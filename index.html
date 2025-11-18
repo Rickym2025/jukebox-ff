@@ -149,6 +149,25 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- INIZIO BLOCCO DA AGGIUNGERE ---
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+        // Se l'URL contiene ?payment=success
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('jukebox-container').style.display = 'none'; // Nascondiamo anche il jukebox
+        document.getElementById('payment-success-screen').style.display = 'block';
+
+        // Facciamo sparire il logo per dare più spazio al messaggio
+        const logo = document.querySelector('.profile-logo');
+        if(logo) logo.style.display = 'none';
+        
+        return; // Fermiamo l'esecuzione del resto dello script di login/jukebox
+    }
+    // Potresti anche aggiungere un messaggio per ?payment=cancel se vuoi
+    if (params.get('payment') === 'cancel') {
+         // Opzionale: mostra un messaggio che dice "Pagamento annullato, puoi riprovare"
+    }
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const n8nWebhookUrl = 'https://n8n-nuovo.duckdns.org/webhook/crea-checkout-jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
