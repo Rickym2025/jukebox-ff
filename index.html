@@ -214,30 +214,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addToCart(songToAdd) {
-        let finalPrice = songToAdd.price;
-        if (!songToAdd.withSIAE) {
-            finalPrice -= ADDON_PRICES.siae;
-        }
-        // Nota: il prezzo del video non va aggiunto qui, ma solo nel carrello finale.
-        // Questo `price` è il prezzo base calcolato per l'articolo.
-        
-        const itemForCart = {
-            id: songToAdd.id,
-            title: songToAdd.title,
-            price: finalPrice,
-            withSIAE: songToAdd.withSIAE,
-            withVideo: songToAdd.withVideo
-        };
+    // --- INIZIO BLOCCO MODIFICATO ---
 
-        const existingIndex = shoppingCart.findIndex(item => item.id === itemForCart.id);
-        if (existingIndex > -1) {
-            shoppingCart[existingIndex] = itemForCart;
-        } else {
-            shoppingCart.push(itemForCart);
-        }
-        renderCart();
-        updateSongItemsUI();
+    // 1. Calcoliamo il prezzo lordo base (con o senza SIAE)
+    let grossPrice = songToAdd.price; // Questo è il prezzo letto dallo sheet (es. 199)
+    if (!songToAdd.withSIAE) {
+        grossPrice -= ADDON_PRICES.siae; // Sottraiamo il costo SIAE se deselezionato
     }
+    
+    // 2. Calcoliamo il netto da pagare (l'importo per Stripe)
+    const deduzione = grossPrice * 0.25;
+    const imponibile = grossPrice - deduzione;
+    const ritenuta = imponibile * 0.20;
+    const priceToCharge = grossPrice - ritenuta; // Questo è il netto che incasserai
+
+    // 3. Creiamo l'oggetto da mettere nel carrello con entrambi i prezzi
+    const itemForCart = {
+        id: songToAdd.id,
+        title: songToAdd.title,
+        priceToCharge: priceToCharge, // <-- Netto da pagare
+        grossPrice: grossPrice,       // <-- Lordo per la ricevuta
+        withSIAE: songToAdd.withSIAE,
+        withVideo: songToAdd.withVideo
+    };
+
+    // --- FINE BLOCCO MODIFICATO ---
+
+    const existingIndex = shoppingCart.findIndex(item => item.id === itemForCart.id);
+    if (existingIndex > -1) {
+        shoppingCart[existingIndex] = itemForCart;
+    } else {
+        shoppingCart.push(itemForCart);
+    }
+    renderCart();
+    updateSongItemsUI();
+}
 
     function renderCart() {
         if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
