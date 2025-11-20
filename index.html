@@ -149,6 +149,17 @@
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
   <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
   <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><ul class="package-list"><li><i class="fas fa-file-contract"></i> <div><strong>Cessione Totale dei Diritti</strong><br><span>Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div></li><li><i class="fas fa-share-alt"></i> <div><strong>Video Promozionale</strong><br><span>Ottimizzato per i tuoi canali social.</span></div></li><li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav)</strong><br><span>Qualità audio professionale non compressa.</span></div></li><li><i class="fas fa-sliders-h"></i> <div><strong>Tracce Separate (.wav)</strong><br><span>Tutti gli strumenti isolati per remix e modifiche.</span></div></li><li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li><li><i class="fas fa-guitar"></i> <div><strong>Spartiti Completi (.pdf)</strong><br><span>Linee melodiche e armonie per Pianoforte e Basso.</span></div></li></ul></div></div>
+  <div id="purchase-info-modal-simplified" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h3>Cosa Ricevi con l'Acquisto?</h3>
+        <ul class="package-list">
+            <li><i class="fas fa-file-contract"></i> <div><strong>Licenza di Utilizzo</strong><br><span>Diritto di utilizzare il brano per i tuoi scopi.</span></div></li>
+            <li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav & .mp3)</strong><br><span>Qualità audio professionale compressa e non.</span></div></li>
+            <li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li>
+        </ul>
+    </div>
+</div>
   <div id="video-modal" class="modal-overlay"><div class="modal-content" id="video-modal-content"><span class="modal-close">&times;</span><video controls controlsList="nodownload" id="jukebox-video-player"></video></div></div>
   <div id="footer-player"><span id="footer-player-title">Nessun brano in riproduzione</span><audio controls controlsList="nodownload" id="jukebox-audio-player"></audio></div>
   <div id="add-to-cart-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="add-to-cart-modal-content"></div></div></div>
@@ -435,7 +446,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
-    function openPurchaseInfoModal() { const modal = document.getElementById('purchase-info-modal'); if (modal) modal.style.display = 'flex'; }
+    function openPurchaseInfoModal() {
+    // Supponiamo di aver salvato il tipo di cliente in una variabile, es. 'currentUserTier'
+    const professionalTiers = ['Orchestra', 'Edizioni']; // Elenco dei clienti professionali
+
+    if (professionalTiers.includes(currentUserTier)) {
+        // Mostra la modale completa per i professionisti
+        const modal = document.getElementById('purchase-info-modal');
+        if (modal) modal.style.display = 'flex';
+    } else {
+        // Mostra la modale semplificata per tutti gli altri
+        const modal = document.getElementById('purchase-info-modal-simplified');
+        if (modal) modal.style.display = 'flex';
+    }
+}
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { audioPlayer.pause(); } audioPlayer.src = ''; footerPlayer.classList.remove('visible'); if (!videoPlayer.paused) { videoPlayer.pause(); } videoPlayer.src = ''; }
     async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formData = new FormData(form); const resultEl = form.querySelector('#form-result'); resultEl.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { resultEl.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { resultEl.innerHTML = `<span style='color: #e53f35;'>Errore: ${result.message}</span>`; } } catch (err) { resultEl.innerHTML = "<span style='color: #e53f35;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
