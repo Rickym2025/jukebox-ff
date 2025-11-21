@@ -136,10 +136,14 @@
             <h1>Pagamento Riuscito!</h1>
             <h3 style="color: #f0f0f0; font-weight: 400; line-height: 1.6;">Grazie per il tuo acquisto.</h3>
             <p style="font-size: 1.1em; color: #ddd; margin-top: 20px;">
-                A breve riceverai un'email all'indirizzo fornito durante il pagamento con il riepilogo dell'ordine e i link per scaricare i file acquistati.
+                A breve riceverai un'email all'indirizzo fornito con il riepilogo dell'ordine e i link per scaricare i file acquistati.
             </p>
             <p style="font-size: 0.9em; color: #aaa; margin-top: 30px;">
-                Se non dovessi ricevere l'email entro 5 minuti, controlla la cartella Spam o contattami.
+                Se non dovessi ricevere l'email entro 5 minuti, controlla la cartella Spam o contattaci a: 
+                <a href="mailto:ff.edizioni@gmail.com" style="color: var(--primary-color); text-decoration: none;">ff.edizioni@gmail.com</a>
+            </p>
+            <p style="font-size: 1.0em; color: #ccc; margin-top: 40px; font-weight: 500;">
+                Ora puoi chiudere questa finestra.
             </p>
         </div>
         <!-- ========= FINE CORREZIONE 1 ========= -->
@@ -192,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ADDON_PRICES = { siae: 99, video: 49 };
     const MAX_PLAYS = 3;
     const RESET_PASSWORD = 'reset_ff_2025';
-    let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '';
+    let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '', currentUserTier = '';
     const songListContainer = document.getElementById('song-list-container');
     const audioPlayer = document.getElementById('jukebox-audio-player');
     const videoPlayer = document.getElementById('jukebox-video-player');
@@ -400,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
         videoPlayer.addEventListener('ended', closeAllModals);
     }
 
-    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
+    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('email-input').value.trim().toLowerCase(); if (!email) { alert('Per favore, inserisci un\'email.'); return; } currentUserEmail = email; const btn = e.target.querySelector('button'); btn.textContent = 'Verifico...'; btn.disabled = true; try { const url = `${sheetApiUrl}?source=jukebox&emailCheck=${encodeURIComponent(email)}`; const res = await fetch(url); if (!res.ok) throw new Error('Errore di rete.'); const result = await res.json(); if (result.status === "ok" && result.name) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('jukebox-container').style.display = 'block'; document.getElementById('client-name').textContent = result.name; currentUserTier = result.tier; await loadMusicFromApi(email); } else { alert(result.message || 'Accesso non autorizzato.'); } } catch (err) { console.error("Login fetch error:", err); alert('Errore di comunicazione.'); } finally { btn.textContent = 'Accedi'; btn.disabled = false; } }
     
     async function loadMusicFromApi(userEmail) {
         songListContainer.innerHTML = `<p>Caricamento...</p>`;
