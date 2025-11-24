@@ -363,17 +363,58 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (song.stato?.toLowerCase() === 'venduto') {
                 purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1;">Brano Venduto</p>`;
             }
-            const hasLyrics = song.liriche && song.liriche.trim() !== "";
-            const hasVideo = song.videoLink && String(song.videoLink).trim() !== '' && String(song.videoLink).toUpperCase() !== 'FALSE';
+            const hasLyrics = song.liriche && String(song.liriche).trim() !== "";
+            
+            // 1. Cerchiamo il link video in entrambe le varianti (camelCase o snake_case)
+            const rawVideoLink = song.videoLink || song.video_link; 
+            const hasVideo = rawVideoLink && String(rawVideoLink).trim() !== '' && String(rawVideoLink).toUpperCase() !== 'FALSE';
+
             const songItem = document.createElement('div');
             songItem.className = 'song-item';
+
+            // 2. Popoliamo il dataset con tutte le chiavi convertite
             Object.keys(song).forEach(key => {
                 const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase());
                 songItem.dataset[camelCaseKey] = song[key];
             });
-            songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`;
+
+            // 3. SICUREZZA EXTRA: Salviamo esplicitamente il link video corretto nel dataset
+            // Questo assicura che handlePlay() trovi sempre 'item.dataset.videoLink'
+            if (hasVideo) {
+                songItem.dataset.videoLink = rawVideoLink;
+            }
+
+            // 4. Generazione HTML (formattata per essere leggibile)
+            songItem.innerHTML = `
+                <div class="song-item-top">
+                    <div class="song-info">
+                        <span class="title">${song.titolo}</span>
+                        <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
+                        <div class="song-details">
+                            ${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}
+                            ${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}
+                        </div>
+                    </div>
+                    <button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>
+                </div>
+                <div class="song-actions">
+                    <button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}">
+                        <i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio
+                    </button>
+                    ${hasVideo ? `
+                        <button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}">
+                            <i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video
+                        </button>` : '<div></div>'}
+                    ${hasLyrics ? `
+                        <button class="btn action-btn lyrics" title="Leggi Testo">
+                            <i class="fas fa-file-lines"></i> Testo
+                        </button>` : '<div></div>'}
+                    ${purchaseHTML}
+                </div>`;
+            
             songListContainer.appendChild(songItem);
         });
+        
         updateSongItemsUI();
     }
     
