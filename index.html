@@ -212,11 +212,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalContent = document.getElementById('add-to-cart-modal-content');
         const basePrice = parseFloat(songData.prezzo);
         
+        // 1. CONTROLLO FONDAMENTALE: Cerchiamo se il brano è già nel carrello
+        // Usiamo toString() per sicurezza sui tipi (stringa vs numero)
+        const existingItem = shoppingCart.find(item => item.id.toString() === songData.id.toString());
+
+        // 2. Determiniamo lo stato delle opzioni
+        // Se è nel carrello -> usiamo le sue opzioni.
+        // Se NON è nel carrello -> Default: SIAE attiva (true), Video spento (false)
+        const isSiaeSelected = existingItem ? existingItem.withSIAE : true;
+        const isVideoSelected = existingItem ? existingItem.withVideo : false;
+        
         modalContent.innerHTML = `
             <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
             
             <div class="upsell-options">
-                <div class="upsell-item selected" data-id="add-siae">
+                <!-- Aggiungiamo la classe 'selected' dinamicamente in base a isSiaeSelected -->
+                <div class="upsell-item ${isSiaeSelected ? 'selected' : ''}" data-id="add-siae">
                     <i class="fas fa-check-circle check-icon"></i>
                     <div class="upsell-item-details">
                         <strong>Cessione Diritti Totale (Deposito SIAE autonomo) - INCLUSA</strong>
@@ -225,7 +236,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 
                 ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
-                <div class="upsell-item" data-id="add-video">
+                <!-- Aggiungiamo la classe 'selected' dinamicamente in base a isVideoSelected -->
+                <div class="upsell-item ${isVideoSelected ? 'selected' : ''}" data-id="add-video">
                     <i class="fas fa-check-circle check-icon"></i>
                     <div class="upsell-item-details">
                         <strong>Aggiungi Video Promozionale (+${ADDON_PRICES.video.toFixed(2)}€)</strong>
@@ -243,11 +255,14 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div id="purchase-summary" style="margin-top: 25px;">
-                <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
+                <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">
+                    ${existingItem ? 'Aggiorna Carrello' : 'Conferma e Aggiungi'}
+                </button>
             </div>`;
         
         modal.style.display = 'flex';
         
+        // Gestione del click per accendere/spegnere i box
         modalContent.querySelectorAll('.upsell-item').forEach(item => {
             item.addEventListener('click', () => item.classList.toggle('selected'));
         });
@@ -257,6 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 id: songData.id, 
                 title: songData.titolo, 
                 price: basePrice, 
+                // Leggiamo la classe 'selected' che ora è corretta sin dall'apertura
                 withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), 
                 withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false 
             };
