@@ -251,66 +251,75 @@ document.addEventListener('DOMContentLoaded', function() {
     enforceAntiPiracy(videoPlayer);
 
     function openAddToCartModal(songData) {
-        const modal = document.getElementById('add-to-cart-modal');
-        const modalContent = document.getElementById('add-to-cart-modal-content');
-        const basePrice = parseFloat(songData.prezzo);
-        
-        // Controllo esistenza carrello
-        const existingItem = shoppingCart.find(item => item.id.toString() === songData.id.toString());
+    const modal = document.getElementById('add-to-cart-modal');
+    const modalContent = document.getElementById('add-to-cart-modal-content');
+    const basePrice = parseFloat(songData.prezzo);
 
-        // Default opzioni
-        const isSiaeSelected = existingItem ? existingItem.withSIAE : true;
-        const isVideoSelected = existingItem ? existingItem.withVideo : false;
+    // --- NUOVA LOGICA DI CALCOLO PER IL RIEPILOGO ---
+    const deduzione = basePrice * 0.25;
+    const imponibile = basePrice - deduzione;
+    const ritenuta = imponibile * 0.20;
+    const priceToCharge = basePrice - ritenuta;
+    // --- FINE NUOVA LOGICA ---
+    
+    modalContent.innerHTML = `
+        <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
         
-        modalContent.innerHTML = `
-            <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
-            <div class="upsell-options">
-                <div class="upsell-item ${isSiaeSelected ? 'selected' : ''}" data-id="add-siae">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Cessione Diritti Totale (Deposito SIAE autonomo) - INCLUSA</strong>
-                        <span>Acquisisci la totalità dei diritti (Master & Publishing) e potrai depositare l'opera a tuo nome.</span>
-                    </div>
+        <div class="upsell-options">
+            <!-- ... La tua sezione con le opzioni SIAE e Video rimane identica ... -->
+            <div class="upsell-item selected" data-id="add-siae">
+                <i class="fas fa-check-circle check-icon"></i>
+                <div class="upsell-item-details">
+                    <strong>Cessione Diritti Totale (Deposito SIAE autonomo) - INCLUSA</strong>
+                    <span>Acquisisci la totalità dei diritti (Master & Publishing) e potrai depositare l'opera a tuo nome.</span>
                 </div>
-                ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
-                <div class="upsell-item ${isVideoSelected ? 'selected' : ''}" data-id="add-video">
-                    <i class="fas fa-check-circle check-icon"></i>
-                    <div class="upsell-item-details">
-                        <strong>Aggiungi Video Promozionale (+${ADDON_PRICES.video.toFixed(2)}€)</strong>
-                        <span>Un video ottimizzato per i tuoi canali social.</span>
-                    </div>
-                </div>` : ''}
             </div>
-            <div class="info-box" style="text-align: center; font-size: 1em; padding: 15px; margin-bottom: 15px;">
-                <strong>Nota:</strong> La Cessione dei Diritti Totali è inclusa di default. <strong>Clicca sulla spunta verde per rimuoverla (-${ADDON_PRICES.siae.toFixed(2)}€)</strong> e acquisire solo i diritti di sfruttamento commerciale del master.
-            </div>
-            <div class="info-box" style="text-align: left;">
-                <strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.
-            </div>
-            <div id="purchase-summary" style="margin-top: 25px;">
-                <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">
-                    ${existingItem ? 'Aggiorna Carrello' : 'Conferma e Aggiungi'}
-                </button>
-            </div>`;
-        
-        modal.style.display = 'flex';
-        
-        modalContent.querySelectorAll('.upsell-item').forEach(item => {
-            item.addEventListener('click', () => item.classList.toggle('selected'));
-        });
+            
+            ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
+            <div class="upsell-item" data-id="add-video">
+                <i class="fas fa-check-circle check-icon"></i>
+                <div class="upsell-item-details">
+                    <strong>Aggiungi Video Promozionale (+${ADDON_PRICES.video.toFixed(2)}€)</strong>
+                    <span>Un video ottimizzato per i tuoi canali social.</span>
+                </div>
+            </div>` : ''}
+        </div>
 
-        document.getElementById('confirm-add-to-cart-btn').onclick = () => {
-            const songToAdd = { 
-                id: songData.id, 
-                title: songData.titolo, 
-                price: basePrice, 
-                withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), 
-                withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false 
-            };
-            addToCart(songToAdd);
-            closeAllModals();
+        <!-- ========= INIZIO BLOCCO AGGIUNTO: RIEPILOGO COSTI ========= -->
+        <div class="info-box" style="text-align: left; border-left-color: var(--success-color);">
+            <h4 style="color: var(--success-color); margin-top: 0; margin-bottom: 10px;">Riepilogo Trasparente</h4>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 5px;">
+                <span>Compenso Lordo (valore totale):</span> <span style="text-align: right; font-weight: 600;">${basePrice.toFixed(2)}€</span>
+                <span>Ritenuta d'Acconto (a carico del cliente):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
+                <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
+                <strong style="font-size: 1.1em;">Importo da Pagare Ora (su Stripe):</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
+            </div>
+        </div>
+        <!-- ========= FINE BLOCCO AGGIUNTO ========= -->
+
+        <div id="purchase-summary" style="margin-top: 25px;">
+            <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
+        </div>`;
+    
+    modal.style.display = 'flex';
+    
+    // Il resto della funzione per gestire i click rimane identico...
+    modalContent.querySelectorAll('.upsell-item').forEach(item => {
+        item.addEventListener('click', () => item.classList.toggle('selected'));
+    });
+
+    document.getElementById('confirm-add-to-cart-btn').onclick = () => {
+        const songToAdd = { 
+            id: songData.id, 
+            title: songData.titolo, 
+            price: basePrice, 
+            withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), 
+            withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false 
         };
-    }
+        addToCart(songToAdd);
+        closeAllModals();
+    };
+}
 
     function addToCart(songToAdd) {
         let grossPrice = songToAdd.price; 
