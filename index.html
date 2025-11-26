@@ -14,7 +14,7 @@
     :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; padding-top: 100px; }
+    body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; padding-top: 100px; user-select: none; /* Protezione selezione testo */ }
     #background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); }
     .container-wrapper { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 120px 20px 50px; }
     .main-content { position: relative; width: 100%; max-width: 850px; }
@@ -129,8 +129,6 @@
           <div id="song-list-container"><p>Caricamento brani...</p></div>
         </div>
 
-        <!-- ========= INIZIO CORREZIONE 1: POSIZIONE DEL BLOCCO SPOSTATA ========= -->
-        <!-- Questo blocco ora è DOPO il jukebox-container, non dentro. -->
         <div id="payment-success-screen" style="display: none; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(12px); padding: 40px 30px; padding-top: 100px; width: 100%; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);">
             <i class="fas fa-check-circle" style="font-size: 4em; color: var(--success-color); margin-bottom: 25px;"></i>
             <h1>Pagamento Riuscito!</h1>
@@ -146,7 +144,6 @@
                 Ora puoi chiudere questa finestra.
             </p>
         </div>
-        <!-- ========= FINE CORREZIONE 1 ========= -->
 
     </div>
   </div>
@@ -170,31 +167,33 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // ========= INIZIO CORREZIONE 2: CODICE PER GESTIRE IL RITORNO DA STRIPE =========
+    // Blocco tasto destro per disincentivare il download rapido
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
-        // Se l'URL contiene ?payment=success, mostriamo la schermata di ringraziamento
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('jukebox-container').style.display = 'none';
         document.getElementById('payment-success-screen').style.display = 'block';
-
         const logo = document.querySelector('.profile-logo');
         if(logo) logo.style.display = 'none';
-        
-        return; // Stoppiamo lo script per non caricare il resto (login, jukebox, etc.)
+        return; 
     }
-    if (params.get('payment') === 'cancel') {
-         // Qui potresti mostrare un messaggio di pagamento annullato se volessi
-    }
-    // ========= FINE CORREZIONE 2 =========
     
-    // Il resto del tuo codice originale inizia qui
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const n8nWebhookUrl = 'https://n8n-nuovo.duckdns.org/webhook/crea-checkout-jukebox';
     const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICES = { siae: 99, video: 49 };
-    const MAX_PLAYS = 3;
+    
+    // =====================================================
+    // CONFIGURAZIONE PROTEZIONE ANTI-PIRATERIA
+    // =====================================================
+    const MAX_PLAYS = 2;                // Max ascolti consentiti (ridotto da 3 a 2)
+    const MAX_PREVIEW_DURATION = 90;    // Limite durata ascolto in secondi (1m 30s)
+    const WATERMARK_INTERVAL = 20;      // Ogni quanti secondi inserire il silenzio
+    const WATERMARK_DURATION = 0.5;     // Durata del silenzio in secondi
+    // =====================================================
+
     const RESET_PASSWORD = 'reset_ff_2025';
     let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '', currentUserTier = '';
     const songListContainer = document.getElementById('song-list-container');
@@ -207,26 +206,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
+    // --- FUNZIONE PROTEZIONE AUDIO/VIDEO (WATERMARK & TIME LIMIT) ---
+    function enforceAntiPiracy(player) {
+        player.addEventListener('timeupdate', () => {
+            // 1. BLOCCO TEMPO MASSIMO (90 secondi)
+            if (player.currentTime >= MAX_PREVIEW_DURATION) {
+                player.pause();
+                player.currentTime = 0;
+                if (player === videoPlayer) closeAllModals();
+                resetPlayingState();
+                alert("L'anteprima è limitata a 90 secondi per motivi di sicurezza.");
+                return;
+            }
+
+            // 2. WATERMARK SILENZIOSO (Buchi audio ogni 20s)
+            // Applicato solo all'Audio Player per evitare glitch visivi sul video,
+            // ma se vuoi puoi togliere l'if per applicarlo a entrambi.
+            if (player === audioPlayer && player.currentTime > 1) { 
+                const cycleTime = player.currentTime % WATERMARK_INTERVAL;
+                // Se siamo nei primi 0.5s del ciclo, metti Mute
+                if (cycleTime < WATERMARK_DURATION) {
+                    if (!player.muted) player.muted = true;
+                } else {
+                    // Altrimenti togli Mute
+                    if (player.muted) player.muted = false;
+                }
+            }
+        });
+    }
+
+    // Applichiamo la protezione a entrambi i player
+    enforceAntiPiracy(audioPlayer);
+    enforceAntiPiracy(videoPlayer);
+
     function openAddToCartModal(songData) {
         const modal = document.getElementById('add-to-cart-modal');
         const modalContent = document.getElementById('add-to-cart-modal-content');
         const basePrice = parseFloat(songData.prezzo);
-        
-        // 1. CONTROLLO FONDAMENTALE: Cerchiamo se il brano è già nel carrello
-        // Usiamo toString() per sicurezza sui tipi (stringa vs numero)
         const existingItem = shoppingCart.find(item => item.id.toString() === songData.id.toString());
-
-        // 2. Determiniamo lo stato delle opzioni
-        // Se è nel carrello -> usiamo le sue opzioni.
-        // Se NON è nel carrello -> Default: SIAE attiva (true), Video spento (false)
         const isSiaeSelected = existingItem ? existingItem.withSIAE : true;
         const isVideoSelected = existingItem ? existingItem.withVideo : false;
         
         modalContent.innerHTML = `
             <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
-            
             <div class="upsell-options">
-                <!-- Aggiungiamo la classe 'selected' dinamicamente in base a isSiaeSelected -->
                 <div class="upsell-item ${isSiaeSelected ? 'selected' : ''}" data-id="add-siae">
                     <i class="fas fa-check-circle check-icon"></i>
                     <div class="upsell-item-details">
@@ -234,9 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>Acquisisci la totalità dei diritti (Master & Publishing) e potrai depositare l'opera a tuo nome.</span>
                     </div>
                 </div>
-                
                 ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
-                <!-- Aggiungiamo la classe 'selected' dinamicamente in base a isVideoSelected -->
                 <div class="upsell-item ${isVideoSelected ? 'selected' : ''}" data-id="add-video">
                     <i class="fas fa-check-circle check-icon"></i>
                     <div class="upsell-item-details">
@@ -245,34 +266,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>` : ''}
             </div>
-
             <div class="info-box" style="text-align: center; font-size: 1em; padding: 15px; margin-bottom: 15px;">
                 <strong>Nota:</strong> La Cessione dei Diritti Totali è inclusa di default. <strong>Clicca sulla spunta verde per rimuoverla (-${ADDON_PRICES.siae.toFixed(2)}€)</strong> e acquisire solo i diritti di sfruttamento commerciale del master.
             </div>
-
             <div class="info-box" style="text-align: left;">
                 <strong>Nota Fiscale:</strong> La cessione di opere dell'ingegno è esente da IVA. Il prezzo indicato è l'imponibile su cui, se sei un soggetto con Partita IVA, dovrai versare la ritenuta d'acconto del 20%.
             </div>
-
             <div id="purchase-summary" style="margin-top: 25px;">
                 <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">
                     ${existingItem ? 'Aggiorna Carrello' : 'Conferma e Aggiungi'}
                 </button>
             </div>`;
-        
         modal.style.display = 'flex';
-        
-        // Gestione del click per accendere/spegnere i box
         modalContent.querySelectorAll('.upsell-item').forEach(item => {
             item.addEventListener('click', () => item.classList.toggle('selected'));
         });
-
         document.getElementById('confirm-add-to-cart-btn').onclick = () => {
             const songToAdd = { 
                 id: songData.id, 
                 title: songData.titolo, 
                 price: basePrice, 
-                // Leggiamo la classe 'selected' che ora è corretta sin dall'apertura
                 withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), 
                 withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false 
             };
@@ -282,62 +295,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addToCart(songToAdd) {
-    // --- INIZIO BLOCCO MODIFICATO ---
-
-    // 1. Calcoliamo il prezzo lordo base (con o senza SIAE)
-    let grossPrice = songToAdd.price; // Questo è il prezzo letto dallo sheet (es. 199)
-    if (!songToAdd.withSIAE) {
-        grossPrice -= ADDON_PRICES.siae; // Sottraiamo il costo SIAE se deselezionato
+        let grossPrice = songToAdd.price; 
+        if (!songToAdd.withSIAE) { grossPrice -= ADDON_PRICES.siae; }
+        const deduzione = grossPrice * 0.25;
+        const imponibile = grossPrice - deduzione;
+        const ritenuta = imponibile * 0.20;
+        const priceToCharge = grossPrice - ritenuta; 
+        const itemForCart = {
+            id: songToAdd.id,
+            title: songToAdd.title,
+            priceToCharge: priceToCharge, 
+            grossPrice: grossPrice,       
+            withSIAE: songToAdd.withSIAE,
+            withVideo: songToAdd.withVideo
+        };
+        const existingIndex = shoppingCart.findIndex(item => item.id === itemForCart.id);
+        if (existingIndex > -1) { shoppingCart[existingIndex] = itemForCart; } else { shoppingCart.push(itemForCart); }
+        renderCart();
+        updateSongItemsUI();
     }
-    
-    // 2. Calcoliamo il netto da pagare (l'importo per Stripe)
-    const deduzione = grossPrice * 0.25;
-    const imponibile = grossPrice - deduzione;
-    const ritenuta = imponibile * 0.20;
-    const priceToCharge = grossPrice - ritenuta; // Questo è il netto che incasserai
-
-    // 3. Creiamo l'oggetto da mettere nel carrello con entrambi i prezzi
-    const itemForCart = {
-        id: songToAdd.id,
-        title: songToAdd.title,
-        priceToCharge: priceToCharge, // <-- Netto da pagare
-        grossPrice: grossPrice,       // <-- Lordo per la ricevuta
-        withSIAE: songToAdd.withSIAE,
-        withVideo: songToAdd.withVideo
-    };
-
-    // --- FINE BLOCCO MODIFICATO ---
-
-    const existingIndex = shoppingCart.findIndex(item => item.id === itemForCart.id);
-    if (existingIndex > -1) {
-        shoppingCart[existingIndex] = itemForCart;
-    } else {
-        shoppingCart.push(itemForCart);
-    }
-    renderCart();
-    updateSongItemsUI();
-}
 
     function renderCart() {
-    if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
-    cartItemsList.innerHTML = '';
-    let total = 0;
-    shoppingCart.forEach(item => {
-        // Il totale mostrato al cliente nel carrello è il totale netto che pagherà
-        let itemTotal = item.priceToCharge; 
-        let optionsText = [];
-        if (item.withSIAE) optionsText.push('SIAE');
-        if (item.withVideo) { 
-            itemTotal += ADDON_PRICES.video; // Aggiungiamo il prezzo del video al netto
-            optionsText.push('Video'); 
-        }
-        total += itemTotal;
-        cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
-    });
-    // Mostriamo il totale netto che il cliente pagherà
-    cartTotalEl.textContent = `Totale da Pagare: ${total.toFixed(2)}€`; 
-    cartBanner.classList.add('visible');
-}
+        if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
+        cartItemsList.innerHTML = '';
+        let total = 0;
+        shoppingCart.forEach(item => {
+            let itemTotal = item.priceToCharge; 
+            let optionsText = [];
+            if (item.withSIAE) optionsText.push('SIAE');
+            if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); }
+            total += itemTotal;
+            cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
+        });
+        cartTotalEl.textContent = `Totale da Pagare: ${total.toFixed(2)}€`; 
+        cartBanner.classList.add('visible');
+    }
     
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     
@@ -354,14 +346,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function redirectToCheckout() {
-        if (shoppingCart.length === 0) {
-            alert("Il carrello è vuoto.");
-            return;
-        }
+        if (shoppingCart.length === 0) { alert("Il carrello è vuoto."); return; }
         const checkoutButton = document.getElementById('cart-checkout-btn');
         checkoutButton.textContent = 'Reindirizzamento...';
         checkoutButton.disabled = true;
-
         const cartParam = encodeURIComponent(JSON.stringify(shoppingCart));
         window.location.href = `${n8nWebhookUrl}?cart=${cartParam}`;
     }
@@ -380,57 +368,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 purchaseHTML = `<p style="color: #f44336; font-weight: bold; grid-column: 1 / -1;">Brano Venduto</p>`;
             }
             const hasLyrics = song.liriche && String(song.liriche).trim() !== "";
-            
-            // 1. Cerchiamo il link video in entrambe le varianti (camelCase o snake_case)
             const rawVideoLink = song.videoLink || song.video_link; 
             const hasVideo = rawVideoLink && String(rawVideoLink).trim() !== '' && String(rawVideoLink).toUpperCase() !== 'FALSE';
-
             const songItem = document.createElement('div');
             songItem.className = 'song-item';
-
-            // 2. Popoliamo il dataset con tutte le chiavi convertite
             Object.keys(song).forEach(key => {
                 const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase());
                 songItem.dataset[camelCaseKey] = song[key];
             });
-
-            // 3. SICUREZZA EXTRA: Salviamo esplicitamente il link video corretto nel dataset
-            // Questo assicura che handlePlay() trovi sempre 'item.dataset.videoLink'
-            if (hasVideo) {
-                songItem.dataset.videoLink = rawVideoLink;
-            }
-
-            // 4. Generazione HTML (formattata per essere leggibile)
-            songItem.innerHTML = `
-                <div class="song-item-top">
-                    <div class="song-info">
-                        <span class="title">${song.titolo}</span>
-                        <div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div>
-                        <div class="song-details">
-                            ${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}
-                            ${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}
-                        </div>
-                    </div>
-                    <button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button>
-                </div>
-                <div class="song-actions">
-                    <button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}">
-                        <i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio
-                    </button>
-                    ${hasVideo ? `
-                        <button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}">
-                            <i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video
-                        </button>` : '<div></div>'}
-                    ${hasLyrics ? `
-                        <button class="btn action-btn lyrics" title="Leggi Testo">
-                            <i class="fas fa-file-lines"></i> Testo
-                        </button>` : '<div></div>'}
-                    ${purchaseHTML}
-                </div>`;
-            
+            if (hasVideo) { songItem.dataset.videoLink = rawVideoLink; }
+            songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`;
             songListContainer.appendChild(songItem);
         });
-        
         updateSongItemsUI();
     }
     
