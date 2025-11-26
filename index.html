@@ -120,8 +120,8 @@
         
         <div id="jukebox-container">
           <h2>Jukebox Personalizzato</h2><p class="subtitle">per <strong id="client-name"></strong></p>
-          <div style="padding: 10px; border: 1px solid #444; border-radius: 8px; margin: 25px auto; max-width: 400px; font-size: 0.9em; background-color: rgba(0,0,0,0.2);">
-            Autori e Compositori: <strong>Fausto Fusetti & Riccardo Modena</strong><br>
+          <div style="padding: 10px; border: 1px solid #444; border-radius: 8px; margin: 25px auto; max-width: 500px; font-size: 0.9em; background-color: rgba(0,0,0,0.2);">
+            Autori e Compositori: <strong style="white-space: nowrap;">Fausto Fusetti & Riccardo Modena</strong><br>
             Licenza Autore SIAE: <strong>189515-0</strong>
           </div>
           <div id="filter-container"><div class="filter-group"> <span class="filter-label">Categoria:</span> <div id="filter-categoria" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">Argomento:</span> <div id="filter-argomento" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div></div>
@@ -389,19 +389,32 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('cart-checkout-btn').addEventListener('click', redirectToCheckout);
         document.getElementById('show-contact-modal-btn').addEventListener('click', () => document.getElementById('contact-modal').style.display = 'flex');
         cartItemsList.addEventListener('click', (e) => { if (e.target.classList.contains('cart-item-remove')) removeFromCart(e.target.dataset.id); });
+        
         songListContainer.addEventListener('click', function(e) {
             const songItem = e.target.closest('.song-item');
             if (!songItem) return;
+
             if (e.target.closest('.add-to-cart-btn')) openAddToCartModal(songItem.dataset);
             else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio');
             else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video');
             else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem);
-            else if (e.target.closest('.info-btn')) openPurchaseInfoModal();
+            
+            // --- MODIFICA QUI SOTTO ---
+            else if (e.target.closest('.info-btn')) {
+                // Recuperiamo lo stato direttamente dai dati del brano cliccato
+                // Nota: nel dataset le chiavi sono minuscole, quindi cerchiamo 'stato'
+                const songStatus = songItem.dataset.stato; 
+                openPurchaseInfoModal(songStatus);
+            }
+            // --------------------------
         });
+
         allModalOverlays.forEach(modal => {
             modal.addEventListener('click', (e) => { if (e.target === modal) closeAllModals(); });
             modal.querySelector('.modal-close')?.addEventListener('click', () => closeAllModals());
         });
+        
+        // ... resto degli event listener audio/video invariati ...
         audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
         videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video'));
         audioPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-audio', 'playing-video'));
@@ -456,20 +469,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
-    function openPurchaseInfoModal() {
-    // Supponiamo di aver salvato il tipo di cliente in una variabile, es. 'currentUserTier'
-    const professionalTiers = ['Orchestra', 'Edizioni']; // Elenco dei clienti professionali
+    function openPurchaseInfoModal(songStatus) {
+        // 1. Normalizziamo lo stato in minuscolo per evitare errori (es. "Hotel" vs "hotel")
+        // Se lo stato è vuoto (undefined), usiamo una stringa vuota.
+        const status = (songStatus || "").toLowerCase().trim();
+        
+        console.log("Stato brano rilevato:", status); // Utile per debug (F12)
 
-    if (professionalTiers.includes(currentUserTier)) {
-        // Mostra la modale completa per i professionisti
-        const modal = document.getElementById('purchase-info-modal');
-        if (modal) modal.style.display = 'flex';
-    } else {
-        // Mostra la modale semplificata per tutti gli altri
-        const modal = document.getElementById('purchase-info-modal-simplified');
-        if (modal) modal.style.display = 'flex';
+        // 2. Lista delle parole chiave che attivano il testo "BREVE" (Info Semplificate)
+        // Hai chiesto: Hotel, Squola (o Scuola), Inno Squadra.
+        const shortInfoKeywords = ['hotel', 'scuola', 'inno squadra', 'inno'];
+
+        // 3. Logica di controllo
+        // Se lo stato del brano contiene una di queste parole -> Modale Semplificata
+        if (shortInfoKeywords.some(keyword => status.includes(keyword))) {
+            document.getElementById('purchase-info-modal').style.display = 'none';
+            document.getElementById('purchase-info-modal-simplified').style.display = 'flex';
+        } else {
+            // ALTRIMENTI (Tutti gli altri casi) -> Modale Completa (Lunga)
+            document.getElementById('purchase-info-modal').style.display = 'flex';
+            document.getElementById('purchase-info-modal-simplified').style.display = 'none';
+        }
     }
-}
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     
     function resetPlayingState() { 
