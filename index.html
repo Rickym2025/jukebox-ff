@@ -121,7 +121,7 @@
         <div id="jukebox-container">
           <h2>Jukebox Personalizzato</h2><p class="subtitle">per <strong id="client-name"></strong></p>
           <div style="padding: 10px; border: 1px solid #444; border-radius: 8px; margin: 25px auto; max-width: 400px; font-size: 0.9em; background-color: rgba(0,0,0,0.2);">
-            Autore e Compositore: <strong>Fausto Fusetti</strong><br>
+            Autori e Compositori: <strong>Fausto Fusetti & Riccardo Modena</strong><br>
             Licenza Autore SIAE: <strong>189515-0</strong>
           </div>
           <div id="filter-container"><div class="filter-group"> <span class="filter-label">Categoria:</span> <div id="filter-categoria" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">Argomento:</span> <div id="filter-argomento" class="filter-buttons"></div> </div><div class="filter-group"> <span class="filter-label">BPM:</span> <div id="filter-bpm" class="filter-buttons"></div> </div></div>
@@ -220,15 +220,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // 2. WATERMARK SILENZIOSO (Buchi audio ogni 20s)
-            // Applicato solo all'Audio Player per evitare glitch visivi sul video,
-            // ma se vuoi puoi togliere l'if per applicarlo a entrambi.
+            // Applicato solo all'Audio Player per evitare glitch visivi sul video
             if (player === audioPlayer && player.currentTime > 1) { 
                 const cycleTime = player.currentTime % WATERMARK_INTERVAL;
                 // Se siamo nei primi 0.5s del ciclo, metti Mute
                 if (cycleTime < WATERMARK_DURATION) {
                     if (!player.muted) player.muted = true;
                 } else {
-                    // Altrimenti togli Mute
+                    // Altrimenti togli Mute (ma solo se era stato messo dal watermark)
+                    // Per semplicità qui togliamo il mute se il ciclo è finito.
                     if (player.muted) player.muted = false;
                 }
             }
@@ -471,7 +471,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
-    function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { audioPlayer.pause(); } audioPlayer.src = ''; footerPlayer.classList.remove('visible'); if (!videoPlayer.paused) { videoPlayer.pause(); } videoPlayer.src = ''; }
+    
+    function resetPlayingState() { 
+        if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } 
+        currentPlayingItem = null; 
+        currentPlayingType = null; 
+        
+        // Reset Audio
+        if (!audioPlayer.paused) { audioPlayer.pause(); } 
+        audioPlayer.src = ''; 
+        audioPlayer.muted = false; // FIX: Assicuriamo che il prossimo brano non sia muto
+        
+        // Reset Video
+        if (!videoPlayer.paused) { videoPlayer.pause(); } 
+        videoPlayer.src = ''; 
+        videoPlayer.muted = false; // FIX: Assicuriamo che il prossimo video non sia muto
+
+        footerPlayer.classList.remove('visible'); 
+    }
+
     async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formData = new FormData(form); const resultEl = form.querySelector('#form-result'); resultEl.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { resultEl.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { resultEl.innerHTML = `<span style='color: #e53f35;'>Errore: ${result.message}</span>`; } } catch (err) { resultEl.innerHTML = "<span style='color: #e53f35;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); alert(`Conteggio per ${email} resettato.`); window.history.replaceState({}, document.title, window.location.pathname); window.location.reload(); } } }
     handleResetFromUrl();
