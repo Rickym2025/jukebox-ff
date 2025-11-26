@@ -167,7 +167,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Blocco tasto destro per disincentivare il download rapido
+    // Blocco tasto destro
     document.addEventListener('contextmenu', event => event.preventDefault());
 
     const params = new URLSearchParams(window.location.search);
@@ -188,14 +188,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // =====================================================
     // CONFIGURAZIONE PROTEZIONE ANTI-PIRATERIA
     // =====================================================
-    const MAX_PLAYS = 2;                // Max ascolti consentiti (ridotto da 3 a 2)
-    const MAX_PREVIEW_DURATION = 90;    // Limite durata ascolto in secondi (1m 30s)
-    const WATERMARK_INTERVAL = 20;      // Ogni quanti secondi inserire il silenzio
-    const WATERMARK_DURATION = 0.5;     // Durata del silenzio in secondi
+    const MAX_PLAYS = 2;                
+    const MAX_PREVIEW_DURATION = 90;    // 90 secondi
+    const WATERMARK_INTERVAL = 20;      // Intervallo silenzio
+    const WATERMARK_DURATION = 0.5;     // Durata silenzio
     // =====================================================
 
     const RESET_PASSWORD = 'reset_ff_2025';
-    let allSongs = [], shoppingCart = [], currentPlayingItem = null, currentPlayingType = null, currentUserEmail = '', currentUserTier = '';
+    
+    // Variabili di Stato
+    let allSongs = [], shoppingCart = [];
+    let currentPlayingItem = null, currentPlayingType = null;
+    let currentUserEmail = '', currentUserTier = '';
+    
+    // NUOVA VARIABILE: Indica se il brano corrente è protetto
+    let isProtectionActive = false; 
+
     const songListContainer = document.getElementById('song-list-container');
     const audioPlayer = document.getElementById('jukebox-audio-player');
     const videoPlayer = document.getElementById('jukebox-video-player');
@@ -206,16 +214,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
-    // --- FUNZIONE PROTEZIONE AUDIO/VIDEO (WATERMARK & TIME LIMIT) ---
+    // --- FUNZIONE PROTEZIONE AUDIO/VIDEO (MODIFICATA) ---
     function enforceAntiPiracy(player) {
         player.addEventListener('timeupdate', () => {
+            
+            // SE LA PROTEZIONE NON È ATTIVA PER QUESTO BRANO, ESCI SUBITO
+            if (!isProtectionActive) return; 
+
             // 1. BLOCCO TEMPO MASSIMO (90 secondi)
             if (player.currentTime >= MAX_PREVIEW_DURATION) {
                 player.pause();
                 player.currentTime = 0;
                 if (player === videoPlayer) closeAllModals();
                 resetPlayingState();
-                alert("L'anteprima è limitata a 90 secondi per motivi di sicurezza.");
+                alert("L'anteprima di questo brano è limitata a 90 secondi per motivi di sicurezza.");
                 return;
             }
 
@@ -227,15 +239,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (cycleTime < WATERMARK_DURATION) {
                     if (!player.muted) player.muted = true;
                 } else {
-                    // Altrimenti togli Mute (ma solo se era stato messo dal watermark)
-                    // Per semplicità qui togliamo il mute se il ciclo è finito.
+                    // Altrimenti togli Mute (solo se era stato messo dal watermark)
                     if (player.muted) player.muted = false;
                 }
             }
         });
     }
 
-    // Applichiamo la protezione a entrambi i player
+    // Applichiamo i listener (che scatteranno solo se isProtectionActive è true)
     enforceAntiPiracy(audioPlayer);
     enforceAntiPiracy(videoPlayer);
 
@@ -243,7 +254,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('add-to-cart-modal');
         const modalContent = document.getElementById('add-to-cart-modal-content');
         const basePrice = parseFloat(songData.prezzo);
+        
+        // Controllo esistenza carrello
         const existingItem = shoppingCart.find(item => item.id.toString() === songData.id.toString());
+
+        // Default opzioni
         const isSiaeSelected = existingItem ? existingItem.withSIAE : true;
         const isVideoSelected = existingItem ? existingItem.withVideo : false;
         
@@ -277,10 +292,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${existingItem ? 'Aggiorna Carrello' : 'Conferma e Aggiungi'}
                 </button>
             </div>`;
+        
         modal.style.display = 'flex';
+        
         modalContent.querySelectorAll('.upsell-item').forEach(item => {
             item.addEventListener('click', () => item.classList.toggle('selected'));
         });
+
         document.getElementById('confirm-add-to-cart-btn').onclick = () => {
             const songToAdd = { 
                 id: songData.id, 
@@ -297,10 +315,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function addToCart(songToAdd) {
         let grossPrice = songToAdd.price; 
         if (!songToAdd.withSIAE) { grossPrice -= ADDON_PRICES.siae; }
+        
         const deduzione = grossPrice * 0.25;
         const imponibile = grossPrice - deduzione;
         const ritenuta = imponibile * 0.20;
         const priceToCharge = grossPrice - ritenuta; 
+
         const itemForCart = {
             id: songToAdd.id,
             title: songToAdd.title,
@@ -309,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             withSIAE: songToAdd.withSIAE,
             withVideo: songToAdd.withVideo
         };
+
         const existingIndex = shoppingCart.findIndex(item => item.id === itemForCart.id);
         if (existingIndex > -1) { shoppingCart[existingIndex] = itemForCart; } else { shoppingCart.push(itemForCart); }
         renderCart();
@@ -370,13 +391,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasLyrics = song.liriche && String(song.liriche).trim() !== "";
             const rawVideoLink = song.videoLink || song.video_link; 
             const hasVideo = rawVideoLink && String(rawVideoLink).trim() !== '' && String(rawVideoLink).toUpperCase() !== 'FALSE';
+            
             const songItem = document.createElement('div');
             songItem.className = 'song-item';
             Object.keys(song).forEach(key => {
                 const camelCaseKey = key.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase());
                 songItem.dataset[camelCaseKey] = song[key];
             });
+            
             if (hasVideo) { songItem.dataset.videoLink = rawVideoLink; }
+            
             songItem.innerHTML = `<div class="song-item-top"><div class="song-info"><span class="title">${song.titolo}</span><div class="plays-left">${isLocked ? 'Limite ascolti raggiunto' : `Ascolti rimasti: ${playsLeft}`}</div><div class="song-details">${song.bpm ? `<span><i class="fas fa-tachometer-alt"></i> ${song.bpm} BPM</span>` : ''}${song.durata ? `<span><i class="far fa-clock"></i> ${song.durata}</span>` : ''}</div></div><button class="btn info-btn top-row" title="Cosa include l'acquisto?"><i class="fas fa-info-circle"></i></button></div><div class="song-actions"><button class="btn action-btn audio ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Ascolta'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-headphones'}"></i> Audio</button>${hasVideo ? `<button class="btn action-btn video ${isLocked ? 'disabled' : ''}" title="${isLocked ? 'Limite ascolti' : 'Guarda Video'}"><i class="fas ${isLocked ? 'fa-lock' : 'fa-film'}"></i> Video</button>` : '<div></div>'}${hasLyrics ? `<button class="btn action-btn lyrics" title="Leggi Testo"><i class="fas fa-file-lines"></i> Testo</button>` : '<div></div>'}${purchaseHTML}</div>`;
             songListContainer.appendChild(songItem);
         });
@@ -398,15 +422,10 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (e.target.closest('.action-btn.audio') || e.target.closest('.title')) handlePlay(songItem, 'audio');
             else if (e.target.closest('.action-btn.video')) handlePlay(songItem, 'video');
             else if (e.target.closest('.action-btn.lyrics')) showLyrics(songItem);
-            
-            // --- MODIFICA QUI SOTTO ---
             else if (e.target.closest('.info-btn')) {
-                // Recuperiamo lo stato direttamente dai dati del brano cliccato
-                // Nota: nel dataset le chiavi sono minuscole, quindi cerchiamo 'stato'
                 const songStatus = songItem.dataset.stato; 
                 openPurchaseInfoModal(songStatus);
             }
-            // --------------------------
         });
 
         allModalOverlays.forEach(modal => {
@@ -414,7 +433,6 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.querySelector('.modal-close')?.addEventListener('click', () => closeAllModals());
         });
         
-        // ... resto degli event listener audio/video invariati ...
         audioPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-audio'));
         videoPlayer.addEventListener('play', () => currentPlayingItem?.classList.add('playing-video'));
         audioPlayer.addEventListener('pause', () => currentPlayingItem?.classList.remove('playing-audio', 'playing-video'));
@@ -449,7 +467,61 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     
-    function handlePlay(item, type = 'audio') { const targetButton = item.querySelector(`.action-btn.${type}`); if (targetButton && targetButton.classList.contains('disabled')) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } resetPlayingState(); currentPlayingItem = item; currentPlayingType = type; if (type === 'audio') { const audioUrl = item.dataset.linkAscolto; if (!audioUrl) { alert("Impossibile riprodurre: link audio mancante."); return; } audioPlayer.src = audioUrl; footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.titolo; audioPlayer.play().catch(e => console.error("Errore durante la riproduzione audio:", e)); } else if (type === 'video') { const videoUrl = item.dataset.videoLink; if (!videoUrl || String(videoUrl).toUpperCase() === 'FALSE') { alert("Video non disponibile per questo brano."); return; } videoPlayer.src = videoUrl; document.getElementById('video-modal').style.display = 'flex'; videoPlayer.play().catch(e => console.error("Errore durante la riproduzione video:", e)); } const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, item.dataset.titolo, currentUserEmail); applyFilters(); }
+    // --- FUNZIONE HANDLE PLAY MODIFICATA PER ATTIVARE LA PROTEZIONE ---
+    function handlePlay(item, type = 'audio') { 
+        const targetButton = item.querySelector(`.action-btn.${type}`); 
+        if (targetButton && targetButton.classList.contains('disabled')) { 
+            alert("Hai raggiunto il limite di ascolti per questo brano."); 
+            return; 
+        } 
+        
+        const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; 
+        if (isPlayingThisItem) { 
+            if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); 
+            else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); 
+            return; 
+        } 
+        
+        resetPlayingState(); 
+        currentPlayingItem = item; 
+        currentPlayingType = type; 
+
+        // ===============================================================
+        // CHECK PIRATERIA: Controlla se la colonna "Pirateria" contiene "P"
+        // ===============================================================
+        // Nota: Il dataset è minuscolo. Se la colonna è "Pirateria", key è 'pirateria'.
+        const piracyValue = item.dataset.pirateria || ""; 
+        isProtectionActive = piracyValue.toUpperCase().trim() === "P";
+        
+        if (isProtectionActive) {
+            console.log("🛡️ Modalità Protezione Attiva per questo brano.");
+        }
+        // ===============================================================
+
+        if (type === 'audio') { 
+            const audioUrl = item.dataset.linkAscolto; 
+            if (!audioUrl) { alert("Impossibile riprodurre: link audio mancante."); return; } 
+            audioPlayer.src = audioUrl; 
+            footerPlayer.classList.add('visible'); 
+            footerPlayerTitle.textContent = item.dataset.titolo; 
+            audioPlayer.play().catch(e => console.error("Errore audio:", e)); 
+        } else if (type === 'video') { 
+            const videoUrl = item.dataset.videoLink; 
+            if (!videoUrl || String(videoUrl).toUpperCase() === 'FALSE') { alert("Video non disponibile."); return; } 
+            videoPlayer.src = videoUrl; 
+            document.getElementById('video-modal').style.display = 'flex'; 
+            videoPlayer.play().catch(e => console.error("Errore video:", e)); 
+        } 
+        
+        const counts = getPlayCounts(); 
+        const songId = item.dataset.id; 
+        let count = counts[songId] || 0; 
+        count++; 
+        counts[songId] = count; 
+        savePlayCounts(counts); 
+        trackPlay(songId, item.dataset.titolo, currentUserEmail); 
+        applyFilters(); 
+    }
     
     function getPlayCounts() { return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
@@ -469,28 +541,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
+    
     function openPurchaseInfoModal(songStatus) {
-        // 1. Normalizziamo lo stato in minuscolo per evitare errori (es. "Hotel" vs "hotel")
-        // Se lo stato è vuoto (undefined), usiamo una stringa vuota.
         const status = (songStatus || "").toLowerCase().trim();
-        
-        console.log("Stato brano rilevato:", status); // Utile per debug (F12)
-
-        // 2. Lista delle parole chiave che attivano il testo "BREVE" (Info Semplificate)
-        // Hai chiesto: Hotel, Squola (o Scuola), Inno Squadra.
-        const shortInfoKeywords = ['hotel', 'scuola', 'inno squadra', 'inno'];
-
-        // 3. Logica di controllo
-        // Se lo stato del brano contiene una di queste parole -> Modale Semplificata
+        const shortInfoKeywords = ['hotel', 'scuola', 'squola', 'inno squadra', 'inno'];
         if (shortInfoKeywords.some(keyword => status.includes(keyword))) {
             document.getElementById('purchase-info-modal').style.display = 'none';
             document.getElementById('purchase-info-modal-simplified').style.display = 'flex';
         } else {
-            // ALTRIMENTI (Tutti gli altri casi) -> Modale Completa (Lunga)
             document.getElementById('purchase-info-modal').style.display = 'flex';
             document.getElementById('purchase-info-modal-simplified').style.display = 'none';
         }
     }
+
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
     
     function resetPlayingState() { 
@@ -498,17 +561,19 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPlayingItem = null; 
         currentPlayingType = null; 
         
-        // Reset Audio
+        // Reset e Assicura Audio Attivo per il prossimo
         if (!audioPlayer.paused) { audioPlayer.pause(); } 
         audioPlayer.src = ''; 
-        audioPlayer.muted = false; // FIX: Assicuriamo che il prossimo brano non sia muto
+        audioPlayer.muted = false; 
         
-        // Reset Video
         if (!videoPlayer.paused) { videoPlayer.pause(); } 
         videoPlayer.src = ''; 
-        videoPlayer.muted = false; // FIX: Assicuriamo che il prossimo video non sia muto
+        videoPlayer.muted = false; 
 
         footerPlayer.classList.remove('visible'); 
+        
+        // Reset flag protezione
+        isProtectionActive = false;
     }
 
     async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formData = new FormData(form); const resultEl = form.querySelector('#form-result'); resultEl.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { resultEl.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { resultEl.innerHTML = `<span style='color: #e53f35;'>Errore: ${result.message}</span>`; } } catch (err) { resultEl.innerHTML = "<span style='color: #e53f35;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
