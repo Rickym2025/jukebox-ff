@@ -148,8 +148,45 @@
     </div>
   </div>
   <div id="lyrics-modal" class="modal-overlay"><div class="modal-content no-copy" style="text-align: left;"><span class="modal-close">&times;</span><h3 id="lyrics-title">Testo</h3><p id="lyrics-text"></p></div></div>
-  <div id="contact-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><div id="contact-form-header"><i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3></div><form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form></div></div>
-  <div id="purchase-info-modal" class="modal-overlay"><div class="modal-content"><span class="modal-close">&times;</span><h3>Cosa Ricevi con l'Acquisto?</h3><ul class="package-list"><li><i class="fas fa-file-contract"></i> <div><strong>Cessione Totale dei Diritti</strong><br><span>Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div></li><li><i class="fas fa-share-alt"></i> <div><strong>Video Promozionale</strong><br><span>Ottimizzato per i tuoi canali social.</span></div></li><li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav)</strong><br><span>Qualità audio professionale non compressa.</span></div></li><li><i class="fas fa-sliders-h"></i> <div><strong>Tracce Separate (.wav)</strong><br><span>Tutti gli strumenti isolati per remix e modifiche.</span></div></li><li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li><li><i class="fas fa-guitar"></i> <div><strong>Spartiti Completi (.pdf)</strong><br><span>Linee melodiche e armonie per Pianoforte e Basso.</span></div></li></ul></div></div>
+  
+  <div id="contact-modal" class="modal-overlay">
+      <div class="modal-content">
+          <span class="modal-close">&times;</span>
+          <div id="contact-form-header">
+              <i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3>
+          </div>
+          
+          <!-- BLOCCO CONTATTI -->
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9em; border: 1px solid #444; text-align: center;">
+              <div style="margin-bottom: 5px;"><strong style="color: var(--primary-color);">Fausto Fusetti:</strong> 392 729 0834</div>
+              <div style="margin-bottom: 5px;"><strong style="color: var(--primary-color);">Riccardo Modena:</strong> 349 525 8418</div>
+              <div style="margin-top: 10px; border-top: 1px solid #555; padding-top: 10px;">
+                  ✉️ <a href="mailto:ff.edizioni@gmail.com" style="color: #f0f0f0; text-decoration: none;">ff.edizioni@gmail.com</a>
+              </div>
+          </div>
+
+          <form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form>
+      </div>
+  </div>
+
+  <div id="purchase-info-modal" class="modal-overlay">
+      <div class="modal-content">
+          <span class="modal-close">&times;</span>
+          <h3>Cosa Ricevi con l'Acquisto?</h3>
+          <ul class="package-list">
+              <li><i class="fas fa-file-contract"></i> <div><strong>Cessione Totale dei Diritti</strong><br><span>Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div></li>
+              
+              <!-- VIDEO NASCOSTO -->
+              <li style="display: none;"><i class="fas fa-share-alt"></i> <div><strong>Video Promozionale</strong><br><span>Ottimizzato per i tuoi canali social.</span></div></li>
+              
+              <li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav)</strong><br><span>Qualità audio professionale non compressa.</span></div></li>
+              <li><i class="fas fa-sliders-h"></i> <div><strong>Tracce Separate (.wav)</strong><br><span>Tutti gli strumenti isolati per remix e modifiche.</span></div></li>
+              <li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li>
+              <li><i class="fas fa-guitar"></i> <div><strong>Spartiti Completi (.pdf)</strong><br><span>Linee melodiche e armonie per Pianoforte e Basso.</span></div></li>
+          </ul>
+      </div>
+  </div>
+
   <div id="purchase-info-modal-simplified" class="modal-overlay">
     <div class="modal-content">
         <span class="modal-close">&times;</span>
@@ -476,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
     
-    // --- FUNZIONE HANDLE PLAY MODIFICATA PER ATTIVARE LA PROTEZIONE ---
+    // --- FUNZIONE HANDLE PLAY CORRETTA ---
     function handlePlay(item, type = 'audio') { 
         const targetButton = item.querySelector(`.action-btn.${type}`); 
         if (targetButton && targetButton.classList.contains('disabled')) { 
@@ -498,7 +535,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // ===============================================================
         // CHECK PIRATERIA: Controlla se la colonna "Pirateria" contiene "P"
         // ===============================================================
-        // Nota: Il dataset è minuscolo. Se la colonna è "Pirateria", key è 'pirateria'.
         const piracyValue = item.dataset.pirateria || ""; 
         isProtectionActive = piracyValue.toUpperCase().trim() === "P";
         
@@ -528,7 +564,10 @@ document.addEventListener('DOMContentLoaded', function() {
         count++; 
         counts[songId] = count; 
         savePlayCounts(counts); 
+        
+        // CORREZIONE QUI: Uso item.dataset.titolo invece di songTitle
         trackPlay(songId, item.dataset.titolo, currentUserEmail); 
+        
         applyFilters(); 
     }
     
