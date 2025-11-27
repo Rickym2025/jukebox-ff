@@ -291,24 +291,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('add-to-cart-modal');
     const modalContent = document.getElementById('add-to-cart-modal-content');
     const basePrice = parseFloat(songData.prezzo);
-
-    // --- NUOVA LOGICA DI CALCOLO PER IL RIEPILOGO ---
-    const deduzione = basePrice * 0.25;
-    const imponibile = basePrice - deduzione;
-    const ritenuta = imponibile * 0.20;
-    const priceToCharge = basePrice - ritenuta;
-    // --- FINE NUOVA LOGICA ---
     
     modalContent.innerHTML = `
         <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
         
         <div class="upsell-options">
-            <!-- ... La tua sezione con le opzioni SIAE e Video rimane identica ... -->
             <div class="upsell-item selected" data-id="add-siae">
                 <i class="fas fa-check-circle check-icon"></i>
                 <div class="upsell-item-details">
-                    <strong>Cessione Diritti Totale (Deposito SIAE autonomo) - INCLUSA</strong>
-                    <span>Acquisisci la totalità dei diritti (Master & Publishing) e potrai depositare l'opera a tuo nome.</span>
+                    <strong>Cessione Diritti Totale (+${ADDON_PRICES.siae.toFixed(2)}€)</strong>
+                    <span>Acquisisci la totalità dei diritti (Master & Publishing).</span>
                 </div>
             </div>
             
@@ -322,36 +314,69 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>` : ''}
         </div>
 
-        <!-- ========= INIZIO BLOCCO AGGIUNTO: RIEPILOGO COSTI ========= -->
         <div class="info-box" style="text-align: left; border-left-color: var(--success-color);">
             <h4 style="color: var(--success-color); margin-top: 0; margin-bottom: 10px;">Riepilogo Trasparente</h4>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 5px;">
-                <span>Compenso Lordo (valore totale):</span> <span style="text-align: right; font-weight: 600;">${basePrice.toFixed(2)}€</span>
-                <span>Ritenuta d'Acconto (a carico del cliente):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
-                <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
-                <strong style="font-size: 1.1em;">Importo da Pagare Ora (su Stripe):</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
+            <div id="dynamic-summary" style="display: grid; grid-template-columns: 2fr 1fr; gap: 5px;">
+                <!-- Questo contenuto sarà generato dinamicamente -->
             </div>
         </div>
-        <!-- ========= FINE BLOCCO AGGIUNTO ========= -->
 
         <div id="purchase-summary" style="margin-top: 25px;">
             <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
         </div>`;
     
     modal.style.display = 'flex';
-    
-    // Il resto della funzione per gestire i click rimane identico...
+
+    // ========= INIZIO NUOVA LOGICA DINAMICA =========
+    const summaryContainer = document.getElementById('dynamic-summary');
+    const siaeOption = modalContent.querySelector('[data-id="add-siae"]');
+    const videoOption = modalContent.querySelector('[data-id="add-video"]');
+
+    function updateSummary() {
+        const withSIAE = siaeOption.classList.contains('selected');
+        const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
+
+        let grossPrice = basePrice;
+        if (!withSIAE) {
+            grossPrice -= ADDON_PRICES.siae;
+        }
+
+        const deduzione = grossPrice * 0.25;
+        const imponibile = grossPrice - deduzione;
+        const ritenuta = imponibile * 0.20;
+        let priceToCharge = grossPrice - ritenuta;
+        
+        if (withVideo) {
+            priceToCharge += ADDON_PRICES.video;
+        }
+
+        summaryContainer.innerHTML = `
+            <span>Compenso Lordo (valore totale):</span> <span style="text-align: right; font-weight: 600;">${grossPrice.toFixed(2)}€</span>
+            <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
+            ${withVideo ? `<span>Costo Video Promozionale:</span> <span style="text-align: right; font-weight: 600;">+${ADDON_PRICES.video.toFixed(2)}€</span>` : ''}
+            <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
+            <strong style="font-size: 1.1em;">Importo da Pagare Ora (su Stripe):</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
+        `;
+    }
+
     modalContent.querySelectorAll('.upsell-item').forEach(item => {
-        item.addEventListener('click', () => item.classList.toggle('selected'));
+        item.addEventListener('click', () => {
+            item.classList.toggle('selected');
+            updateSummary(); // Ricalcola e aggiorna il riepilogo ad ogni click
+        });
     });
+
+    // Chiamata iniziale per mostrare i calcoli di default
+    updateSummary(); 
+    // ========= FINE NUOVA LOGICA DINAMICA =========
 
     document.getElementById('confirm-add-to-cart-btn').onclick = () => {
         const songToAdd = { 
             id: songData.id, 
             title: songData.titolo, 
-            price: basePrice, 
-            withSIAE: modalContent.querySelector('[data-id="add-siae"]').classList.contains('selected'), 
-            withVideo: modalContent.querySelector('[data-id="add-video"]')?.classList.contains('selected') || false 
+            price: basePrice, // Passiamo sempre il prezzo base originale
+            withSIAE: siaeOption.classList.contains('selected'), 
+            withVideo: videoOption ? videoOption.classList.contains('selected') : false
         };
         addToCart(songToAdd);
         closeAllModals();
