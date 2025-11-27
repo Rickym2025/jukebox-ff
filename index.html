@@ -292,23 +292,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalContent = document.getElementById('add-to-cart-modal-content');
     const basePrice = parseFloat(songData.prezzo);
 
-    // ========= INIZIO BLOCCO MODIFICATO: Leggi lo stato iniziale dal carrello =========
     const existingCartItem = shoppingCart.find(item => item.id.toString() === songData.id);
-    const initialWithSIAE = existingCartItem ? existingCartItem.withSIAE : true; // Default a true se non è nel carrello
-    const initialWithVideo = existingCartItem ? existingCartItem.withVideo : false; // Default a false
-    // ========= FINE BLOCCO MODIFICATO =========
+    const initialWithSIAE = existingCartItem ? existingCartItem.withSIAE : true;
+    const initialWithVideo = existingCartItem ? existingCartItem.withVideo : false;
     
     modalContent.innerHTML = `
         <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
         
         <div class="upsell-options">
+            <!-- ========= INIZIO TESTO MODIFICATO ========= -->
             <div class="upsell-item ${initialWithSIAE ? 'selected' : ''}" data-id="add-siae">
                 <i class="fas fa-check-circle check-icon"></i>
                 <div class="upsell-item-details">
-                    <strong>Cessione Diritti Totale (+${ADDON_PRICES.siae.toFixed(2)}€)</strong>
-                    <span>Acquisisci la totalità dei diritti (Master & Publishing).</span>
+                    <strong>Includi Cessione Totale dei Diritti</strong>
+                    <span>Acquisisci Master & Publishing per depositare l'opera a tuo nome.</span>
                 </div>
             </div>
+            <!-- ========= FINE TESTO MODIFICATO ========= -->
             
             ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
             <div class="upsell-item ${initialWithVideo ? 'selected' : ''}" data-id="add-video">
@@ -341,9 +341,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const withSIAE = siaeOption.classList.contains('selected');
         const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
 
-        // ========= INIZIO BLOCCO DI CALCOLO FISCALMENTE CORRETTO =========
-        
-        // 1. Calcoliamo il Compenso Lordo TOTALE (Brano + Video)
         let grossPriceTotal = basePrice;
         if (!withSIAE) {
             grossPriceTotal -= ADDON_PRICES.siae;
@@ -352,22 +349,27 @@ document.addEventListener('DOMContentLoaded', function() {
             grossPriceTotal += ADDON_PRICES.video;
         }
 
-        // 2. Calcoliamo la parte fiscale sul Lordo TOTALE
         const deduzione = grossPriceTotal * 0.25;
         const imponibile = grossPriceTotal - deduzione;
         const ritenuta = imponibile * 0.20;
-        
-        // 3. Calcoliamo il Netto finale da pagare
         const priceToCharge = grossPriceTotal - ritenuta;
         
-        // ========= FINE BLOCCO DI CALCOLO FISCALMENTE CORRETTO =========
-
+        // ========= INIZIO TESTO MODIFICATO NEL RIEPILOGO =========
+        let compensoLabel = "Licenza d'Uso Commerciale:";
+        if (withSIAE) {
+            compensoLabel = "Cessione Totale Diritti:";
+        }
+        if (withVideo) {
+            compensoLabel = "Cessione Totale (Brano + Video):";
+        }
+        
         summaryContainer.innerHTML = `
-            <span>Compenso Lordo Totale:</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
+            <span>${compensoLabel}</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
             <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
             <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
             <strong style="font-size: 1.1em;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
         `;
+        // ========= FINE TESTO MODIFICATO NEL RIEPILOGO =========
     }
 
     modalContent.querySelectorAll('.upsell-item').forEach(item => {
@@ -437,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         totalToCharge += itemTotalToCharge;
         
         let optionsText = [];
-        if (item.withSIAE) optionsText.push('SIAE');
+        if (item.withSIAE) optionsText.push("Cessione Diritti"); else optionsText.push("Licenza d'Uso");
         if (item.withVideo) optionsText.push('Video');
         
         cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotalToCharge.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
