@@ -300,15 +300,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
         
         <div class="upsell-options">
-            <!-- ========= INIZIO TESTO MODIFICATO ========= -->
             <div class="upsell-item ${initialWithSIAE ? 'selected' : ''}" data-id="add-siae">
                 <i class="fas fa-check-circle check-icon"></i>
                 <div class="upsell-item-details">
-                    <strong>Includi Cessione Totale dei Diritti</strong>
-                    <span>Acquisisci Master & Publishing per depositare l'opera a tuo nome.</span>
+                    <strong>Cessione Totale dei Diritti (Master & Publishing)</strong>
+                    <span>Deseleziona per acquistare solo la Licenza d'Uso (-${ADDON_PRICES.siae.toFixed(2)}€)</span>
                 </div>
             </div>
-            <!-- ========= FINE TESTO MODIFICATO ========= -->
             
             ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
             <div class="upsell-item ${initialWithVideo ? 'selected' : ''}" data-id="add-video">
@@ -354,22 +352,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const ritenuta = imponibile * 0.20;
         const priceToCharge = grossPriceTotal - ritenuta;
         
-        // ========= INIZIO TESTO MODIFICATO NEL RIEPILOGO =========
-        let compensoLabel = "Licenza d'Uso Commerciale:";
-        if (withSIAE) {
-            compensoLabel = "Cessione Totale Diritti:";
-        }
-        if (withVideo) {
-            compensoLabel = "Cessione Totale (Brano + Video):";
-        }
-        
         summaryContainer.innerHTML = `
-            <span>${compensoLabel}</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
+            <span>Compenso Lordo Totale:</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
             <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
             <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
             <strong style="font-size: 1.1em;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
         `;
-        // ========= FINE TESTO MODIFICATO NEL RIEPILOGO =========
     }
 
     modalContent.querySelectorAll('.upsell-item').forEach(item => {
@@ -385,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const songToAdd = { 
             id: songData.id, 
             title: songData.titolo, 
-            price: basePrice,
+            price: basePrice, // Passiamo il prezzo base originale. addToCart si occuperà dei calcoli.
             withSIAE: siaeOption.classList.contains('selected'), 
             withVideo: videoOption ? videoOption.classList.contains('selected') : false
         };
