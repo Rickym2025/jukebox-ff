@@ -336,29 +336,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoOption = modalContent.querySelector('[data-id="add-video"]');
 
     function updateSummary() {
-        const withSIAE = siaeOption.classList.contains('selected');
-        const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
+    const withSIAE = siaeOption.classList.contains('selected');
+    const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
 
-        let grossPriceTotal = basePrice;
-        if (!withSIAE) {
-            grossPriceTotal -= ADDON_PRICES.siae;
-        }
-        if (withVideo) {
-            grossPriceTotal += ADDON_PRICES.video;
-        }
+    // --- CALCOLO FISCALE DEFINITIVO E CORRETTO ---
+    let grossPriceTotal = basePrice;
+    if (!withSIAE) grossPriceTotal -= ADDON_PRICES.siae;
+    if (withVideo) grossPriceTotal += ADDON_PRICES.video;
 
-        const deduzione = grossPriceTotal * 0.25;
-        const imponibile = grossPriceTotal - deduzione;
-        const ritenuta = imponibile * 0.20;
-        const priceToCharge = grossPriceTotal - ritenuta;
-        
-        summaryContainer.innerHTML = `
-            <span>Compenso Lordo Totale:</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
-            <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
-            <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
-            <strong style="font-size: 1.1em;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
-        `;
-    }
+    const deduzione = grossPriceTotal * 0.25;
+    const imponibile = grossPriceTotal - deduzione;
+    const ritenuta = imponibile * 0.20; // <-- CORREZIONE: calcolata sull'imponibile
+    const priceToCharge = grossPriceTotal - ritenuta;
+    
+    summaryContainer.innerHTML = `
+        <span>Compenso Lordo Totale:</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
+        <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
+        <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
+        <strong style="font-size: 1.1em;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
+    `;
+}
 
     modalContent.querySelectorAll('.upsell-item').forEach(item => {
         item.addEventListener('click', () => {
@@ -412,17 +409,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let totalToCharge = 0;
 
     shoppingCart.forEach(item => {
-        // --- Replica esatta della logica di calcolo in updateSummary ---
-        let grossPriceTotal = item.grossPrice; // Lordo del brano (con o senza SIAE)
-        if (item.withVideo) { 
-            grossPriceTotal += ADDON_PRICES.video; 
-        }
+        // --- CALCOLO FISCALE DEFINITIVO E CORRETTO ---
+        let grossPriceTotal = item.grossPrice;
+        if (item.withVideo) grossPriceTotal += ADDON_PRICES.video;
 
         const deduzione = grossPriceTotal * 0.25;
         const imponibile = grossPriceTotal - deduzione;
-        const ritenuta = imponibile * 0.20;
+        const ritenuta = imponibile * 0.20; // <-- CORREZIONE
         const itemTotalToCharge = grossPriceTotal - ritenuta;
-        // --- Fine logica di calcolo ---
         
         totalToCharge += itemTotalToCharge;
         
@@ -430,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (item.withSIAE) optionsText.push("Cessione Diritti"); else optionsText.push("Licenza d'Uso");
         if (item.withVideo) optionsText.push('Video');
         
-        cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotalToCharge.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
+        cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span><span class="options">+ ${optionsText.join(' & ')}</span></div><div class="cart-item-price">${itemTotalToCharge.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
     });
 
     cartTotalEl.textContent = `Totale da Pagare Ora: ${totalToCharge.toFixed(2)}€`; 
