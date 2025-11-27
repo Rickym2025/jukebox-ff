@@ -456,7 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkoutButton = document.getElementById('cart-checkout-btn');
         checkoutButton.textContent = 'Reindirizzamento...';
         checkoutButton.disabled = true;
-        alert("Dati inviati a n8n:\n" + JSON.stringify(shoppingCart, null, 2));
         const cartParam = encodeURIComponent(JSON.stringify(shoppingCart));
         window.location.href = `${n8nWebhookUrl}?cart=${cartParam}`;
     }
