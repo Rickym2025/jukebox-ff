@@ -339,14 +339,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const withSIAE = siaeOption.classList.contains('selected');
     const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
 
-    // --- CALCOLO FISCALE DEFINITIVO E CORRETTO ---
     let grossPriceTotal = basePrice;
     if (!withSIAE) grossPriceTotal -= ADDON_PRICES.siae;
     if (withVideo) grossPriceTotal += ADDON_PRICES.video;
 
     const deduzione = grossPriceTotal * 0.25;
     const imponibile = grossPriceTotal - deduzione;
-    const ritenuta = imponibile * 0.20; // <-- CORREZIONE: calcolata sull'imponibile
+    const ritenuta = imponibile * 0.20; // <-- CALCOLO CORRETTO
     const priceToCharge = grossPriceTotal - ritenuta;
     
     summaryContainer.innerHTML = `
@@ -409,13 +408,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let totalToCharge = 0;
 
     shoppingCart.forEach(item => {
-        // --- CALCOLO FISCALE DEFINITIVO E CORRETTO ---
         let grossPriceTotal = item.grossPrice;
         if (item.withVideo) grossPriceTotal += ADDON_PRICES.video;
 
         const deduzione = grossPriceTotal * 0.25;
         const imponibile = grossPriceTotal - deduzione;
-        const ritenuta = imponibile * 0.20; // <-- CORREZIONE
+        const ritenuta = imponibile * 0.20; // <-- CALCOLO CORRETTO
         const itemTotalToCharge = grossPriceTotal - ritenuta;
         
         totalToCharge += itemTotalToCharge;
