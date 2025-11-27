@@ -341,24 +341,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const withSIAE = siaeOption.classList.contains('selected');
         const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
 
-        let grossPrice = basePrice;
+        // ========= INIZIO BLOCCO DI CALCOLO FISCALMENTE CORRETTO =========
+        
+        // 1. Calcoliamo il Compenso Lordo TOTALE (Brano + Video)
+        let grossPriceTotal = basePrice;
         if (!withSIAE) {
-            grossPrice -= ADDON_PRICES.siae;
+            grossPriceTotal -= ADDON_PRICES.siae;
         }
         if (withVideo) {
-            grossPrice += ADDON_PRICES.video;
+            grossPriceTotal += ADDON_PRICES.video;
         }
 
-        const deduzione = grossPrice * 0.25;
-        const imponibile = grossPrice - deduzione;
+        // 2. Calcoliamo la parte fiscale sul Lordo TOTALE
+        const deduzione = grossPriceTotal * 0.25;
+        const imponibile = grossPriceTotal - deduzione;
         const ritenuta = imponibile * 0.20;
-        const priceToCharge = grossPrice - ritenuta;
         
+        // 3. Calcoliamo il Netto finale da pagare
+        const priceToCharge = grossPriceTotal - ritenuta;
+        
+        // ========= FINE BLOCCO DI CALCOLO FISCALMENTE CORRETTO =========
+
         summaryContainer.innerHTML = `
-            <span>Compenso Lordo (brano ${withVideo ? '+ video' : ''}):</span> <span style="text-align: right; font-weight: 600;">${grossPrice.toFixed(2)}€</span>
+            <span>Compenso Lordo Totale:</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
             <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
             <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
-            <strong style="font-size: 1.1em;">Importo da Pagare Ora (su Stripe):</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
+            <strong style="font-size: 1.1em;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
         `;
     }
 
@@ -409,20 +417,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderCart() {
-        if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
-        cartItemsList.innerHTML = '';
-        let total = 0;
-        shoppingCart.forEach(item => {
-            let itemTotal = item.priceToCharge; 
-            let optionsText = [];
-            if (item.withSIAE) optionsText.push('SIAE');
-            if (item.withVideo) { itemTotal += ADDON_PRICES.video; optionsText.push('Video'); }
-            total += itemTotal;
-            cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotal.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
-        });
-        cartTotalEl.textContent = `Totale da Pagare: ${total.toFixed(2)}€`; 
-        cartBanner.classList.add('visible');
-    }
+    if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
+    cartItemsList.innerHTML = '';
+    let totalToCharge = 0;
+
+    shoppingCart.forEach(item => {
+        // --- Replica esatta della logica di calcolo in updateSummary ---
+        let grossPriceTotal = item.grossPrice; // Lordo del brano (con o senza SIAE)
+        if (item.withVideo) { 
+            grossPriceTotal += ADDON_PRICES.video; 
+        }
+
+        const deduzione = grossPriceTotal * 0.25;
+        const imponibile = grossPriceTotal - deduzione;
+        const ritenuta = imponibile * 0.20;
+        const itemTotalToCharge = grossPriceTotal - ritenuta;
+        // --- Fine logica di calcolo ---
+        
+        totalToCharge += itemTotalToCharge;
+        
+        let optionsText = [];
+        if (item.withSIAE) optionsText.push('SIAE');
+        if (item.withVideo) optionsText.push('Video');
+        
+        cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span>${optionsText.length > 0 ? `<span class="options">+ ${optionsText.join(' & ')}</span>` : ''}</div><div class="cart-item-price">${itemTotalToCharge.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
+    });
+
+    cartTotalEl.textContent = `Totale da Pagare Ora: ${totalToCharge.toFixed(2)}€`; 
+    cartBanner.classList.add('visible');
+}
     
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     
