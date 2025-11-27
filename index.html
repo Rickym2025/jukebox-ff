@@ -336,24 +336,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const withSIAE = siaeOption.classList.contains('selected');
         const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
 
+        // ========= INIZIO BLOCCO DI CALCOLO CORRETTO =========
+        
+        // 1. Calcoliamo il Compenso Lordo TOTALE
         let grossPrice = basePrice;
         if (!withSIAE) {
             grossPrice -= ADDON_PRICES.siae;
         }
+        if (withVideo) {
+            grossPrice += ADDON_PRICES.video;
+        }
 
+        // 2. Calcoliamo la parte fiscale sul Lordo TOTALE
         const deduzione = grossPrice * 0.25;
         const imponibile = grossPrice - deduzione;
         const ritenuta = imponibile * 0.20;
-        let priceToCharge = grossPrice - ritenuta;
         
-        if (withVideo) {
-            priceToCharge += ADDON_PRICES.video;
-        }
+        // 3. Calcoliamo il Netto finale da pagare
+        const priceToCharge = grossPrice - ritenuta;
+        
+        // ========= FINE BLOCCO DI CALCOLO CORRETTO =========
 
         summaryContainer.innerHTML = `
-            <span>Compenso Lordo (valore totale):</span> <span style="text-align: right; font-weight: 600;">${grossPrice.toFixed(2)}€</span>
+            <span>Compenso Lordo (brano ${withVideo ? '+ video' : ''}):</span> <span style="text-align: right; font-weight: 600;">${grossPrice.toFixed(2)}€</span>
             <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
-            ${withVideo ? `<span>Costo Video Promozionale:</span> <span style="text-align: right; font-weight: 600;">+${ADDON_PRICES.video.toFixed(2)}€</span>` : ''}
             <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
             <strong style="font-size: 1.1em;">Importo da Pagare Ora (su Stripe):</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
         `;
