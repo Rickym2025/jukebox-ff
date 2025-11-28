@@ -11,10 +11,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; }
+    :root { --primary-color: #0693e3; --glow-color: rgba(6, 147, 227, 0.7); --success-color: #4CAF50; --warning-color: #ff9800; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; padding-top: 100px; user-select: none; /* Protezione selezione testo */ }
+    body { font-family: 'Montserrat', sans-serif; color: #f0f0f0; text-align: center; background-color: #121212; overflow-x: hidden; padding-top: 100px; user-select: none; }
     #background-video { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover; filter: brightness(0.4); }
     .container-wrapper { min-height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 120px 20px 50px; }
     .main-content { position: relative; width: 100%; max-width: 850px; }
@@ -66,7 +66,7 @@
     #video-modal-content video { width: 100%; border-radius: 10px; max-height: 70vh;}
     #contact-modal .modal-content { text-align: left; }
     #contact-form-header { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 20px; }
-    #contact-form-header i { font-size: 1.5em; }
+    #contact-form i { font-size: 1.5em; }
     #contact-form { display: flex; flex-direction: column; gap: 15px; }
     #contact-form input, #contact-form textarea { background-color: #2c2c2c; border: 2px solid #555; border-radius: 10px; color: #f0f0f0; padding: 12px; font-size: 1em; width: 100%; transition: border-color 0.3s ease; }
     #contact-form textarea { resize: vertical; min-height: 120px; }
@@ -93,29 +93,61 @@
     .package-list { list-style: none; padding-left: 0; text-align: left; }
     .package-list li { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px; font-size: 1em; }
     .package-list li i { color: var(--primary-color); width: 20px; text-align: center; margin-top: 5px; font-size: 1.1em; }
-    #cart-banner { position: fixed; top: 0; left: 50%; transform: translate(-50%, -120%); width: 100%; max-width: 850px; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1002; color: white; padding: 15px; transition: transform 0.4s ease-out; border-bottom: 1px solid var(--primary-color); border-radius: 0 0 15px 15px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; }
+    
+    /* CART BANNER AGGIORNATO PER MULTI-RIGA */
+    #cart-banner { position: fixed; top: 0; left: 50%; transform: translate(-50%, -120%); width: 100%; max-width: 850px; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); z-index: 1002; color: white; padding: 15px; transition: transform 0.4s ease-out; border-bottom: 2px solid var(--primary-color); border-radius: 0 0 15px 15px; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 20px; box-shadow: 0 5px 30px rgba(0,0,0,0.8); }
     #cart-banner.visible { transform: translate(-50%, 0); }
-    #cart-items-container { text-align: left; flex-grow: 1; min-width: 250px; }
-    #cart-items-container h4 { margin: 0 0 10px 0; font-size: 1em; color: var(--primary-color); }
-    .cart-item { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; font-size: 0.9em; padding: 5px 0; border-bottom: 1px solid #333; }
+    
+    #cart-items-container { text-align: left; flex: 1 1 300px; min-width: 250px; max-height: 150px; overflow-y: auto; padding-right: 10px; border-right: 1px solid #444; }
+    #cart-items-container h4 { margin: 0 0 10px 0; font-size: 1em; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
+    
+    /* STILE DETTAGLIATO PER IL RIEPILOGO */
+    #cart-summary { flex: 0 0 auto; min-width: 280px; text-align: right; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+    .cart-tax-breakdown { font-size: 0.85em; color: #ccc; line-height: 1.4; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; }
+    .cart-tax-row { display: flex; justify-content: space-between; gap: 15px; }
+    .cart-tax-row.highlight { color: var(--warning-color); font-style: italic; }
+    .cart-tax-row.total { font-weight: 700; font-size: 1.1em; color: var(--success-color); border-top: 1px solid #555; margin-top: 5px; padding-top: 5px; }
+    
+    .cart-item { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; font-size: 0.9em; padding: 6px 0; border-bottom: 1px solid #333; }
     .cart-item:last-child { border-bottom: none; }
     .cart-item-details { text-align: left; }
-    .cart-item-details .title { font-weight: 600; }
-    .cart-item-details .options { font-size: 0.8em; color: #ccc; }
-    .cart-item-price { font-weight: 500; white-space: nowrap; justify-self: end; }
-    .cart-item-remove { background: none; border: none; color: #e53935; cursor: pointer; font-size: 1.2em; }
-    #cart-summary { text-align: center; }
-    #cart-total { font-size: 1.2em; font-weight: 600; margin-bottom: 10px; }
-    #cart-checkout-btn { background-color: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; white-space: nowrap; }
-    #cart-checkout-btn:hover { background-color: #45a049; }
+    .cart-item-details .title { font-weight: 600; display: block; }
+    .cart-item-details .options { font-size: 0.8em; color: #aaa; }
+    .cart-item-price { font-weight: 500; white-space: nowrap; justify-self: end; color: #fff; }
+    .cart-item-remove { background: none; border: none; color: #e53935; cursor: pointer; font-size: 1.2em; padding: 0 5px; }
+    
+    #cart-checkout-btn { background-color: var(--success-color); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; width: 100%; font-size: 1em; margin-top: 5px; }
+    #cart-checkout-btn:hover { background-color: #45a049; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4); }
+
+    /* Media query per mobile */
+    @media (max-width: 600px) {
+        #cart-banner { flex-direction: column; align-items: stretch; }
+        #cart-items-container { border-right: none; border-bottom: 1px solid #444; padding-bottom: 10px; max-height: 120px; }
+        #cart-summary { text-align: left; width: 100%; }
+        .cart-tax-row { justify-content: space-between; }
+    }
   </style>
 </head>
 <body>
-  <div id="cart-banner"><div id="cart-items-container"><h4><i class="fas fa-shopping-cart"></i> Il Tuo Carrello</h4><div id="cart-items-list"></div></div><div id="cart-summary"><div id="cart-total">Totale: 0.00€</div><button id="cart-checkout-btn">Procedi alla Cassa</button></div></div>
+  <!-- BANNER CARRELLO AGGIORNATO -->
+  <div id="cart-banner">
+      <div id="cart-items-container">
+          <h4><i class="fas fa-shopping-cart"></i> Il Tuo Carrello</h4>
+          <div id="cart-items-list"></div>
+      </div>
+      <div id="cart-summary">
+          <!-- Questo contenuto verrà generato dinamicamente da JS -->
+          <div class="cart-tax-breakdown"></div> 
+          <button id="cart-checkout-btn">Procedi alla Cassa</button>
+      </div>
+  </div>
+
   <video autoplay muted loop playsinline preload="auto" id="background-video"><source src="https://github.com/Rickym2025/fausto-fusetti-links/raw/main/video_sfondo_compressed.mp4" type="video/mp4" /></video>
+  
   <div class="container-wrapper">
     <div class="main-content">
         <div class="profile-logo"><div class="profile-logo-image"></div></div>
+        
         <div id="login-screen"><h1>Jukebox FF Riservato</h1><form id="login-form"><input type="email" id="email-input" placeholder="Inserisci la tua email di accesso" required autocomplete="email" /><button type="submit" class="button">Accedi</button></form></div>
         
         <div id="jukebox-container">
@@ -155,8 +187,6 @@
           <div id="contact-form-header">
               <i class="fas fa-pen-nib"></i><h3>Contattami per il tuo Progetto</h3>
           </div>
-          
-          <!-- BLOCCO CONTATTI -->
           <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9em; border: 1px solid #444; text-align: center;">
               <div style="margin-bottom: 5px;"><strong style="color: var(--primary-color);">Fausto Fusetti:</strong> 392 729 0834</div>
               <div style="margin-bottom: 5px;"><strong style="color: var(--primary-color);">Riccardo Modena:</strong> 349 525 8418</div>
@@ -164,7 +194,6 @@
                   ✉️ <a href="mailto:ff.edizioni@gmail.com" style="color: #f0f0f0; text-decoration: none;">ff.edizioni@gmail.com</a>
               </div>
           </div>
-
           <form id="contact-form"><input type="hidden" name="access_key" value="9013a8d5-0901-42a0-b9e6-4c45553f960d"/><input type="text" name="name" placeholder="Il tuo Nome" required/><input type="email" name="email" placeholder="La tua Email" required/><textarea name="message" placeholder="Descrivi la tua idea o richiesta..." required></textarea><button type="submit" class="button">Invia Messaggio</button><div id="form-result"></div></form>
       </div>
   </div>
@@ -175,10 +204,7 @@
           <h3>Cosa Ricevi con l'Acquisto?</h3>
           <ul class="package-list">
               <li><i class="fas fa-file-contract"></i> <div><strong>Cessione Totale dei Diritti</strong><br><span>Diventi l'unico proprietario dell'opera (Master & Publishing).</span></div></li>
-              
-              <!-- VIDEO NASCOSTO -->
               <li style="display: none;"><i class="fas fa-share-alt"></i> <div><strong>Video Promozionale</strong><br><span>Ottimizzato per i tuoi canali social.</span></div></li>
-              
               <li><i class="fas fa-music"></i> <div><strong>Brano Master (.wav)</strong><br><span>Qualità audio professionale non compressa.</span></div></li>
               <li><i class="fas fa-sliders-h"></i> <div><strong>Tracce Separate (.wav)</strong><br><span>Tutti gli strumenti isolati per remix e modifiche.</span></div></li>
               <li><i class="fas fa-file-alt"></i> <div><strong>Testo del Brano (.pdf)</strong><br><span>Testo ufficiale formattato.</span></div></li>
@@ -219,17 +245,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const sheetApiUrl = 'https://script.google.com/macros/s/AKfycbw666DGD4BlSHuJwmVYcRLF9_qMJX2LXy_r6gCGVbjR_dXQDngQU-JttofSKOwUkIJZ/exec';
     const n8nWebhookUrl = 'https://n8n-nuovo.duckdns.org/webhook/crea-checkout-jukebox';
-    const STRIPE_PUBLISHABLE_KEY = "pk_test_51S0GLJLyZ8FXl87PPrgWhBO9RP4ERXMcwT3KQ65JVOYRwYXFsBSohEM7tZE1yDFPusNPcqHK3Ivk8FSNYyj7TdkK00Jeb1SEET";
     const ADDON_PRICES = { siae: 99, video: 49 };
     
-    // =====================================================
     // CONFIGURAZIONE PROTEZIONE ANTI-PIRATERIA
-    // =====================================================
     const MAX_PLAYS = 2;                
-    const MAX_PREVIEW_DURATION = 90;    // 90 secondi
-    const WATERMARK_INTERVAL = 20;      // Intervallo silenzio
-    const WATERMARK_DURATION = 0.5;     // Durata silenzio
-    // =====================================================
+    const MAX_PREVIEW_DURATION = 90;    
+    const WATERMARK_INTERVAL = 20;      
+    const WATERMARK_DURATION = 0.5;     
 
     const RESET_PASSWORD = 'reset_ff_2025';
     
@@ -238,7 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPlayingItem = null, currentPlayingType = null;
     let currentUserEmail = '', currentUserTier = '';
     
-    // NUOVA VARIABILE: Indica se il brano corrente è protetto
     let isProtectionActive = false; 
 
     const songListContainer = document.getElementById('song-list-container');
@@ -248,17 +269,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const footerPlayerTitle = document.getElementById('footer-player-title');
     const cartBanner = document.getElementById('cart-banner');
     const cartItemsList = document.getElementById('cart-items-list');
-    const cartTotalEl = document.getElementById('cart-total');
     const allModalOverlays = document.querySelectorAll('.modal-overlay');
 
-    // --- FUNZIONE PROTEZIONE AUDIO/VIDEO (MODIFICATA) ---
+    // Funzione protezione
     function enforceAntiPiracy(player) {
         player.addEventListener('timeupdate', () => {
-            
-            // SE LA PROTEZIONE NON È ATTIVA PER QUESTO BRANO, ESCI SUBITO
             if (!isProtectionActive) return; 
-
-            // 1. BLOCCO TEMPO MASSIMO (90 secondi)
             if (player.currentTime >= MAX_PREVIEW_DURATION) {
                 player.pause();
                 player.currentTime = 0;
@@ -267,121 +283,119 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert("L'anteprima di questo brano è limitata a 90 secondi per motivi di sicurezza.");
                 return;
             }
-
-            // 2. WATERMARK SILENZIOSO (Buchi audio ogni 20s)
-            // Applicato solo all'Audio Player per evitare glitch visivi sul video
             if (player === audioPlayer && player.currentTime > 1) { 
                 const cycleTime = player.currentTime % WATERMARK_INTERVAL;
-                // Se siamo nei primi 0.5s del ciclo, metti Mute
                 if (cycleTime < WATERMARK_DURATION) {
                     if (!player.muted) player.muted = true;
                 } else {
-                    // Altrimenti togli Mute (solo se era stato messo dal watermark)
                     if (player.muted) player.muted = false;
                 }
             }
         });
     }
-
-    // Applichiamo i listener (che scatteranno solo se isProtectionActive è true)
     enforceAntiPiracy(audioPlayer);
     enforceAntiPiracy(videoPlayer);
 
+    // ==========================================
+    // LOGICA CARRELLO AGGIORNATA
+    // ==========================================
+
     function openAddToCartModal(songData) {
-    const modal = document.getElementById('add-to-cart-modal');
-    const modalContent = document.getElementById('add-to-cart-modal-content');
-    const basePrice = parseFloat(songData.prezzo);
+        const modal = document.getElementById('add-to-cart-modal');
+        const modalContent = document.getElementById('add-to-cart-modal-content');
+        const basePrice = parseFloat(songData.prezzo);
 
-    const existingCartItem = shoppingCart.find(item => item.id.toString() === songData.id);
-    const initialWithSIAE = existingCartItem ? existingCartItem.withSIAE : true;
-    const initialWithVideo = existingCartItem ? existingCartItem.withVideo : false;
-    
-    modalContent.innerHTML = `
-        <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
+        const existingCartItem = shoppingCart.find(item => item.id.toString() === songData.id);
+        const initialWithSIAE = existingCartItem ? existingCartItem.withSIAE : true;
+        const initialWithVideo = existingCartItem ? existingCartItem.withVideo : false;
         
-        <div class="upsell-options">
-            <div class="upsell-item ${initialWithSIAE ? 'selected' : ''}" data-id="add-siae">
-                <i class="fas fa-check-circle check-icon"></i>
-                <div class="upsell-item-details">
-                    <strong>Cessione Totale dei Diritti (Master & Publishing)</strong>
-                    <span>Deseleziona per acquistare solo la Licenza d'Uso (-${ADDON_PRICES.siae.toFixed(2)}€)</span>
-                </div>
-            </div>
+        modalContent.innerHTML = `
+            <h3>Opzioni per <span class="song-title-highlight">${songData.titolo}</span></h3>
             
-            ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
-            <div class="upsell-item ${initialWithVideo ? 'selected' : ''}" data-id="add-video">
-                <i class="fas fa-check-circle check-icon"></i>
-                <div class="upsell-item-details">
-                    <strong>Aggiungi Video Promozionale (+${ADDON_PRICES.video.toFixed(2)}€)</strong>
-                    <span>Un video ottimizzato per i tuoi canali social.</span>
+            <div class="upsell-options">
+                <div class="upsell-item ${initialWithSIAE ? 'selected' : ''}" data-id="add-siae">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    <div class="upsell-item-details">
+                        <strong>Cessione Totale dei Diritti (Master & Publishing)</strong>
+                        <span>Deseleziona per acquistare solo la Licenza d'Uso (-${ADDON_PRICES.siae.toFixed(2)}€)</span>
+                    </div>
                 </div>
-            </div>` : ''}
-        </div>
-
-        <div class="info-box" style="text-align: left; border-left-color: var(--success-color);">
-            <h4 style="color: var(--success-color); margin-top: 0; margin-bottom: 10px;">Riepilogo Trasparente</h4>
-            <div id="dynamic-summary" style="display: grid; grid-template-columns: 2fr 1fr; gap: 5px;">
-                <!-- Contenuto dinamico -->
+                
+                ${(songData.videoLink && String(songData.videoLink).toUpperCase() !== 'FALSE') ? `
+                <div class="upsell-item ${initialWithVideo ? 'selected' : ''}" data-id="add-video">
+                    <i class="fas fa-check-circle check-icon"></i>
+                    <div class="upsell-item-details">
+                        <strong>Aggiungi Video Promozionale (+${ADDON_PRICES.video.toFixed(2)}€)</strong>
+                        <span>Un video ottimizzato per i tuoi canali social.</span>
+                    </div>
+                </div>` : ''}
             </div>
-        </div>
 
-        <div id="purchase-summary" style="margin-top: 25px;">
-            <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiorna</button>
-        </div>`;
-    
-    modal.style.display = 'flex';
+            <div class="info-box" style="text-align: left; border-left-color: var(--success-color);">
+                <h4 style="color: var(--success-color); margin-top: 0; margin-bottom: 10px;">Trasparenza Fiscale</h4>
+                <div id="dynamic-summary" style="display: grid; grid-template-columns: 2fr 1fr; gap: 5px; font-size: 0.95em;">
+                    <!-- Contenuto dinamico -->
+                </div>
+            </div>
 
-    const summaryContainer = document.getElementById('dynamic-summary');
-    const siaeOption = modalContent.querySelector('[data-id="add-siae"]');
-    const videoOption = modalContent.querySelector('[data-id="add-video"]');
+            <div id="purchase-summary" style="margin-top: 25px;">
+                <button id="confirm-add-to-cart-btn" class="add-to-cart-btn">Conferma e Aggiungi</button>
+            </div>`;
+        
+        modal.style.display = 'flex';
 
-    function updateSummary() {
-    const withSIAE = siaeOption.classList.contains('selected');
-    const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
+        const summaryContainer = document.getElementById('dynamic-summary');
+        const siaeOption = modalContent.querySelector('[data-id="add-siae"]');
+        const videoOption = modalContent.querySelector('[data-id="add-video"]');
 
-    let grossPriceTotal = basePrice;
-    if (!withSIAE) grossPriceTotal -= ADDON_PRICES.siae;
-    if (withVideo) grossPriceTotal += ADDON_PRICES.video;
+        function updateSummary() {
+            const withSIAE = siaeOption.classList.contains('selected');
+            const withVideo = videoOption ? videoOption.classList.contains('selected') : false;
 
-    const deduzione = grossPriceTotal * 0.25;
-    const imponibile = grossPriceTotal - deduzione;
-    const ritenuta = imponibile * 0.20; // <-- CALCOLO CORRETTO
-    const priceToCharge = grossPriceTotal - ritenuta;
-    
-    summaryContainer.innerHTML = `
-        <span>Compenso Lordo Totale:</span> <span style="text-align: right; font-weight: 600;">${grossPriceTotal.toFixed(2)}€</span>
-        <span>Ritenuta d'Acconto (a carico tuo):</span> <span style="text-align: right; font-weight: 600;">-${ritenuta.toFixed(2)}€</span>
-        <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
-        <strong style="font-size: 1.1em;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em;">${priceToCharge.toFixed(2)}€</strong>
-    `;
-}
+            let grossPriceTotal = basePrice;
+            if (!withSIAE) grossPriceTotal -= ADDON_PRICES.siae;
+            if (withVideo) grossPriceTotal += ADDON_PRICES.video;
 
-    modalContent.querySelectorAll('.upsell-item').forEach(item => {
-        item.addEventListener('click', () => {
-            item.classList.toggle('selected');
-            updateSummary();
+            const deduzione = grossPriceTotal * 0.25;
+            const imponibile = grossPriceTotal - deduzione;
+            const ritenuta = imponibile * 0.20;
+            const priceToCharge = grossPriceTotal - ritenuta;
+            
+            summaryContainer.innerHTML = `
+                <span>Compenso Lordo:</span> <span style="text-align: right;">${grossPriceTotal.toFixed(2)}€</span>
+                <span style="color: #ccc;">- Ritenuta d'Acconto (da versare via F24):</span> <span style="text-align: right; color: var(--warning-color); font-style: italic;">-${ritenuta.toFixed(2)}€</span>
+                <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #555; margin: 5px 0;">
+                <strong style="font-size: 1.1em; color: white;">Importo da Pagare Ora:</strong> <strong style="text-align: right; font-size: 1.1em; color: var(--success-color);">${priceToCharge.toFixed(2)}€</strong>
+            `;
+        }
+
+        modalContent.querySelectorAll('.upsell-item').forEach(item => {
+            item.addEventListener('click', () => {
+                item.classList.toggle('selected');
+                updateSummary();
+            });
         });
-    });
 
-    updateSummary(); 
+        updateSummary(); 
 
-    document.getElementById('confirm-add-to-cart-btn').onclick = () => {
-        const songToAdd = { 
-            id: songData.id, 
-            title: songData.titolo, 
-            price: basePrice, // Passiamo il prezzo base originale. addToCart si occuperà dei calcoli.
-            withSIAE: siaeOption.classList.contains('selected'), 
-            withVideo: videoOption ? videoOption.classList.contains('selected') : false
+        document.getElementById('confirm-add-to-cart-btn').onclick = () => {
+            const songToAdd = { 
+                id: songData.id, 
+                title: songData.titolo, 
+                price: basePrice, // Prezzo base originale
+                withSIAE: siaeOption.classList.contains('selected'), 
+                withVideo: videoOption ? videoOption.classList.contains('selected') : false
+            };
+            addToCart(songToAdd);
+            closeAllModals();
         };
-        addToCart(songToAdd);
-        closeAllModals();
-    };
-}
+    }
 
     function addToCart(songToAdd) {
         let grossPrice = songToAdd.price; 
         if (!songToAdd.withSIAE) { grossPrice -= ADDON_PRICES.siae; }
         
+        // Calcoli per il singolo item (utili per il backend, ma il renderCart ricalcolerà il totale globale)
         const deduzione = grossPrice * 0.25;
         const imponibile = grossPrice - deduzione;
         const ritenuta = imponibile * 0.20;
@@ -403,31 +417,61 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderCart() {
-    if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
-    cartItemsList.innerHTML = '';
-    let totalToCharge = 0;
-
-    shoppingCart.forEach(item => {
-        let grossPriceTotal = item.grossPrice;
-        if (item.withVideo) grossPriceTotal += ADDON_PRICES.video;
-
-        const deduzione = grossPriceTotal * 0.25;
-        const imponibile = grossPriceTotal - deduzione;
-        const ritenuta = imponibile * 0.20; // <-- CALCOLO CORRETTO
-        const itemTotalToCharge = grossPriceTotal - ritenuta;
+        if (shoppingCart.length === 0) { cartBanner.classList.remove('visible'); return; }
         
-        totalToCharge += itemTotalToCharge;
-        
-        let optionsText = [];
-        if (item.withSIAE) optionsText.push("Cessione Diritti"); else optionsText.push("Licenza d'Uso");
-        if (item.withVideo) optionsText.push('Video');
-        
-        cartItemsList.innerHTML += `<div class="cart-item"><div class="cart-item-details"><span class="title">${item.title}</span><span class="options">+ ${optionsText.join(' & ')}</span></div><div class="cart-item-price">${itemTotalToCharge.toFixed(2)}€</div><button class="cart-item-remove" data-id="${item.id}">&times;</button></div>`;
-    });
+        cartItemsList.innerHTML = '';
+        let globalGross = 0;
 
-    cartTotalEl.textContent = `Totale da Pagare Ora: ${totalToCharge.toFixed(2)}€`; 
-    cartBanner.classList.add('visible');
-}
+        shoppingCart.forEach(item => {
+            let itemGross = item.grossPrice;
+            if (item.withVideo) itemGross += ADDON_PRICES.video;
+            
+            globalGross += itemGross;
+            
+            let optionsText = [];
+            if (item.withSIAE) optionsText.push("Cessione"); else optionsText.push("Licenza");
+            if (item.withVideo) optionsText.push('Video');
+            
+            // Visualizziamo il Lordo per item nella lista, per coerenza col totale lordo
+            cartItemsList.innerHTML += `
+                <div class="cart-item">
+                    <div class="cart-item-details">
+                        <span class="title">${item.title}</span>
+                        <span class="options">+ ${optionsText.join(' & ')}</span>
+                    </div>
+                    <div class="cart-item-price">${itemGross.toFixed(2)}€</div>
+                    <button class="cart-item-remove" data-id="${item.id}">&times;</button>
+                </div>`;
+        });
+
+        // CALCOLO TOTALE GLOBALE
+        const globalDeduzione = globalGross * 0.25;
+        const globalImponibile = globalGross - globalDeduzione;
+        const globalRitenuta = globalImponibile * 0.20;
+        const globalNetto = globalGross - globalRitenuta;
+
+        // AGGIORNAMENTO BOX RIEPILOGO
+        const summaryBox = document.querySelector('.cart-tax-breakdown');
+        summaryBox.innerHTML = `
+            <div class="cart-tax-row">
+                <span>Compenso Lordo:</span>
+                <span>${globalGross.toFixed(2)}€</span>
+            </div>
+            <div class="cart-tax-row highlight">
+                <span>- Ritenuta d'acconto (20% su 75%):</span>
+                <span>${globalRitenuta.toFixed(2)}€</span>
+            </div>
+            <div style="text-align: right; font-size: 0.8em; color: #888; margin-bottom: 5px;">
+                (Da versare via F24 a tuo carico)
+            </div>
+            <div class="cart-tax-row total">
+                <span>DA PAGARE ORA:</span>
+                <span>${globalNetto.toFixed(2)}€</span>
+            </div>
+        `;
+
+        cartBanner.classList.add('visible');
+    }
     
     function removeFromCart(songId) { shoppingCart = shoppingCart.filter(item => item.id.toString() !== songId.toString()); renderCart(); updateSongItemsUI(); }
     
@@ -448,6 +492,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkoutButton = document.getElementById('cart-checkout-btn');
         checkoutButton.textContent = 'Reindirizzamento...';
         checkoutButton.disabled = true;
+        
+        // Stripe riceverà il Netto, ma è utile passare i metadati corretti
         const cartParam = encodeURIComponent(JSON.stringify(shoppingCart));
         window.location.href = `${n8nWebhookUrl}?cart=${cartParam}`;
     }
@@ -543,124 +589,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateFilters(songs) { const filters = { categoria: new Set(), argomento: new Set(), bpm: new Set() }; songs.forEach(s => { if (s.categoria && typeof s.categoria === 'string') s.categoria.split(/[;,]/).forEach(cat => { if (cat.trim()) filters.categoria.add(cat.trim()); }); if (s.argomento && typeof s.argomento === 'string') s.argomento.split(/[;,]/).forEach(arg => { if (arg.trim()) filters.argomento.add(arg.trim()); }); if (s.bpm) filters.bpm.add(s.bpm); }); const createBtns = (type, items, label) => { const cont = document.getElementById(`filter-${type}`); if (!cont) return; cont.innerHTML = ''; const allBtn = document.createElement('button'); allBtn.textContent = label; allBtn.value = ''; allBtn.className = 'active'; cont.appendChild(allBtn); [...items].sort((a, b) => isNaN(a) ? a.localeCompare(b) : a - b).forEach(item => { const btn = document.createElement('button'); btn.textContent = item; btn.value = item; cont.appendChild(btn); }); cont.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') { cont.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); applyFilters(); } }); }; createBtns('categoria', filters.categoria, 'Tutte'); createBtns('argomento', filters.argomento, 'Tutti'); createBtns('bpm', filters.bpm, 'Tutti'); }
     function applyFilters() { const getActive = id => document.querySelector(`#filter-${id} button.active`)?.value ?? ''; const filtered = allSongs.filter(song => { const categoryMatch = !getActive('categoria') || (song.categoria && song.categoria.split(/[;,]/).map(c => c.trim()).includes(getActive('categoria'))); const argumentMatch = !getActive('argomento') || (song.argomento && song.argomento.split(/[;,]/).map(a => a.trim()).includes(getActive('argomento'))); const bpmMatch = !getActive('bpm') || (song.bpm && String(song.bpm) === getActive('bpm')); return categoryMatch && argumentMatch && bpmMatch; }); renderSongs(filtered); }
-    
-    // --- FUNZIONE HANDLE PLAY CORRETTA ---
     function handlePlay(item, type = 'audio') { 
         const targetButton = item.querySelector(`.action-btn.${type}`); 
-        if (targetButton && targetButton.classList.contains('disabled')) { 
-            alert("Hai raggiunto il limite di ascolti per questo brano."); 
-            return; 
-        } 
-        
+        if (targetButton && targetButton.classList.contains('disabled')) { alert("Hai raggiunto il limite di ascolti per questo brano."); return; } 
         const isPlayingThisItem = item === currentPlayingItem && type === currentPlayingType; 
-        if (isPlayingThisItem) { 
-            if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); 
-            else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); 
-            return; 
-        } 
-        
+        if (isPlayingThisItem) { if (type === 'audio') audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(); else videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause(); return; } 
         resetPlayingState(); 
         currentPlayingItem = item; 
         currentPlayingType = type; 
-
-        // ===============================================================
-        // CHECK PIRATERIA: Controlla se la colonna "Pirateria" contiene "P"
-        // ===============================================================
         const piracyValue = item.dataset.pirateria || ""; 
         isProtectionActive = piracyValue.toUpperCase().trim() === "P";
-        
-        if (isProtectionActive) {
-            console.log("🛡️ Modalità Protezione Attiva per questo brano.");
-        }
-        // ===============================================================
-
-        if (type === 'audio') { 
-            const audioUrl = item.dataset.linkAscolto; 
-            if (!audioUrl) { alert("Impossibile riprodurre: link audio mancante."); return; } 
-            audioPlayer.src = audioUrl; 
-            footerPlayer.classList.add('visible'); 
-            footerPlayerTitle.textContent = item.dataset.titolo; 
-            audioPlayer.play().catch(e => console.error("Errore audio:", e)); 
-        } else if (type === 'video') { 
-            const videoUrl = item.dataset.videoLink; 
-            if (!videoUrl || String(videoUrl).toUpperCase() === 'FALSE') { alert("Video non disponibile."); return; } 
-            videoPlayer.src = videoUrl; 
-            document.getElementById('video-modal').style.display = 'flex'; 
-            videoPlayer.play().catch(e => console.error("Errore video:", e)); 
-        } 
-        
-        const counts = getPlayCounts(); 
-        const songId = item.dataset.id; 
-        let count = counts[songId] || 0; 
-        count++; 
-        counts[songId] = count; 
-        savePlayCounts(counts); 
-        
-        // CORREZIONE QUI: Uso item.dataset.titolo invece di songTitle
-        trackPlay(songId, item.dataset.titolo, currentUserEmail); 
-        
-        applyFilters(); 
+        if (type === 'audio') { const audioUrl = item.dataset.linkAscolto; if (!audioUrl) { alert("Impossibile riprodurre: link audio mancante."); return; } audioPlayer.src = audioUrl; footerPlayer.classList.add('visible'); footerPlayerTitle.textContent = item.dataset.titolo; audioPlayer.play().catch(e => console.error("Errore audio:", e)); } else if (type === 'video') { const videoUrl = item.dataset.videoLink; if (!videoUrl || String(videoUrl).toUpperCase() === 'FALSE') { alert("Video non disponibile."); return; } videoPlayer.src = videoUrl; document.getElementById('video-modal').style.display = 'flex'; videoPlayer.play().catch(e => console.error("Errore video:", e)); } 
+        const counts = getPlayCounts(); const songId = item.dataset.id; let count = counts[songId] || 0; count++; counts[songId] = count; savePlayCounts(counts); trackPlay(songId, item.dataset.titolo, currentUserEmail); applyFilters(); 
     }
-    
     function getPlayCounts() { return JSON.parse(localStorage.getItem(`jukeboxPlayCounts_${currentUserEmail}`)) || {}; }
     function savePlayCounts(counts) { localStorage.setItem(`jukeboxPlayCounts_${currentUserEmail}`, JSON.stringify(counts)); }
-    
-    async function trackPlay(songId, songTitle, userEmail) {
-        const payload = { id: songId, title: songTitle, email: userEmail };
-        try {
-            await fetch(sheetApiUrl, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' },
-                mode: 'no-cors'
-            });
-        } catch (error) {
-            console.error("Impossibile tracciare l'ascolto:", error);
-        }
-    }
-
+    async function trackPlay(songId, songTitle, userEmail) { const payload = { id: songId, title: songTitle, email: userEmail }; try { await fetch(sheetApiUrl, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' }, mode: 'no-cors' }); } catch (error) { console.error("Impossibile tracciare l'ascolto:", error); } }
     function showLyrics(item) { const modal = document.getElementById('lyrics-modal'); if (modal) { modal.querySelector('#lyrics-title').innerText = item.dataset.titolo; modal.querySelector('#lyrics-text').innerText = item.dataset.liriche || "Testo non disponibile."; modal.style.display = 'flex'; } }
-    
-    function openPurchaseInfoModal(songStatus) {
-        const status = (songStatus || "").toLowerCase().trim();
-        const shortInfoKeywords = ['hotel', 'scuola', 'squola', 'inno squadra', 'inno'];
-        if (shortInfoKeywords.some(keyword => status.includes(keyword))) {
-            document.getElementById('purchase-info-modal').style.display = 'none';
-            document.getElementById('purchase-info-modal-simplified').style.display = 'flex';
-        } else {
-            document.getElementById('purchase-info-modal').style.display = 'flex';
-            document.getElementById('purchase-info-modal-simplified').style.display = 'none';
-        }
-    }
-
+    function openPurchaseInfoModal(songStatus) { const status = (songStatus || "").toLowerCase().trim(); const shortInfoKeywords = ['hotel', 'scuola', 'squola', 'inno squadra', 'inno']; if (shortInfoKeywords.some(keyword => status.includes(keyword))) { document.getElementById('purchase-info-modal').style.display = 'none'; document.getElementById('purchase-info-modal-simplified').style.display = 'flex'; } else { document.getElementById('purchase-info-modal').style.display = 'flex'; document.getElementById('purchase-info-modal-simplified').style.display = 'none'; } }
     function closeAllModals() { allModalOverlays.forEach(m => { if(m) m.style.display = 'none' }); if (currentPlayingType === 'video') { videoPlayer.pause(); videoPlayer.src = ''; } }
-    
-    function resetPlayingState() { 
-        if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } 
-        currentPlayingItem = null; 
-        currentPlayingType = null; 
-        
-        // Reset e Assicura Audio Attivo per il prossimo
-        if (!audioPlayer.paused) { audioPlayer.pause(); } 
-        audioPlayer.src = ''; 
-        audioPlayer.muted = false; 
-        
-        if (!videoPlayer.paused) { videoPlayer.pause(); } 
-        videoPlayer.src = ''; 
-        videoPlayer.muted = false; 
-
-        footerPlayer.classList.remove('visible'); 
-        
-        // Reset flag protezione
-        isProtectionActive = false;
-    }
-
+    function resetPlayingState() { if (currentPlayingItem) { currentPlayingItem.classList.remove('playing-audio', 'playing-video'); } currentPlayingItem = null; currentPlayingType = null; if (!audioPlayer.paused) { audioPlayer.pause(); } audioPlayer.src = ''; audioPlayer.muted = false; if (!videoPlayer.paused) { videoPlayer.pause(); } videoPlayer.src = ''; videoPlayer.muted = false; footerPlayer.classList.remove('visible'); isProtectionActive = false; }
     async function handleContactForm(e) { e.preventDefault(); const form = e.target; const formData = new FormData(form); const resultEl = form.querySelector('#form-result'); resultEl.innerHTML = "Invio..."; const btn = form.querySelector('button[type="submit"]'); btn.disabled = true; try { const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: formData }); const result = await res.json(); if (result.success) { resultEl.innerHTML = "<span style='color: var(--success-color);'>Messaggio inviato!</span>"; form.reset(); setTimeout(() => closeAllModals(), 3000); } else { resultEl.innerHTML = `<span style='color: #e53f35;'>Errore: ${result.message}</span>`; } } catch (err) { resultEl.innerHTML = "<span style='color: #e53f35;'>Errore di rete.</span>"; } finally { btn.disabled = false; } }
     function handleResetFromUrl() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.get('action') === 'reset' && urlParams.get('password') === RESET_PASSWORD) { const email = urlParams.get('email'); if(email) { localStorage.removeItem(`jukeboxPlayCounts_${email.toLowerCase()}`); alert(`Conteggio per ${email} resettato.`); window.history.replaceState({}, document.title, window.location.pathname); window.location.reload(); } } }
     handleResetFromUrl();
     setupEventListeners();
 });
 </script>
-
 </body>
 </html>
