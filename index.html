@@ -573,8 +573,48 @@ document.addEventListener('DOMContentLoaded', function() {
             const res = await fetch(url);
             if (!res.ok) throw new Error(`Errore di rete: ${res.statusText}`);
             const data = await res.json();
+            
             if (data && Array.isArray(data.songs)) {
                 allSongs = data.songs;
+
+                // --- INIZIO NUOVA LOGICA PER IL NOME ---
+                const clientNameElement = document.getElementById('client-name');
+                const currentName = clientNameElement.textContent.trim().toLowerCase();
+                const emailPrefix = userEmail.split('@')[0].toLowerCase();
+                const genericNames = ['info', 'admin', 'contact', 'prenotazioni', 'reception', 'ufficio', 'hello', 'mail'];
+
+                // Se il nome attuale è uguale al prefisso email (es. "info") oppure è nella lista dei generici
+                if (currentName === emailPrefix || genericNames.includes(currentName)) {
+                    
+                    let newName = "";
+
+                    // TENTATIVO 1: Estrai dal Titolo del primo brano (es. "Hotel Helvetia - Titolo")
+                    if (allSongs.length > 0) {
+                        const firstSongTitle = allSongs[0].titolo || allSongs[0].Titolo; 
+                        if (firstSongTitle && firstSongTitle.includes('-')) {
+                            // Prende la parte prima del trattino " - "
+                            newName = firstSongTitle.split('-')[0].trim();
+                        }
+                    }
+
+                    // TENTATIVO 2: Se fallisce il titolo, estrai dal dominio email (es. @termehelvetia.it)
+                    if (!newName || newName.length < 3) {
+                        try {
+                            const domain = userEmail.split('@')[1].split('.')[0];
+                            // Mette la prima lettera maiuscola (termehelvetia -> Termehelvetia)
+                            newName = domain.charAt(0).toUpperCase() + domain.slice(1);
+                        } catch (e) {
+                            console.log("Impossibile estrarre nome dal dominio");
+                        }
+                    }
+
+                    // Se abbiamo trovato un nome valido, aggiorniamo l'interfaccia
+                    if (newName && newName.length > 2) {
+                        clientNameElement.textContent = newName;
+                    }
+                }
+                // --- FINE NUOVA LOGICA ---
+
                 populateFilters(allSongs);
                 applyFilters();
             } else {
