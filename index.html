@@ -234,6 +234,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('contextmenu', event => event.preventDefault());
 
     const params = new URLSearchParams(window.location.search);
+
+    const magicEmail = params.get('user_email');
+    if (magicEmail) {
+        const emailInput = document.getElementById('email-input');
+        const loginForm = document.getElementById('login-form');
+        
+        if (emailInput && loginForm) {
+            // 1. Decodifica e inserisce l'email nel campo
+            emailInput.value = decodeURIComponent(magicEmail);
+            
+            // 2. Cambia il testo del bottone per feedback visivo
+            const btn = loginForm.querySelector('button');
+            if(btn) btn.textContent = 'Accesso in corso...';
+
+            // 3. Simula l'invio del form (così riusa tutta la tua logica esistente di API e caricamento)
+            setTimeout(() => {
+                loginForm.dispatchEvent(new Event('submit', {
+                    'bubbles': true,
+                    'cancelable': true
+                }));
+            }, 500); // Mezzo secondo di attesa per assicurarsi che tutto sia caricato
+        }
+    }
+  
     if (params.get('payment') === 'success') {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('jukebox-container').style.display = 'none';
